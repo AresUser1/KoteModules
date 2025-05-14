@@ -1,4 +1,4 @@
-# *   /_/\  
+# *   /\_/\  
 # *  ( o.o )   Mew!
 # *   > ^ <
 # *
@@ -1355,13 +1355,12 @@ async def delete_handler(event):
     await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .version ===
-# === ОБРАБОТЧИК КОМАНДЫ .version ===
 @client.on(events.NewMessage(pattern=r'^\.version$'))
 @error_handler
 async def version_handler(event):
     if not await is_owner(event):
         return
-    module_version = "1.0.0"  # Текущая версия
+    module_version = "1.0.1"  # Текущая версия
     uptime = get_uptime()
     user = await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
@@ -1374,39 +1373,50 @@ async def version_handler(event):
 
     # Проверка новой версии
     latest_version = module_version
-    update_text = ""
+    update_text = "\n⚠️ Не удалось проверить обновления"
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get('https://api.github.com/repos/AresUser1/KoteModules/releases/latest') as resp:
-                if resp.status == 200:
+                status = resp.status
+                print(f"[Debug] Статус GitHub API: {status}")
+                if status == 200:
                     data = await resp.json()
-                    latest_version = data['tag_name'].lstrip('v')  # Например, 'v1.0.1' → '1.0.1'
+                    print(f"[Debug] Ответ API: {data}")
+                    latest_version = data['tag_name'].lstrip('v')
                     if latest_version != module_version:
                         update_text = (
-                            f"\n\n**⚠️ Доступна новая версия: {latest_version}**\n"
+                            f"\n⚠️ Доступна новая версия: {latest_version}\n"
                             f"Обнови: [GitHub](https://github.com/AresUser1/KoteModules/releases/latest)"
                         )
+                    else:
+                        update_text = ""  # Если версия та же, ничего не показываем
+                elif status == 404:
+                    print(f"[Debug] Релизы не найдены (404)")
+                    update_text = "\n⚠️ Не удалось проверить обновления"
                 else:
-                    update_text = "\n\n**⚠️ Не удалось проверить обновления**"
+                    error_text = await resp.text()
+                    print(f"[Debug] Ошибка GitHub API: Статус {status}, Текст: {error_text}")
+                    update_text = "\n⚠️ Не удалось проверить обновления"
     except Exception as e:
-        await send_error_log(f"Ошибка проверки обновлений: {str(e)}", "version_handler", event)
-        update_text = "\n\n**⚠️ Не удалось проверить обновления**"
+        print(f"[Debug] Исключение GitHub API: {str(e)}")
+        await send_error_log(f"Ошибка проверки обновлений: Исключение: {str(e)}", "version_handler", event)
+        update_text = "\n⚠️ Не удалось проверить обновления"
 
-    quote_text = (
-        f"{info_emoji} **KoteUserBot**\n"
-        f"**Owner:** {owner_username}\n"
+    text = (
+        f"{info_emoji} KoteUserBot\n"
+        f"Owner: {owner_username}\n"
         f"\n"
-        f"**Version:** {module_version}\n"
-        f"**Branch:** {branch}\n"
-        f"**Uptime:** {uptime}\n"
-        f"**Prefix:** `{prefix}`\n"
-        f"**Platform:** {platform}"
+        f"Version: {module_version}\n"
+        f"Branch: {branch}\n"
+        f"Uptime: {uptime}\n"
+        f"Prefix: {prefix}\n"
+        f"Platform: {platform}\n"
+        f"{update_text}\n"
+        f"\n"
+        f"{premium_emoji} Developed with 💖 by Kote"
     )
-    full_text = f"{quote_text}{update_text}\n\n{premium_emoji} Developed with 💖 by Kote"
 
-    parsed_text, entities = parser.parse(full_text)
-    quote_length = len(quote_text.encode('utf-16-le')) // 2
-    entities.append(types.MessageEntityBlockquote(offset=0, length=quote_length))
+    parsed_text, entities = parser.parse(text)
 
     try:
         channel = await client.get_entity("@KoteUserBotMedia")
@@ -1424,7 +1434,8 @@ async def version_handler(event):
         )
         await event.message.delete()
     except Exception as e:
-        await send_error_log(str(e), "version_handler", event)
+        print(f"[Debug] Ошибка отправки медиа: {str(e)}")
+        await send_error_log(f"Ошибка отправки медиа: {str(e)}", "version_handler", event)
         await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .stags ===
