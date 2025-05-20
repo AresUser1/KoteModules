@@ -1,4 +1,4 @@
-# *   /\_/\  
+# *   /_/\  
 # *  ( o.o )   Mew!
 # *   > ^ <
 # *
@@ -13,10 +13,11 @@
 # Name: KoteUserBot
 # Authors: Kote
 # Commands:
-# .help | .info | .ping | .helps | .tag | .add | .remove | .dele | .сипался | .version | .stags | .stconfig | .stoptag | .name | .spam | .stopspam
+# .help | .helps | .ping | .info | .version | .сипался | .dele | .add | .remove | .tag | .stoptag | .name | .autoupdate | .spam | .stopspam | .stags | .stconfig | .on | .off | .setprefix | .status | .profile | .backup
 # scope: Telegram_Only
 # meta developer: @Aaaggrrr
 
+import shutil
 import sys
 import traceback
 import time
@@ -33,8 +34,8 @@ import sqlite3
 import aiohttp
 from collections import defaultdict
 from typing import List, Dict, Any
+import zipfile
 
-# Проверка зависимостей
 try:
     from telethon import TelegramClient, events, types, functions
     from telethon.extensions import markdown
@@ -44,10 +45,32 @@ try:
     from telethon.tl.types import PeerChannel
 except ImportError as e:
     print(f"[Critical] Ошибка импорта зависимостей: {e}")
-    print("[Critical] Убедитесь, что установлен Telethon: `pip install telethon`")
+    print("[Critical] Установите Telethon: `pip install telethon`")
     sys.exit(1)
 
-# Конфигурация API
+def create_env_file():
+    print("\n[Setup] Файл .env не найден. Создаём новый.")
+    print("1. Перейдите на https://my.telegram.org")
+    print("2. Войдите и выберите 'API development tools'")
+    print("3. Создайте приложение, получите API_ID и API_HASH")
+    api_id = input("\nВведите API_ID: ").strip()
+    api_hash = input("Введите API_HASH: ").strip()
+    
+    if not api_id.isdigit() or not api_hash:
+        print("[Error] API_ID — число, API_HASH — не пустой!")
+        sys.exit(1)
+    
+    try:
+        with open('.env', 'w') as f:
+            f.write(f"API_ID={api_id}\n")
+            f.write(f"API_HASH={api_hash}\n")
+        os.chmod('.env', 0o600)
+    except Exception as e:
+        print(f"[Error] Ошибка создания .env: {e}")
+        sys.exit(1)
+
+if not os.path.exists('.env'):
+    create_env_file()
 load_dotenv()
 api_id = int(os.getenv('API_ID'))
 api_hash = os.getenv('API_HASH')
@@ -55,10 +78,15 @@ session = 'my_session'
 start_time = time.time()
 owner_id = None
 
+CONFIG = {
+    'prefix': '.'
+}
+
 # Конфигурация белых списков для .tag
 WHITELISTS = defaultdict(list)
 WHITELISTS_FILE = 'whitelists.json'
 TAG_COOLDOWN = 10
+BOT_ENABLED = True
 
 # Конфигурация Silent Tags
 SILENT_TAGS_ENABLED = False
@@ -71,23 +99,17 @@ SILENT_TAGS_CONFIG: Dict[str, Any] = {
     'use_whitelist': False,
     'use_chat_whitelist': False
 }
-BLOCKED_USERS = []  # Список заблокированных пользователей
-FW_PROTECT = {}  # Защита от флуд-уведомлений
-FW_PROTECT_LIMIT = 5  # Лимит уведомлений за 5 минут
-SPAM_RUNNING = False  # Флаг для отслеживания выполнения .spam
-SPAM_TASK = None  # Переменная для хранения задачи спама
+BLOCKED_USERS = []
+FW_PROTECT = {}
+FW_PROTECT_LIMIT = 5
+SPAM_RUNNING = False
+SPAM_TASK = None
 
-# Добавляем состояние для отслеживания последней обработанной команды .stoptag
 TAG_STATE = {
     'running': False,
     'last_message_id': None
-    }
-
-CONFIG = {
-    'prefix': '.'  # Префикс команд
 }
 
-# База данных SQLite для Silent Tags и логов
 DB_FILE = 'koteuserbot.db'
 
 def init_db():
@@ -113,7 +135,12 @@ def init_db():
                 group_id INTEGER UNIQUE
             )
         ''')
-        # Проверяем, нет ли повреждённых данных
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bot_config (
+                param TEXT PRIMARY KEY,
+                value TEXT
+            )
+        ''')
         cursor.execute('SELECT group_id FROM error_log_group WHERE id = 1')
         result = cursor.fetchone()
         if result and result[0] is None:
@@ -129,19 +156,48 @@ def init_db():
     finally:
         conn.close()
 
+def load_config():
+    global CONFIG
+    print("[Debug] Загрузка конфигурации")
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bot_config'")
+        if not cursor.fetchone():
+            print("[Debug] Таблица bot_config не существует, используется префикс по умолчанию")
+            CONFIG['prefix'] = '.'
+            return
+        cursor.execute('SELECT value FROM bot_config WHERE param = ?', ('prefix',))
+        result = cursor.fetchone()
+        CONFIG['prefix'] = result[0] if result else '.'
+    except Exception as e:
+        print(f"[Error] Ошибка загрузки конфигурации: {e}")
+        CONFIG['prefix'] = '.'
+    finally:
+        conn.close()
+
+def save_config():
+    print("[Debug] Сохранение конфигурации")
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('INSERT OR REPLACE INTO bot_config (param, value) VALUES (?, ?)',
+                      ('prefix', CONFIG['prefix']))
+        conn.commit()
+    except Exception as e:
+        print(f"[Error] Ошибка сохранения конфигурации: {e}")
+    finally:
+        conn.close()
+
 def load_silent_tags_config():
     global SILENT_TAGS_ENABLED, SILENT_TAGS_CONFIG
     print("[Debug] Загрузка конфигурации Silent Tags")
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-
-        # Загрузка enabled
         cursor.execute('SELECT value FROM silent_tags_config WHERE param = ?', ('enabled',))
         result = cursor.fetchone()
         SILENT_TAGS_ENABLED = result[0] == 'true' if result else False
-
-        # Загрузка остальных параметров
         for param in SILENT_TAGS_CONFIG:
             cursor.execute('SELECT value FROM silent_tags_config WHERE param = ?', (param,))
             result = cursor.fetchone()
@@ -161,12 +217,8 @@ def save_silent_tags_config():
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-
-        # Сохранение enabled
         cursor.execute('INSERT OR REPLACE INTO silent_tags_config (param, value) VALUES (?, ?)',
                       ('enabled', 'true' if SILENT_TAGS_ENABLED else 'false'))
-
-        # Сохранение остальных параметров
         for param, value in SILENT_TAGS_CONFIG.items():
             if isinstance(value, list):
                 value = json.dumps(value)
@@ -174,7 +226,6 @@ def save_silent_tags_config():
                 value = 'true' if value else 'false'
             cursor.execute('INSERT OR REPLACE INTO silent_tags_config (param, value) VALUES (?, ?)',
                           (param, value))
-
         conn.commit()
     except Exception as e:
         print(f"[Error] Ошибка сохранения конфигурации Silent Tags: {e}")
@@ -614,7 +665,7 @@ EMOJI_SET = {
         'help': '[📖](emoji/5373098009640836781)',
         'info': '[ℹ️](emoji/5228686859663585439)',
         'name': '[👤](emoji/5373012449597335010)',
-        'username': '[📛](emoji/5431736674147114227)',
+        'username': '[🪪](emoji/5422683699130933153)',
         'id': '[🆔](emoji/5974526806995242353)',
         'premium': '[⭐](emoji/5334523697174683404)',
         'leave': '[🥰](emoji/5420557514225770446)',
@@ -630,7 +681,7 @@ EMOJI_SET = {
         'help': '📖',
         'info': 'ℹ️',
         'name': '👤',
-        'username': '📛',
+        'username': '🪪',
         'id': '🆔',
         'premium': '⭐',
         'leave': '🥰',
@@ -723,100 +774,136 @@ async def safe_edit_message(event, text, entities):
 # Декоратор для обработки ошибок
 def error_handler(handler):
     async def wrapper(event):
+        global BOT_ENABLED
         print(f"[Debug] Выполнение обработчика: {handler.__name__}")
+        if not BOT_ENABLED and handler.__name__ != "on_handler":
+            print("[Debug] Бот выключен, команда игнорируется")
+            return
+        command_name = handler.__name__.replace('_handler', '')
+        if not await is_owner(event):
+            if event.sender_id not in ACCESS_CONTROL or command_name not in ACCESS_CONTROL[event.sender_id]:
+                print(f"[Debug] У пользователя {event.sender_id} нет доступа к команде {command_name}")
+                return
         try:
             await handler(event)
         except Exception as e:
             error_msg = f"{str(e)}\n\nTraceback: {''.join(traceback.format_tb(e.__traceback__))}"
             await send_error_log(error_msg, handler.__name__, event)
-            await safe_edit_message(event, f"**Ошибка:** {str(e)}", [])
+            await client.send_message(event.chat_id, f"**Ошибка:** {str(e)}")
     return wrapper
 
-# === ОБРАБОТЧИК КОМАНДЫ .ping ===
-@client.on(events.NewMessage(pattern=r'^\.ping$'))
-@error_handler
-async def ping_handler(event):
-    if not await is_owner(event):
-        return
-    start = time.time()
-    uptime = get_uptime()
-    
-    response_time = (time.time() - start) * 1000
-    ping_emoji = await get_emoji('ping')
-    rocket_emoji = await get_emoji('rocket')
-    text = (
-        f"**{ping_emoji} Скорость отклика Telegram:** {response_time:.3f} мс\n"
-        f"**{rocket_emoji} Время работы:** {uptime}\n\n"
-    )
-    
-    parsed_text, entities = parser.parse(text)
-    await safe_edit_message(event, parsed_text, entities)
+async def update_files_from_git():
+    print("[Debug] Запуск обновления файлов из Git")
+    try:
+        branch = get_git_branch()
+        repo_url = "https://github.com/AresUser1/KoteModules.git"
+        temp_dir = "temp_git_update"
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+        os.makedirs(temp_dir)
+        subprocess.run(["git", "clone", "--branch", branch, repo_url, temp_dir], check=True)
+        print(f"[Debug] Репозиторий клонирован в {temp_dir}")
+        for item in os.listdir(temp_dir):
+            item_path = os.path.join(temp_dir, item)
+            if os.path.isfile(item_path):
+                shutil.copy2(item_path, os.getcwd())
+                print(f"[Debug] Скопирован файл: {item}")
+        shutil.rmtree(temp_dir)
+        print("[Debug] Временная папка удалена")
+        return True, "Файлы успешно обновлены!"
+    except Exception as e:
+        error_msg = f"Ошибка обновления: {str(e)}"
+        print(f"[Error] {error_msg}")
+        return False, error_msg
 
 # === ОБРАБОТЧИК КОМАНДЫ .help ===
-@client.on(events.NewMessage(pattern=r'^\.help(?:\s+(.+))?$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}help(?:\s+(.+))?$', x)))
 @error_handler
 async def help_handler(event):
     if not await is_owner(event):
         return
-    args = event.pattern_match.group(1)
+    args = event.pattern_match.group(1) if event.pattern_match and event.pattern_match.group(1) else None
     help_emoji = await get_emoji('help')
-    
+
+    # Словарь с подробным описанием команд
+    commands_help = {
+        'ping': f"**{help_emoji} {CONFIG['prefix']}ping**\nПоказывает скорость отклика Telegram и время работы бота.",
+        'help': f"**{help_emoji} {CONFIG['prefix']}help [команда]**\nПоказывает список команд или справку по команде.",
+        'helps': f"**{help_emoji} {CONFIG['prefix']}helps**\nПоказывает белый список для {CONFIG['prefix']}tag в текущей группе.",
+        'info': f"**{help_emoji} {CONFIG['prefix']}info**\nПоказывает данные аккаунта (ник, username, ID, Premium).",
+        'version': f"**{help_emoji} {CONFIG['prefix']}version**\nПоказывает версию бота, ветку, платформу и проверяет обновления.",
+        'сипался': f"**{help_emoji} {CONFIG['prefix']}сипался**\nПокидает группу с прощальным сообщением.",
+        'dele': f"**{help_emoji} {CONFIG['prefix']}dele <число>**\nУдаляет до 100 сообщений в группе (нужны права).",
+        'add': f"**{help_emoji} {CONFIG['prefix']}add @username/ID**\nДобавляет пользователя в белый список для {CONFIG['prefix']}tag.",
+        'remove': f"**{help_emoji} {CONFIG['prefix']}remove @username/ID**\nУдаляет пользователя из белого списка для {CONFIG['prefix']}tag.",
+        'tag': f"**{help_emoji} {CONFIG['prefix']}tag [текст]**\nТегирует всех в группе, кроме ботов, whitelist и владельца.",
+        'stoptag': f"**{help_emoji} {CONFIG['prefix']}stoptag**\nОстанавливает выполнение {CONFIG['prefix']}tag.",
+        'name': f"**{help_emoji} {CONFIG['prefix']}name <ник>**\nМеняет имя аккаунта.",
+        'autoupdate': f"**{help_emoji} {CONFIG['prefix']}autoupdate**\nОбновляет файлы бота из Git-репозитория.",
+        'spam': f"**{help_emoji} {CONFIG['prefix']}spam <число> <текст>**\nОтправляет до 100 сообщений с задержкой 0.5с.",
+        'stopspam': f"**{help_emoji} {CONFIG['prefix']}stopspam**\nОстанавливает выполнение {CONFIG['prefix']}spam.",
+        'stags': f"**{help_emoji} {CONFIG['prefix']}stags [on/off]**\nВключает или выключает Silent Tags (логи упоминаний).",
+        'stconfig': (
+            f"**{help_emoji} {CONFIG['prefix']}stconfig [параметр] [значение]**\nПоказывает или меняет настройки Silent Tags.\n"
+            f"Примеры:\n"
+            f"`{CONFIG['prefix']}stconfig` — показать настройки\n"
+            f"`{CONFIG['prefix']}stconfig silent true` — включить тихий режим\n"
+            f"`{CONFIG['prefix']}stconfig ignore_users add @username` — добавить в игнор"
+        ),
+        'on': f"**{help_emoji} {CONFIG['prefix']}on**\nВключает бота для обработки команд.",
+        'off': f"**{help_emoji} {CONFIG['prefix']}off**\nВыключает бота (кроме {CONFIG['prefix']}on).",
+        'setprefix': f"**{help_emoji} {CONFIG['prefix']}setprefix <префикс>**\nМеняет префикс команд (до 5 символов).",
+        'status': f"**{help_emoji} {CONFIG['prefix']}status**\nПоказывает статус бота, префикс, Silent Tags и время работы.",
+        'profile': (
+            f"**{help_emoji} {CONFIG['prefix']}profile @username/ID [groups]**\nПоказывает профиль пользователя (имя, username, ID, Premium, последний онлайн).\n"
+            f"Добавьте `groups` для отображения общих групп (до 5, остальные обрезаются)."
+        ),
+        'backup': f"**{help_emoji} {CONFIG['prefix']}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное."
+    }
+
     if args:
         args = args.lower().strip()
-        commands_help = {
-            'ping': f"**{help_emoji} .ping**\nПоказывает скорость отклика Telegram и время работы бота.",
-            'help': f"**{help_emoji} .help**\nПоказывает список команд. Используйте `.help <команда>` для подробной информации.",
-            'helps': f"**{help_emoji} .helps**\nПоказывает белый список пользователей для .tag в текущей группе.",
-            'info': f"**{help_emoji} .info**\nПоказывает информацию об аккаунте (ник, username, ID, статус Premium).",
-            'version': f"**{help_emoji} .version**\nПоказывает информацию о версии бота.",
-            'сипался': f"**{help_emoji} .сипался**\nПокидает группу с прощальным сообщением (только в группах).",
-            'dele': f"**{help_emoji} .dele <количество>**\nУдаляет указанное количество сообщений в группе (если есть права, до 100).",
-            'add': f"**{help_emoji} .add @username/ID**\nДобавляет пользователя в белый список для .tag.",
-            'remove': f"**{help_emoji} .remove @username/ID**\nУдаляет пользователя из белого списка для .tag.",
-            'tag': f"**{help_emoji} .tag <текст>**\nТегирует всех пользователей группы, кроме ботов и белого списка.",
-            'stoptag': f"**{help_emoji} .stoptag**\nОстанавливает выполнение команды .tag.",
-            'name': f"**{help_emoji} .name <новый ник>**\nИзменяет имя аккаунта без входа в настройки.",
-            'spam': f"**{help_emoji} .spam <количество> <текст>**\nОтправляет указанное количество сообщений с текстом (до 100, задержка 0.3с).",
-            'stopspam': f"**{help_emoji} .stopspam**\nОстанавливает выполнение команды .spam.",
-            'stags': f"**{help_emoji} .stags <on/off>**\nВключает или выключает Silent Tags (уведомления об упоминаниях в избранное).",
-            'stconfig': (
-                f"**{help_emoji} .stconfig**\nПоказывает текущие настройки Silent Tags.\n\n"
-                f"**.stconfig <параметр> true/false**\nИзменяет булевый параметр (silent, ignore_bots, и т.д.).\n"
-                f"**.stconfig <список> add/remove @username/ID/this**\nДобавляет/удаляет пользователя или чат в список (ignore_users, ignore_chats, и т.д.).\n"
-                f"Пример: `.stconfig silent true`, `.stconfig ignore_chats add this`"
-            )
-        }
-        text = commands_help.get(args, f"**Ошибка:** Команда `{args}` не найдена!")
+        # Поддержка команды "сипался" (русский текст)
+        args = 'сипался' if args == 'сипался' else args
+        text = commands_help.get(args, f"**Ошибка:** Команда `{args}` не найдена! Используйте `{CONFIG['prefix']}help` для списка команд.")
     else:
         text = (
-            f"**{help_emoji} Список команд:**\n\n"
+            f"**{help_emoji} Команды KoteUserBot:**\n\n"
             f"**Основные**\n"
-            f"`.ping` — Пинг и время работы\n"
-            f"`.info` — Инфо об аккаунте\n"
-            f"`.version` — Версия бота\n"
-            f"`.help [команда]` — Справка\n"
-            f"`.name <ник>` — Сменить имя\n\n"
+            f"`{CONFIG['prefix']}ping` — Пинг и время работы\n"
+            f"`{CONFIG['prefix']}info` — Инфо об аккаунте\n"
+            f"`{CONFIG['prefix']}version` — Версия и обновления\n"
+            f"`{CONFIG['prefix']}help [команда]` — Справка\n"
+            f"`{CONFIG['prefix']}name <ник>` — Сменить имя\n"
+            f"`{CONFIG['prefix']}autoupdate` — Обновить бота\n"
+            f"`{CONFIG['prefix']}on` — Включить бота\n"
+            f"`{CONFIG['prefix']}off` — Выключить бота\n"
+            f"`{CONFIG['prefix']}setprefix <префикс>` — Сменить префикс\n"
+            f"`{CONFIG['prefix']}status` — Статус бота\n"
+            f"`{CONFIG['prefix']}backup` — Создать бэкап\n"
+            f"`{CONFIG['prefix']}profile @username/ID [groups]` — Профиль пользователя\n\n"
             f"**Группы**\n"
-            f"`.tag [текст]` — Тег всех\n"
-            f"`.stoptag` — Остановить тег\n"
-            f"`.add @username` — Добавить в whitelist\n"
-            f"`.remove @username` — Удалить из whitelist\n"
-            f"`.helps` — Показать whitelist\n"
-            f"`.dele <число>` — Удалить сообщения\n"
-            f"`.сипался` — Покинуть группу\n"
-            f"`.spam <число> <текст>` — Спам\n"
-            f"`.stopspam` — Остановить спам\n\n"
+            f"`{CONFIG['prefix']}tag [текст]` — Тег всех\n"
+            f"`{CONFIG['prefix']}stoptag` — Остановить тег\n"
+            f"`{CONFIG['prefix']}add @username/ID` — В whitelist\n"
+            f"`{CONFIG['prefix']}remove @username/ID` — Из whitelist\n"
+            f"`{CONFIG['prefix']}helps` — Показать whitelist\n"
+            f"`{CONFIG['prefix']}dele <число>` — Удалить сообщения\n"
+            f"`{CONFIG['prefix']}сипался` — Покинуть группу\n"
+            f"`{CONFIG['prefix']}spam <число> <текст>` — Спам\n"
+            f"`{CONFIG['prefix']}stopspam` — Остановить спам\n\n"
             f"**Silent Tags**\n"
-            f"`.stags [on/off]` — Вкл/выкл логи\n"
-            f"`.stconfig` — Настройки\n\n"
-            f"Подробно: `.help <команда>`"
+            f"`{CONFIG['prefix']}stags [on/off]` — Вкл/выкл\n"
+            f"`{CONFIG['prefix']}stconfig [параметр] [значение]` — Настройки\n\n"
+            f"Подробности: `{CONFIG['prefix']}help <команда>`"
         )
-    
+
     parsed_text, entities = parser.parse(text)
-    await safe_edit_message(event, parsed_text, entities)
+    await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+    await event.message.delete()
 
 # === ОБРАБОТЧИК КОМАНДЫ .helps ===
-@client.on(events.NewMessage(pattern=r'^\.helps$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}helps$', x)))
 @error_handler
 async def helps_handler(event):
     if not await is_owner(event):
@@ -849,7 +936,7 @@ async def helps_handler(event):
     await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .add ===
-@client.on(events.NewMessage(pattern=r'^\.add\s+(.+)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}add\s+(.+)$', x)))
 @error_handler
 async def add_handler(event):
     if not await is_owner(event):
@@ -860,7 +947,13 @@ async def add_handler(event):
         await safe_edit_message(event, parsed_text, entities)
         return
 
-    identifier = event.pattern_match.group(1).strip()
+    identifier = event.pattern_match.group(1).strip() if event.pattern_match else None
+    if not identifier:
+        text = "**Ошибка:** Неверный @username или ID!"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
     user_id = await get_user_id(identifier)
     if not user_id:
         text = "**Ошибка:** Неверный @username или ID!"
@@ -886,7 +979,7 @@ async def add_handler(event):
     await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .remove ===
-@client.on(events.NewMessage(pattern=r'^\.remove\s+(.+)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}remove\s+(.+)$', x)))
 @error_handler
 async def remove_handler(event):
     if not await is_owner(event):
@@ -897,7 +990,13 @@ async def remove_handler(event):
         await safe_edit_message(event, parsed_text, entities)
         return
 
-    identifier = event.pattern_match.group(1).strip()
+    identifier = event.pattern_match.group(1).strip() if event.pattern_match else None
+    if not identifier:
+        text = "**Ошибка:** Неверный @username или ID!"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
     user_id = await get_user_id(identifier)
     if not user_id:
         text = "**Ошибка:** Неверный @username или ID!"
@@ -929,7 +1028,7 @@ SPAM_STATE = {
     'last_message_id': None  # Для отслеживания обработанного сообщения
 }
 
-@client.on(events.NewMessage(pattern=r'^\.spam\s+(\d+)\s+([\s\S]*)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}spam\s+(\d+)\s+([\s\S]*)$', x)))
 @error_handler
 async def spam_handler(event):
     print(f"[Debug] Запуск spam_handler для сообщения: {event.raw_text}, message_id={event.message.id}")
@@ -950,6 +1049,11 @@ async def spam_handler(event):
         return
 
     try:
+        if not event.pattern_match:
+            text = f"**Ошибка:** Неверный формат команды! Пример: `{CONFIG['prefix']}spam 5 текст`"
+            parsed_text, entities = parser.parse(text)
+            await event.message.edit(parsed_text, formatting_entities=entities)
+            return
         count = int(event.pattern_match.group(1))
         message_text = event.pattern_match.group(2).strip()
         print(f"[Debug] Параметры спама: count={count}, message_text={message_text}")
@@ -975,7 +1079,7 @@ async def spam_handler(event):
         input_entities = event.message.entities or []
         adjusted_entities = []
         if input_entities:
-            offset = len(f'.spam {count} ')
+            offset = len(f'{CONFIG["prefix"]}spam {count} ')
             for e in input_entities:
                 if e.offset >= offset:
                     start = e.offset - offset
@@ -1033,7 +1137,7 @@ async def spam_handler(event):
         entities = [types.MessageEntityBold(offset=0, length=len(text))]
         await event.message.edit(text, formatting_entities=entities)
 
-@client.on(events.NewMessage(pattern=r'^\.stopspam$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}stopspam$', x)))
 @error_handler
 async def stopspam_handler(event):
     print("[Debug] Запуск stopspam_handler")
@@ -1058,7 +1162,7 @@ async def stopspam_handler(event):
     print("[Debug] Сообщение об остановке спама отправлено")
 
 # === ОБРАБОТЧИК КОМАНДЫ .tag ===
-@client.on(events.NewMessage(pattern=r'^\.tag\s*([\s\S]*)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}tag\s*([\s\S]*)$', x)))
 @error_handler
 async def tag_handler(event):
     print(f"[Debug] Запуск tag_handler для сообщения: {event.raw_text}, message_id={event.message.id}")
@@ -1105,7 +1209,7 @@ async def tag_handler(event):
     TAG_STATE['running'] = True
     print(f"[Debug] Тегирование начато для {len(users_to_tag)} пользователей в чате {chat_id}")
     try:
-        input_text = event.message.text[len('.tag '):].strip()
+        input_text = event.pattern_match.group(1).strip() if event.pattern_match else ""
         input_entities = event.message.entities or []
         
         if input_text:
@@ -1115,7 +1219,7 @@ async def tag_handler(event):
         
         adjusted_entities = []
         if input_entities:
-            offset = len('.tag ')
+            offset = len(f'{CONFIG["prefix"]}tag ')
             for e in input_entities:
                 if e.offset >= offset:
                     start = e.offset - offset
@@ -1209,7 +1313,7 @@ async def tag_handler(event):
             print(f"[Debug] Ошибка удаления начального сообщения: {str(e)}")
 
 # === ОБРАБОТЧИК КОМАНДЫ .stoptag ===
-@client.on(events.NewMessage(pattern=r'^\.stoptag$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}stoptag$', x)))
 @error_handler
 async def stoptag_handler(event):
     print(f"[Debug] Запуск stoptag_handler для сообщения: {event.raw_text}, message_id={event.message.id}")
@@ -1237,12 +1341,12 @@ async def stoptag_handler(event):
     print("[Debug] Сообщение об остановке тегирования отправлено")
 
 # === ОБРАБОТЧИК КОМАНДЫ .name ===
-@client.on(events.NewMessage(pattern=r'^\.name\s+(.+)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}name\s+(.+)$', x)))
 @error_handler
 async def name_handler(event):
     if not await is_owner(event):
         return
-    new_name = event.pattern_match.group(1).strip()
+    new_name = event.pattern_match.group(1).strip() if event.pattern_match else None
     if not new_name:
         text = "**Ошибка:** Укажите новое имя!"
         parsed_text, entities = parser.parse(text)
@@ -1262,8 +1366,78 @@ async def name_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
 
+# === ОБРАБОТЧИК КОМАНДЫ .autoupdate ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}autoupdate$', x)))
+@error_handler
+async def autoupdate_handler(event):
+    if not await is_owner(event):
+        return
+    success, message = await update_files_from_git()
+    text = f"**Обновление:** {message}"
+    if success:
+        text += "\n**Перезапустите бота для применения изменений!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+# === ОБРАБОТЧИК КОМАНДЫ .on ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}on$', x)))
+@error_handler
+async def on_handler(event):
+    global BOT_ENABLED
+    if not await is_owner(event):
+        return
+    if BOT_ENABLED:
+        text = "**Бот уже включен!**"
+    else:
+        BOT_ENABLED = True
+        text = "**Бот включен!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+# === ОБРАБОТЧИК КОМАНДЫ .off ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}off$', x)))
+@error_handler
+async def off_handler(event):
+    global BOT_ENABLED
+    if not await is_owner(event):
+        return
+    if not BOT_ENABLED:
+        text = "**Бот уже выключен!**"
+    else:
+        BOT_ENABLED = False
+        text = "**Бот выключен!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+# === ОБРАБОТЧИК КОМАНДЫ .ping ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}ping$', x)))
+@error_handler
+async def ping_handler(event):
+    if not await is_owner(event):
+        return
+    
+    # Замер пинга Telegram API
+    start = time.time()
+    await client(functions.users.GetUsersRequest(id=[await client.get_me()]))  # Лёгкий запрос к Telegram API
+    telegram_ping = (time.time() - start) * 1000  # Время в миллисекундах
+    
+    # Получаем время работы бота
+    uptime = get_uptime()
+    
+    # Формируем текст ответа
+    ping_emoji = await get_emoji('ping')
+    rocket_emoji = await get_emoji('rocket')
+    text = (
+        f"**{ping_emoji} Скорость отклика Telegram:** {telegram_ping:.3f} мс\n"
+        f"**{rocket_emoji} Время работы:** {uptime}\n\n"
+    )
+    
+    parsed_text, entities = parser.parse(text)
+    await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+    await event.message.delete()
+
 # === ОБРАБОТЧИК КОМАНДЫ .info ===
-@client.on(events.NewMessage(pattern=r'^\.info$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}info$', x)))
 @error_handler
 async def info_handler(event):
     if not await is_owner(event):
@@ -1292,7 +1466,7 @@ async def info_handler(event):
     await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .сипался ===
-@client.on(events.NewMessage(pattern=r'^\.сипался$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}сипался$', x)))
 @error_handler
 async def leave_handler(event):
     if not await is_owner(event):
@@ -1306,14 +1480,39 @@ async def leave_handler(event):
     leave_emoji = await get_emoji('leave')
     text = f"**{leave_emoji} Я ушёл, пока!**"
     parsed_text, entities = parser.parse(text)
-    
     await safe_edit_message(event, parsed_text, entities)
-    
+
     chat = await event.get_chat()
-    await client(LeaveChannelRequest(chat))
+    chat_id = chat.id
+    print(f"[Debug] Попытка покинуть чат: chat_id={chat_id}, type={type(chat)}")
+
+    try:
+        if isinstance(chat, types.Channel):
+            print(f"[Debug] Чат является супергруппой/каналом, использование LeaveChannelRequest")
+            await client(LeaveChannelRequest(chat))
+        elif isinstance(chat, types.Chat):
+            print(f"[Debug] Чат является обычной группой, использование DeleteChatUserRequest")
+            me = await client.get_me()
+            await client(functions.messages.DeleteChatUserRequest(
+                chat_id=chat.id,
+                user_id=me.id
+            ))
+        else:
+            error_msg = f"Неизвестный тип чата: {type(chat)}"
+            print(f"[Error] {error_msg}")
+            await send_error_log(error_msg, "leave_handler", event)
+            await client.send_message(event.chat_id, f"**Ошибка:** {error_msg}")
+            return
+
+        print(f"[Debug] Успешно покинул чат: chat_id={chat_id}")
+    except Exception as e:
+        error_msg = f"Не удалось покинуть чат: {str(e)}"
+        print(f"[Error] {error_msg}")
+        await send_error_log(error_msg, "leave_handler", event)
+        await client.send_message(event.chat_id, f"**Ошибка:** {error_msg}")
 
 # === ОБРАБОТЧИК КОМАНДЫ .dele ===
-@client.on(events.NewMessage(pattern=r'^\.dele\s+(\d+)$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}dele\s+(\d+)$', x)))
 @error_handler
 async def delete_handler(event):
     if not await is_owner(event):
@@ -1324,7 +1523,7 @@ async def delete_handler(event):
         await safe_edit_message(event, parsed_text, entities)
         return
 
-    count = int(event.pattern_match.group(1))
+    count = int(event.pattern_match.group(1)) if event.pattern_match else 0
     if count <= 0:
         text = "**Ошибка:** Укажите положительное число сообщений!"
         parsed_text, entities = parser.parse(text)
@@ -1355,12 +1554,12 @@ async def delete_handler(event):
     await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .version ===
-@client.on(events.NewMessage(pattern=r'^\.version$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}version$', x)))
 @error_handler
 async def version_handler(event):
     if not await is_owner(event):
         return
-    module_version = "1.0.1"  # Текущая версия
+    module_version = "1.0.2"  # Текущая версия
     uptime = get_uptime()
     user = await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
@@ -1438,8 +1637,62 @@ async def version_handler(event):
         await send_error_log(f"Ошибка отправки медиа: {str(e)}", "version_handler", event)
         await safe_edit_message(event, parsed_text, entities)
 
+# === ОБРАБОТЧИК КОМАНДЫ .setprefix ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}setprefix\s+(.+)$', x)))
+@error_handler
+async def setprefix_handler(event):
+    if not await is_owner(event):
+        return
+    
+    new_prefix = event.pattern_match.group(1).strip() if event.pattern_match else None
+    if not new_prefix:
+        text = f"**Ошибка:** Укажите новый префикс! Пример: `{CONFIG['prefix']}setprefix !`"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+    
+    if len(new_prefix) > 5:
+        text = "**Ошибка:** Префикс не должен быть длиннее 5 символов!"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+    
+    old_prefix = CONFIG['prefix']
+    CONFIG['prefix'] = new_prefix
+    save_config()
+    config_emoji = await get_emoji('config')
+    text = f"**{config_emoji} Префикс изменён с `{old_prefix}` на `{new_prefix}`!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+# === ОБРАБОТЧИК КОМАНДЫ .status ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}status$', x)))
+@error_handler
+async def status_handler(event):
+    if not await is_owner(event):
+        return
+    
+    uptime = get_uptime()
+    prefix = CONFIG['prefix']
+    silent_status = "Включены" if SILENT_TAGS_ENABLED else "Выключены"
+    bot_status = "Включен" if BOT_ENABLED else "Выключен"
+    config_emoji = await get_emoji('config')
+    silent_emoji = await get_emoji('silent')
+    rocket_emoji = await get_emoji('rocket')
+    
+    text = (
+        f"**{config_emoji} Статус KoteUserBot:**\n\n"
+        f"**{rocket_emoji} Время работы:** {uptime}\n"
+        f"**Префикс:** `{prefix}`\n"
+        f"**Бот:** {bot_status}\n"
+        f"**{silent_emoji} Silent Tags:** {silent_status}\n"
+    )
+    
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
 # === ОБРАБОТЧИК КОМАНДЫ .stags ===
-@client.on(events.NewMessage(pattern=r'^\.stags\s*(on|off)?$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}stags\s*(on|off)?$', x)))
 async def stags_handler(event):
     if not await is_owner(event):
         return
@@ -1464,7 +1717,7 @@ async def stags_handler(event):
         await safe_edit_message(event, f"Ошибка: {str(e)}", [])
 
 # === ОБРАБОТЧИК КОМАНДЫ .stconfig ===
-@client.on(events.NewMessage(pattern=r'^\.stconfig(?:\s+(.+))?$'))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}stconfig(?:\s+(.+))?$', x)))
 async def stconfig_handler(event):
     if not await is_owner(event):
         return
@@ -1712,179 +1965,215 @@ async def silent_tags_watcher(event):
         except Exception as e2:
             print(f"[SilentTags] Ошибка при логировании: {str(e2)}")
 
-# Функция для автоматического обновления BLOCKED_USERS
-async def update_blocked_users():
-    print("[Debug] Запуск задачи обновления заблокированных пользователей")
-    global BLOCKED_USERS
-    while True:
-        try:
-            if SILENT_TAGS_CONFIG['ignore_blocked']:
-                blocked = await client(GetBlockedRequest(offset=0, limit=1000))
-                new_blocked_users = [user.id for user in blocked.users]
-                if new_blocked_users != BLOCKED_USERS:
-                    BLOCKED_USERS = new_blocked_users
-                    print(f"[SilentTags] Обновлено {len(BLOCKED_USERS)} заблокированных пользователей")
-        except Exception as e:
-            await send_error_log(str(e), "update_blocked_users")
-        await asyncio.sleep(10)
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}backup$', x)))
+@error_handler
+async def backup_handler(event):
+    if not await is_owner(event):
+        return
+    
+    try:
+        now = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M')
+        archive_name = f'kote_backup_{now}.zip'
+        files_to_backup = ['.env', 'koteuserbot.db', 'whitelists.json']
+        backed_up_files = []
 
+        # Создание архива
+        with zipfile.ZipFile(archive_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file in files_to_backup:
+                if os.path.exists(file):
+                    zipf.write(file)
+                    backed_up_files.append(file)
+        
+        if not backed_up_files:
+            text = "**Ошибка:** Нет файлов для бэкапа!"
+            parsed_text, entities = parser.parse(text)
+            await safe_edit_message(event, parsed_text, entities)
+            await send_error_log("Не найдено файлов для создания бэкапа", "backup_handler", event)
+            return
+
+        # Отправка бэкапа в избранное
+        me = await client.get_me()
+        await client.send_file(me.id, archive_name, caption=f'📦 Бэкап KoteUserBot ({now})')
+        
+        # Логирование в KoteUserBotDebug
+        log_message = (
+            f"📦 Создан и отправлен бэкап KoteUserBot\n"
+            f"<b>Время:</b> {now}\n"
+            f"<b>Файлы:</b> {', '.join(backed_up_files)}\n"
+            f"<b>Размер:</b> {os.path.getsize(archive_name) / 1024:.2f} КБ"
+        )
+        await send_error_log(log_message, "backup_handler", event, is_test=True)
+        
+        # Удаление временного файла
+        os.remove(archive_name)
+        
+        # Ответ пользователю
+        text = f"**📦 Бэкап ({now}) создан и отправлен в избранное!**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+    
+    except Exception as e:
+        error_msg = f"Ошибка при создании бэкапа: {str(e)}"
+        await send_error_log(error_msg, "backup_handler", event)
+        text = f"**Ошибка:** Не удалось создать бэкап: {str(e)}"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}profile\s+([^ ]+)(?:\s+(groups))?$', x)))
+@error_handler
+async def profile_handler(event):
+    if not await is_owner(event):
+        return
+    identifier = event.pattern_match.group(1).strip()
+    show_groups = event.pattern_match.group(2) == "groups"
+    user_id = await get_user_id(identifier)
+    if not user_id:
+        text = "**Ошибка:** Неверный @username или ID!"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    try:
+        user = await client(GetFullUserRequest(user_id))
+        user_entity = user.users[0]
+        name_emoji = await get_emoji('name')
+        username_emoji = await get_emoji('username')
+        id_emoji = await get_emoji('id')
+        premium_emoji = await get_emoji('premium')
+
+        username = f"@{user_entity.username}" if user_entity.username else "Нет"
+        first_name = user_entity.first_name or "Не указано"
+        premium_status = "Да" if user_entity.premium else "Нет"
+        last_seen = "Недавно" if user_entity.status else "Давно"
+
+        # Поиск общих групп только если указан аргумент "groups"
+        common_chats = []
+        if show_groups:
+            try:
+                common = await client(functions.messages.GetCommonChatsRequest(
+                    user_id=user_entity,
+                    max_id=0,
+                    limit=100
+                ))
+                for chat in common.chats:
+                    if isinstance(chat, (types.Chat, types.Channel)):
+                        common_chats.append(chat.title)
+                # Ограничиваем до 5 групп
+                total_chats = len(common_chats)
+                if total_chats > 5:
+                    common_chats = common_chats[:5] + [f"...и другие (всего {total_chats})"]
+                elif total_chats == 0:
+                    common_chats = ["Нет"]
+            except Exception as e:
+                print(f"[Debug] Не удалось получить общие группы: {str(e)}")
+                common_chats = ["Ошибка при получении групп"]
+
+        text = (
+            f"**{name_emoji} Профиль пользователя:**\n\n"
+            f"**{name_emoji} Имя:** {first_name}\n"
+            f"**{username_emoji} Username:** {username}\n"
+            f"**{id_emoji} ID:** {user_id}\n"
+            f"**{premium_emoji} Premium:** {premium_status}\n"
+            f"**Последний раз онлайн:** {last_seen}\n"
+        )
+        if show_groups:
+            text += f"**Общие группы:** {', '.join(common_chats)}\n"
+        
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+    except Exception as e:
+        await send_error_log(str(e), "profile_handler", event)
+        text = f"**Ошибка:** Не удалось получить профиль: {str(e)}"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+
+# === Функция отладки базы данных ===
 def debug_db():
     print("[Debug] Отладка базы данных")
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute('SELECT param, value FROM silent_tags_config')
-        results = cursor.fetchall()
-        print("[SilentTags] Содержимое базы данных (silent_tags_config):")
-        for param, value in results:
-            print(f"  {param}: {value}")
-        cursor.execute('SELECT id, group_id FROM error_log_group')
-        results = cursor.fetchall()
-        print("[ErrorLog] Содержимое базы данных (error_log_group):")
-        for id, group_id in results:
-            print(f"  id: {id}, group_id: {group_id}")
+        
+        print("[Debug] Таблицы в базе данных:")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+        for table in tables:
+            print(f"[Debug] Таблица: {table[0]}")
+            cursor.execute(f"SELECT * FROM {table[0]}")
+            rows = cursor.fetchall()
+            for row in rows:
+                print(f"[Debug] Запись: {row}")
+        
+        conn.close()
     except Exception as e:
         print(f"[Error] Ошибка отладки базы данных: {e}")
-        raise
-    finally:
-        conn.close()
 
-# Основная функция
+# === Основная функция ===
 async def main():
     global owner_id, BLOCKED_USERS
     print("[Debug] Запуск основной функции")
     try:
+        print("[Debug] Инициализация базы данных")
+        init_db()  # Сначала инициализируем базу
+        print("[Debug] Загрузка конфигурации")
+        load_config()  # Затем загружаем конфигурацию
         print("[Debug] Загрузка белых списков")
         load_whitelists()
-        print("[Debug] Инициализация базы данных")
-        init_db()
         print("[Debug] Загрузка конфигурации Silent Tags")
         load_silent_tags_config()
         print("[Debug] Отладка базы данных")
         debug_db()
         
-        print("[Debug] Получение информации о пользователе")
-        user = await client.get_me()
-        if not user:
-            raise Exception("Не удалось получить данные пользователя")
-        owner_id = user.id
-        print(f"[Main] Userbot запущен! Владелец: ID {owner_id}, Username: @{user.username or 'None'}")
-
-        # Проверяем или создаём группу логов ошибок
-        print("[Debug] Проверка группы логов ошибок")
-        group_id = await get_error_log_group()
-        if group_id:
-            print(f"[Main] Найдена группа логов ошибок: {group_id}")
-            try:
-                invite = await client(functions.messages.ExportChatInviteRequest(peer=group_id))
-                group_link = invite.link
-            except Exception as e:
-                group_link = f"t.me/c/{group_id}"
-                print(f"[Log] Не удалось получить ссылку на существующую группу ошибок: {str(e)}")
-            print(f"[Main] Ссылка на группу логов ошибок: {group_link}")
-        else:
-            print("[Debug] Создание новой группы логов ошибок")
-            group_id, group_link = await create_error_log_group()
-            if group_id:
-                print(f"[Main] Создана группа логов ошибок: {group_id}")
-                print(f"[Main] Ссылка на группу логов ошибок: {group_link}")
-            else:
-                print("[Main] Не удалось создать группу логов ошибок")
-
-        # Проверяем или создаём группу Silent Tags
-        print("[Debug] Проверка группы Silent Tags")
-        silence_group_id = await get_silence_log_group()
-        if silence_group_id:
-            print(f"[Main] Найдена группа Silent Tags: {silence_group_id}")
-            try:
-                invite = await client(functions.messages.ExportChatInviteRequest(peer=silence_group_id))
-                group_link = invite.link
-            except Exception as e:
-                group_link = f"t.me/c/{silence_group_id}"
-                print(f"[Log] Не удалось получить ссыл쿠 на существующую группу Silent Tags: {str(e)}")
-            print(f"[Main] Ссылка на группу Silent Tags: {group_link}")
-        else:
-            print("[Debug] Создание новой группы Silent Tags")
-            silence_group_id, group_link = await create_silence_log_group()
-            if silence_group_id:
-                print(f"[Main] Создана группа Silent Tags: {silence_group_id}")
-                print(f"[Main] Ссылка на группу Silent Tags: {group_link}")
-                # Отправляем тестовый лог
-                print("[Debug] Отправка тестового лога в Silent Tags")
-                await send_log("KoteUserBotSilence запущен успешно", "main", is_test=True, is_tag_log=True)
-            else:
-                print("[Main] Не удалось создать группу Silent Tags")
-
-        print("[Debug] Загрузка заблокированных пользователей")
-        if SILENT_TAGS_CONFIG['ignore_blocked']:
-            blocked = await client(GetBlockedRequest(offset=0, limit=1000))
+        me = await client.get_me()
+        owner_id = me.id
+        print(f"[Debug] Owner ID: {owner_id}")
+        
+        # Загрузка заблокированных пользователей
+        try:
+            blocked = await client(GetBlockedRequest(offset=0, limit=100))
             BLOCKED_USERS = [user.id for user in blocked.users]
-            print(f"[Main] Загружено {len(BLOCKED_USERS)} заблокированных пользователей")
-
-        print("[Debug] Запуск задачи обновления заблокированных пользователей")
-        client.loop.create_task(update_blocked_users())
-
-        print("[Debug] Клиент готов, ожидание событий")
-        await client.run_until_disconnected()
-    except Exception as e:
-        error_msg = f"Критическая ошибка при запуске: {str(e)}\n\nTraceback: {''.join(traceback.format_tb(e.__traceback__))}"
-        print(f"[Main] {error_msg}")
-        try:
-            await send_log(error_msg, "main")
-        except Exception as e2:
-            print(f"[Error] Не удалось отправить ошибку в Telegram: {e2}")
-        sys.exit(1)
-
-# Асинхронная функция для запуска
-async def start_bot():
-    print("[Debug] Запуск программы")
-    try:
-        print("[Debug] Подключение клиента")
-        await client.start()
-        print("[Debug] Клиент подключен, запуск main")
-        await main()
-    except Exception as e:
-        print(f"[Critical] Ошибка при запуске: {e}")
-        print(traceback.format_exc())
-        print("[Critical] Возможные причины:")
-        print("- Недействительная сессия Telegram. Удалите my_session.session и запустите снова.")
-        print("- Отсутствует Telethon. Установите: `pip install telethon`.")
-        print("- Проблемы с сетью или доступом к файлам в Termux.")
-        await client.disconnect()
-        sys.exit(1)
-
-if __name__ == '__main__':
-    try:
-        client.loop.run_until_complete(start_bot())
-    except KeyboardInterrupt:
-        print("\n[Main] Получен сигнал остановки (Ctrl+C), завершение работы...")
-        try:
-            # Отменяем все фоновые задачи
-            tasks = [task for task in asyncio.all_tasks(client.loop) if task is not asyncio.current_task(client.loop)]
-            for task in tasks:
-                task.cancel()
-                print(f"[Debug] Отмена задачи: {task.get_name()}")
-            
-            # Даём задачам время на завершение
-            client.loop.run_until_complete(client.loop.shutdown_asyncgens())
-            print("[Debug] Все асинхронные генераторы завершены")
-            
-            # Отключаем клиент
-            print("[Debug] Отключение клиента Telegram")
-            client.loop.run_until_complete(client.disconnect())
-            print("[Main] Юзербот остановлен")
-        except asyncio.CancelledError:
-            print("[Debug] Получено CancelledError при завершении задач")
+            print(f"[Debug] Загружено {len(BLOCKED_USERS)} заблокированных пользователей")
         except Exception as e:
-            print(f"[Error] Ошибка при завершении: {e}")
-        finally:
-            # Закрываем цикл событий
-            client.loop.close()
-            print("[Debug] Цикл событий закрыт")
-            sys.exit(0)
+            print(f"[Error] Ошибка загрузки заблокированных пользователей: {e}")
+            await send_error_log(str(e), "main")
+        
+        # Тестовый лог в группу ошибок
+        await send_error_log("KoteUserBot запущен!", "main", is_test=True)
+        
+        # Запуск клиента
+        print("[Debug] Запуск Telegram клиента")
+        await client.run_until_disconnected()
+    
     except Exception as e:
-        print(f"[Critical] Ошибка в цикле событий: {e}")
+        error_msg = f"Критическая ошибка в main: {str(e)}\n\nTraceback: {''.join(traceback.format_tb(e.__traceback__))}"
+        print(f"[Critical] {error_msg}")
+        await send_error_log(error_msg, "main")
+        raise
+
+# === Запуск бота ===
+if __name__ == '__main__':
+    print("[Debug] Запуск KoteUserBot")
+    try:
+        client.start()
+        client.loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("[Debug] Бот остановлен пользователем")
+        try:
+            # Асинхронно завершаем работу клиента
+            client.loop.run_until_complete(client.loop.shutdown_asyncgens())
+            client.loop.run_until_complete(client.disconnect())
+        except Exception as e:
+            print(f"[Error] Ошибка при отключении клиента: {e}")
+        finally:
+            client.loop.close()
+            print("[Debug] Клиент успешно отключен")
+    except Exception as e:
+        print(f"[Critical] Ошибка запуска: {e}")
         print(traceback.format_exc())
-        client.loop.run_until_complete(client.disconnect())
-        client.loop.close()
-        sys.exit(1)
+        try:
+            client.loop.run_until_complete(client.loop.shutdown_asyncgens())
+            client.loop.run_until_complete(client.disconnect())
+        except Exception as e:
+            print(f"[Error] Ошибка при отключении клиента: {e}")
+        finally:
+            client.loop.close()
