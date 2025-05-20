@@ -13,7 +13,7 @@
 # Name: KoteUserBot
 # Authors: Kote
 # Commands:
-# .help | .helps | .ping | .info | .version | .сипался | .dele | .add | .remove | .tag | .stoptag | .name | .autoupdate | .spam | .stopspam | .stags | .stconfig | .on | .off | .setprefix | .status | .profile | .backup
+# .help | .helps | .ping | .info | .version | .сипался | .dele | .add | .remove | .tag | .stoptag | .name | .autoupdate | .spam | .stopspam | .stags | .stconfig | .on | .off | .setprefix | .status | .profile | .backup | .mus | .dice | .typing | .stoptyping | .weather
 # scope: Telegram_Only
 # meta developer: @Aaaggrrr
 
@@ -80,6 +80,12 @@ owner_id = None
 
 CONFIG = {
     'prefix': '.'
+}
+
+TYPING_STATE = {
+    'running': False,
+    'task': None,
+    'chat_id': None
 }
 
 # Конфигурация белых списков для .tag
@@ -673,7 +679,12 @@ EMOJI_SET = {
         'whitelist': '[📋](emoji/5334882760735598374)',
         'tag': '[🏷️]',
         'config': '[⚙️](emoji/5215327492738392838)',
-        'silent': '[🤫](emoji/5370930189322688800)'
+        'silent': '[🤫](emoji/5370930189322688800)',
+        'music': '[🎶](emoji/5188705588925702510)',
+        'search': '[🔥](emoji/5420315771991497307)',
+        'typing': '[⌨️](emoji/5472111548572900003)',
+        'weather': '[🌦️](emoji/5283097055852503586)',
+        'dice': '🎲'
     },
     'regular': {
         'ping': '⚡️',
@@ -689,7 +700,12 @@ EMOJI_SET = {
         'whitelist': '📋',
         'tag': '🏷️',
         'config': '⚙️',
-        'silent': '🤫'
+        'silent': '🤫',
+        'music': '🎶',
+        'search': '🔥',
+        'dice': '🎲',
+        'typing': '⌨️',
+        'weather': '🌦️'
     }
 }
 
@@ -816,7 +832,6 @@ async def update_files_from_git():
         print(f"[Error] {error_msg}")
         return False, error_msg
 
-# === ОБРАБОТЧИК КОМАНДЫ .help ===
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}help(?:\s+(.+))?$', x)))
 @error_handler
 async def help_handler(event):
@@ -850,6 +865,7 @@ async def help_handler(event):
             f"`{CONFIG['prefix']}stconfig silent true` — включить тихий режим\n"
             f"`{CONFIG['prefix']}stconfig ignore_users add @username` — добавить в игнор"
         ),
+        'mus': f"**{help_emoji} {CONFIG['prefix']}mus <запрос>**\nИщет музыку через @lybot и отправляет трек.",
         'on': f"**{help_emoji} {CONFIG['prefix']}on**\nВключает бота для обработки команд.",
         'off': f"**{help_emoji} {CONFIG['prefix']}off**\nВыключает бота (кроме {CONFIG['prefix']}on).",
         'setprefix': f"**{help_emoji} {CONFIG['prefix']}setprefix <префикс>**\nМеняет префикс команд (до 5 символов).",
@@ -858,14 +874,18 @@ async def help_handler(event):
             f"**{help_emoji} {CONFIG['prefix']}profile @username/ID [groups]**\nПоказывает профиль пользователя (имя, username, ID, Premium, последний онлайн).\n"
             f"Добавьте `groups` для отображения общих групп (до 5, остальные обрезаются)."
         ),
-        'backup': f"**{help_emoji} {CONFIG['prefix']}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное."
+        'backup': f"**{help_emoji} {CONFIG['prefix']}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное.",
+        'dice': f"**{help_emoji} {CONFIG['prefix']}dice**\nБросает анимированный кубик 🎲.",
+        'typing': f"**{help_emoji} {CONFIG['prefix']}typing <время>**\nИмитирует набор текста (s, m, h, d, y, до 1 часа).",
+        'stoptyping': f"**{help_emoji} {CONFIG['prefix']}stoptyping**\nОстанавливает имитацию набора текста.",
+        'weather': f"**{help_emoji} {CONFIG['prefix']}weather <город>**\nПоказывает погоду для указанного города."
     }
 
     if args:
         args = args.lower().strip()
         # Поддержка команды "сипался" (русский текст)
         args = 'сипался' if args == 'сипался' else args
-        text = commands_help.get(args, f"**Ошибка:** Команда `{args}` не найдена! Используйте `{CONFIG['prefix']}help` для списка команд.")
+        text = commands_help.get(args, f"**{help_emoji} Ошибка:** Команда `{args}` не найдена! Используйте `{CONFIG['prefix']}help` для списка команд.")
     else:
         text = (
             f"**{help_emoji} Команды KoteUserBot:**\n\n"
@@ -890,8 +910,13 @@ async def help_handler(event):
             f"`{CONFIG['prefix']}helps` — Показать whitelist\n"
             f"`{CONFIG['prefix']}dele <число>` — Удалить сообщения\n"
             f"`{CONFIG['prefix']}сипался` — Покинуть группу\n"
+            f"`{CONFIG['prefix']}mus <запрос>` — Поиск музыки\n"
             f"`{CONFIG['prefix']}spam <число> <текст>` — Спам\n"
-            f"`{CONFIG['prefix']}stopspam` — Остановить спам\n\n"
+            f"`{CONFIG['prefix']}stopspam` — Остановить спам\n"
+            f"`{CONFIG['prefix']}dice` — Бросить кубик\n"
+            f"`{CONFIG['prefix']}typing <время>` — Имитация набора\n"
+            f"`{CONFIG['prefix']}stoptyping` — Остановить имитацию\n"
+            f"`{CONFIG['prefix']}weather <город>` — Погода\n\n"
             f"**Silent Tags**\n"
             f"`{CONFIG['prefix']}stags [on/off]` — Вкл/выкл\n"
             f"`{CONFIG['prefix']}stconfig [параметр] [значение]` — Настройки\n\n"
@@ -901,6 +926,42 @@ async def help_handler(event):
     parsed_text, entities = parser.parse(text)
     await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
     await event.message.delete()
+
+# === ОБРАБОТЧИК КОМАНДЫ .mus ===
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}mus\s*(.*)$', x)))
+@error_handler
+async def mus_handler(event):
+    if not await is_owner(event):
+        return
+    args = event.pattern_match.group(1).strip() if event.pattern_match else ""
+    reply = await event.get_reply_message()
+    music_emoji = await get_emoji('music')
+    search_emoji = await get_emoji('search')
+    if not args:
+        text = f"**{music_emoji} Не указан запрос!**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+    try:
+        text = f"**{search_emoji} Поиск...**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        music = await client.inline_query("lybot", args)
+        if not music:
+            raise Exception("Трек не найден")
+        await event.message.delete()
+        await client.send_file(
+            event.chat_id,
+            music[0].result.document,
+            reply_to=reply.id if reply else None,
+        )
+        print(f"[Debug] Трек отправлен: запрос={args}, chat_id={event.chat_id}")
+    except Exception as e:
+        error_msg = f"Ошибка поиска трека '{args}': {str(e)}"
+        await send_error_log(error_msg, "mus_handler", event)
+        text = f"**{music_emoji} Трек: `{args}` не найден.**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
 
 # === ОБРАБОТЧИК КОМАНДЫ .helps ===
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}helps$', x)))
@@ -1559,7 +1620,7 @@ async def delete_handler(event):
 async def version_handler(event):
     if not await is_owner(event):
         return
-    module_version = "1.0.2"  # Текущая версия
+    module_version = "1.0.3"  # Текущая версия
     uptime = get_uptime()
     user = await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
@@ -2084,6 +2145,184 @@ async def profile_handler(event):
     except Exception as e:
         await send_error_log(str(e), "profile_handler", event)
         text = f"**Ошибка:** Не удалось получить профиль: {str(e)}"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}dice$', x)))
+@error_handler
+async def dice_handler(event):
+    if not await is_owner(event):
+        return
+    dice_emoji = await get_emoji('dice')
+    await client.send_message(event.chat_id, f"{dice_emoji} Бросаем кубик!", file=types.InputMediaDice('🎲'))
+    await event.message.delete()
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}typing\s+([\d]+[smhdy])$', x)))
+@error_handler
+async def typing_handler(event):
+    if not await is_owner(event):
+        return
+    if TYPING_STATE['running']:
+        text = "**Ошибка:** Имитация набора уже активна! Используйте `.stoptyping`."
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    time_str = event.pattern_match.group(1).strip()
+    try:
+        time_value = int(time_str[:-1])
+        unit = time_str[-1].lower()
+        time_units = {
+            's': 1,
+            'm': 60,
+            'h': 3600,
+            'd': 86400,
+            'y': 31536000
+        }
+        if unit not in time_units:
+            text = "**Ошибка:** Неверная единица времени! Используйте s, m, h, d, y."
+            parsed_text, entities = parser.parse(text)
+            await safe_edit_message(event, parsed_text, entities)
+            return
+        duration = time_value * time_units[unit]
+        if duration > 3600:
+            text = "**Ошибка:** Максимальная длительность — 1 час!"
+            parsed_text, entities = parser.parse(text)
+            await safe_edit_message(event, parsed_text, entities)
+            return
+    except ValueError:
+        text = "**Ошибка:** Укажите число и единицу времени! Пример: `.typing 10s`"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    TYPING_STATE['running'] = True
+    TYPING_STATE['chat_id'] = event.chat_id
+
+    async def typing_task():
+        try:
+            end_time = time.time() + duration
+            while time.time() < end_time and TYPING_STATE['running']:
+                await client(functions.messages.SetTypingRequest(
+                    peer=event.chat_id,
+                    action=types.SendMessageTypingAction()
+                ))
+                await asyncio.sleep(5)
+        except Exception as e:
+            await send_error_log(str(e), "typing_task", event)
+        finally:
+            TYPING_STATE['running'] = False
+            TYPING_STATE['task'] = None
+            TYPING_STATE['chat_id'] = None
+
+    TYPING_STATE['task'] = client.loop.create_task(typing_task())
+    typing_emoji = await get_emoji('typing')
+    text = f"**{typing_emoji} Имитация набора начата на {time_str}!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}stoptyping$', x)))
+@error_handler
+async def stoptyping_handler(event):
+    if not await is_owner(event):
+        return
+    if not TYPING_STATE['running']:
+        text = "**Ошибка:** Имитация набора не активна!"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    TYPING_STATE['running'] = False
+    if TYPING_STATE['task']:
+        TYPING_STATE['task'].cancel()
+        TYPING_STATE['task'] = None
+    typing_emoji = await get_emoji('typing')
+    text = f"**{typing_emoji} Имитация набора остановлена!**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}weather\s+(.+)$', x)))
+@error_handler
+async def weather_handler(event):
+    if not await is_owner(event):
+        return
+    city = event.pattern_match.group(1).strip().replace(' ', '+')
+    if not city:
+        text = "**Ошибка:** Укажите город! Пример: `.weather Москва`"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    try:
+        weather_emoji = await get_emoji('weather')
+        text = f"**{weather_emoji} Запрашиваем погоду для {city.replace('+', ' ')}...**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+
+        # Словарь для перевода состояния погоды
+        weather_conditions = {
+            'clear': 'Ясно',
+            'sunny': 'Солнечно',
+            'partly cloudy': 'Переменная облачность',
+            'cloudy': 'Облачно',
+            'overcast': 'Пасмурно',
+            'mist': 'Туман',
+            'fog': 'Густой туман',
+            'light rain': 'Лёгкий дождь',
+            'rain': 'Дождь',
+            'heavy rain': 'Сильный дождь',
+            'showers': 'Ливни',
+            'light snow': 'Лёгкий снег',
+            'snow': 'Снег',
+            'heavy snow': 'Сильный снег',
+            'thunderstorm': 'Гроза'
+        }
+
+        async with aiohttp.ClientSession() as session:
+            # Запрос с форматом, учитывающим пробелы в состоянии
+            url = f"http://wttr.in/{city}?lang=ru&format=%l:+%c+%t+%w+%h+%p"
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise Exception(f"Ошибка wttr.in: Статус {response.status}")
+                weather_data = await response.text()
+                if "Unknown location" in weather_data:
+                    raise Exception("Город не найден")
+                
+                # Разбиение ответа с учётом пробелов в состоянии
+                parts = weather_data.strip().split(': ', 1)
+                if len(parts) < 2:
+                    raise Exception("Некорректный ответ от wttr.in")
+                
+                location = parts[0]
+                data = parts[1].split()
+                if len(data) < 5:
+                    raise Exception("Некорректный ответ от wttr.in")
+                
+                # Извлечение состояния (может содержать пробелы)
+                temp_index = next(i for i, x in enumerate(data) if x.startswith('+') or x.startswith('-'))
+                condition = ' '.join(data[:temp_index]).lower()
+                temp = data[temp_index]
+                wind = data[temp_index + 1]
+                humidity = data[temp_index + 2]
+                precip = data[temp_index + 3]
+                
+                # Перевод состояния
+                condition_ru = weather_conditions.get(condition, condition.capitalize())
+                
+                text = (
+                    f"{weather_emoji} Погода в {location}:\n\n"
+                    f"**Состояние:** {condition_ru}\n"
+                    f"**Температура:** {temp}\n"
+                    f"**Ветер:** {wind}\n"
+                    f"**Влажность:** {humidity}\n"
+                    f"**Осадки:** {precip}\n"
+                )
+                parsed_text, entities = parser.parse(text)
+                await safe_edit_message(event, parsed_text, entities)
+    except Exception as e:
+        error_msg = f"Ошибка получения погоды для '{city}': {str(e)}"
+        await send_error_log(error_msg, "weather_handler", event)
+        text = f"**{weather_emoji} Ошибка:** Не удалось получить погоду: {str(e)}"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
 
