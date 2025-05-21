@@ -1620,7 +1620,7 @@ async def delete_handler(event):
 async def version_handler(event):
     if not await is_owner(event):
         return
-    module_version = "1.0.3"  # Текущая версия
+    module_version = "1.0.4"  # Текущая версия
     uptime = get_uptime()
     user = await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
