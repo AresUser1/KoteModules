@@ -13,7 +13,7 @@
 # Name: KoteUserBot
 # Authors: Kote
 # Commands:
-# .help | .helps | .ping | .info | .version | .сипался | .dele | .add | .remove | .tag | .stoptag | .name | .autoupdate | .spam | .stopspam | .stags | .stconfig | .on | .off | .setprefix | .status | .profile | .backup | .mus | .dice | .typing | .stoptyping | .weather | .admin | .prefix | .unadmin | .unprefix | .adminhelp | .adminsettings | .admins | .addrp | .delrp | .rplist | .rp | .addrpcreator | .delrpcreator | .listrpcreators | .setrpnick | .delrpnick | .rpnick
+# .help | .helps | .ping | .info | .version | .сипался | .dele | .add | .remove | .tag | .stoptag | .name | .autoupdate | .restart | .spam | .stopspam | .stags | .stconfig | .on | .off | .setprefix | .status | .profile | .backup | .mus | .dice | .typing | .stoptyping | .weather | .admin | .prefix | .unadmin | .unprefix | .adminhelp | .adminsettings | .admins | .addrp | .delrp | .rplist | .rp | .addrpcreator | .delrpcreator | .listrpcreators | .setrpnick | .delrpnick | .rpnick
 # scope: Telegram_Only
 # meta developer: @Aaaggrrr
 
@@ -83,6 +83,7 @@ api_hash = os.getenv('API_HASH')
 session = 'my_session'
 start_time = time.time()
 owner_id = None
+RESTART_FLAG = False
 
 CONFIG = {
     'prefix': '.',
@@ -1256,7 +1257,8 @@ async def help_handler(event):
         'stoptag': f"**{prefix}stoptag**\nОстанавливает выполнение `{prefix}tag`.",
         'tagsettings': f"**{prefix}tagsettings [параметр] [значение]**\nНастраивает команду .tag.\n\n`delay <сек>` - задержка между тегами.\n`priority <id/username>` - приоритет отображения ника.\n`position <before/after>` - позиция тегов.",
         'name': f"**{prefix}name <ник>**\nМеняет имя аккаунта.",
-        'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git-репозитория.",
+        'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git-репозитория и автоматически перезапускает его.",
+        'restart': f"**{prefix}restart**\nПерезапускает бота для применения обновлений или в случае ошибок.",
         'spam': f"**{prefix}spam <число> <текст>**\nОтправляет до 100 сообщений с задержкой 0.5с.",
         'stopspam': f"**{prefix}stopspam**\nОстанавливает выполнение `{prefix}spam`.",
         'stags': f"**{prefix}stags [on/off]**\nВключает или выключает Silent Tags (логи упоминаний).",
@@ -1305,7 +1307,7 @@ async def help_handler(event):
         text = (
             f"**{help_emoji} Команды KoteUserBot:**\n\n"
             "**Основные**\n"
-            f"`{prefix}ping`, `{prefix}info`, `{prefix}version`, `{prefix}help`, `{prefix}on`, `{prefix}off`, `{prefix}setprefix`, `{prefix}status`, `{prefix}backup`, `{prefix}autoupdate`\n\n"
+            f"`{prefix}ping`, `{prefix}info`, `{prefix}version`, `{prefix}help`, `{prefix}on`, `{prefix}off`, `{prefix}setprefix`, `{prefix}status`, `{prefix}backup`, `{prefix}autoupdate`, `{prefix}restart`\n\n"
             "**Управление пользователями**\n"
             f"`{prefix}profile`, `{prefix}name`, `{prefix}nonick`, `{prefix}block`, `{prefix}unblock`, `{prefix}blocklist`\n\n"
             "**Управление группой**\n"
@@ -2085,15 +2087,33 @@ async def name_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
 
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*restart$', x)))
+@error_handler
+async def restart_handler(event):
+    if not await is_owner(event): return
+    global RESTART_FLAG
+    RESTART_FLAG = True
+    await safe_edit_message(event, "🔄 **Перезапуск...**", [])
+    await client.disconnect()
+
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*autoupdate$', x)))
 @error_handler
 async def autoupdate_handler(event):
     if not await is_owner(event): return
+    await safe_edit_message(event, "⏳ **Запускаю обновление файлов из Git...**", [])
     success, message = await update_files_from_git()
     text = f"**Обновление:** {message}"
-    if success: text += "\n**Перезапустите бота для применения изменений!**"
-    parsed_text, entities = parser.parse(text)
-    await safe_edit_message(event, parsed_text, entities)
+    if success:
+        text += "\n\n✅ **Файлы успешно обновлены! Перезапускаю бота для применения изменений...**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        
+        global RESTART_FLAG
+        RESTART_FLAG = True
+        await client.disconnect()
+    else:
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*on$', x)))
 @error_handler
@@ -2225,7 +2245,7 @@ async def delete_handler(event):
 @error_handler
 async def version_handler(event):
     if not await is_owner(event): return
-    module_version = "1.0.7"
+    module_version = "1.0.8"
     uptime, user = get_uptime(), await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
     branch, prefix, platform = get_git_branch(), CONFIG['prefix'], detect_platform()
@@ -3524,6 +3544,9 @@ if __name__ == '__main__':
     print("[Debug] Запуск KoteUserBot")
     try:
         asyncio.run(main())
+        if RESTART_FLAG:
+            print("[Info] Перезапуск бота...")
+            os.execv(sys.executable, ['python'] + sys.argv)
     except KeyboardInterrupt:
         print("\n[Debug] Бот остановлен пользователем.")
     except Exception as e:
