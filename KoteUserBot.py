@@ -33,16 +33,18 @@ import unicodedata
 import asyncio
 import sqlite3
 import aiohttp
+import random
 from collections import defaultdict
 from typing import List, Dict, Any
 import zipfile
 
 try:
-    from telethon import TelegramClient, events, types, functions
+    from telethon import TelegramClient, events, types, functions, errors
     from telethon.extensions import markdown, html
     from telethon.tl.functions.channels import LeaveChannelRequest, EditAdminRequest, GetParticipantRequest
     from telethon.tl.functions.users import GetFullUserRequest
-    from telethon.tl.functions.contacts import GetBlockedRequest
+    from telethon.tl.functions.contacts import GetBlockedRequest, UnblockRequest, BlockRequest
+    from telethon.tl.functions.account import UpdateProfileRequest
     from telethon.tl.types import PeerChannel, ChatAdminRights, ChannelParticipantAdmin
     from telethon.utils import get_display_name
     from telethon.errors.rpcerrorlist import ChatAdminRequiredError, UserNotParticipantError, RightForbiddenError, UserAdminInvalidError
@@ -122,14 +124,20 @@ ADMIN_RIGHTS_CONFIG = {}
 TYPING_STATE = {'running': False, 'task': None, 'chat_id': None}
 WHITELISTS = defaultdict(list)
 WHITELISTS_FILE = 'whitelists.json'
-TAG_COOLDOWN = 10
 BOT_ENABLED = True
 SILENT_TAGS_ENABLED = False
 SILENT_TAGS_CONFIG: Dict[str, Any] = {
     'silent': False, 'ignore_bots': False, 'ignore_blocked': False,
     'ignore_users': [], 'ignore_chats': [], 'use_whitelist': False, 'use_chat_whitelist': False
 }
-BLOCKED_USERS = []
+
+TAG_CONFIG = {
+    'delay': 3,
+    'priority': 'id',
+    'position': 'before'
+}
+
+BOT_BLOCKED_USERS = set()
 FW_PROTECT = {}
 FW_PROTECT_LIMIT = 5
 SPAM_RUNNING = False
@@ -140,24 +148,89 @@ RP_ENABLED_CHATS = set()
 RP_ACCESS_LIST = defaultdict(set)
 RP_PUBLIC_CHATS = set()
 RP_CREATORS = set()
+GLOBAL_NICKS = defaultdict(dict)
+RP_NICKS = defaultdict(dict)
+ADMIN_CONFIGS = {}
 DB_FILE = 'koteuserbot.db'
 
 def init_db():
     print("[Debug] Инициализация базы данных")
+    conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
+
+        # Проверяем, существует ли таблица rp_commands вообще
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_commands'")
+        table_exists = cursor.fetchone()
+
+        if table_exists:
+            # Если таблица есть, проверяем её структуру на наличие старой колонки
+            cursor.execute("PRAGMA table_info(rp_commands)")
+            columns = [column[1] for column in cursor.fetchall()]
+
+            # Если существует старая колонка premium_emoji_id, но нет новой premium_emoji_ids
+            if 'premium_emoji_id' in columns and 'premium_emoji_ids' not in columns:
+                print("[Debug] Обнаружена старая структура 'rp_commands'. Миграция...")
+                cursor.execute('ALTER TABLE rp_commands RENAME TO rp_commands_old')
+                # Создаем новую таблицу с правильной структурой
+                cursor.execute('''CREATE TABLE rp_commands (
+                                    command TEXT PRIMARY KEY,
+                                    action TEXT NOT NULL,
+                                    premium_emoji_ids TEXT, -- Хранение списка как JSON-строки
+                                    standard_emoji TEXT)
+                               ''')
+                # Переносим данные, преобразуя одиночный ID в JSON-массив
+                # Убедимся, что json_array доступна
+                cursor.execute('''INSERT INTO rp_commands (command, action, premium_emoji_ids, standard_emoji)
+                                  SELECT command, action,
+                                         CASE WHEN premium_emoji_id IS NOT NULL THEN json_array(premium_emoji_id) ELSE NULL END,
+                                         standard_emoji
+                                  FROM rp_commands_old
+                               ''')
+                cursor.execute('DROP TABLE rp_commands_old')
+                conn.commit()
+                print("[Debug] Миграция 'rp_commands' завершена.")
+
+        # Если таблицы не было или миграция завершена, создаем таблицу с новой структурой (если ее все еще нет)
+        cursor.execute('''CREATE TABLE IF NOT EXISTS rp_commands (
+                            command TEXT PRIMARY KEY,
+                            action TEXT NOT NULL,
+                            premium_emoji_ids TEXT,
+                            standard_emoji TEXT)
+                       ''')
+
+        # Остальные таблицы (этот код уже есть у вас, он здесь для полноты)
         cursor.execute('CREATE TABLE IF NOT EXISTS silent_tags_config (param TEXT PRIMARY KEY, value TEXT)')
         cursor.execute('CREATE TABLE IF NOT EXISTS error_log_group (id INTEGER PRIMARY KEY, group_id INTEGER UNIQUE)')
         cursor.execute('CREATE TABLE IF NOT EXISTS silence_log_group (id INTEGER PRIMARY KEY, group_id INTEGER UNIQUE)')
         cursor.execute('CREATE TABLE IF NOT EXISTS bot_config (param TEXT PRIMARY KEY, value TEXT)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS rp_commands (command TEXT PRIMARY KEY, action TEXT NOT NULL, premium_emoji_id INTEGER, standard_emoji TEXT)')
         cursor.execute('CREATE TABLE IF NOT EXISTS rp_enabled_chats (chat_id INTEGER PRIMARY KEY)')
         cursor.execute('CREATE TABLE IF NOT EXISTS rp_access_list (chat_id INTEGER NOT NULL, user_id INTEGER NOT NULL, PRIMARY KEY (chat_id, user_id))')
         cursor.execute('CREATE TABLE IF NOT EXISTS rp_public_chats (chat_id INTEGER PRIMARY KEY)')
         cursor.execute('CREATE TABLE IF NOT EXISTS rp_creators (user_id INTEGER PRIMARY KEY)')
         cursor.execute('CREATE TABLE IF NOT EXISTS admin_rights_config (right_name TEXT PRIMARY KEY, is_enabled INTEGER)')
-        cursor.execute('CREATE TABLE IF NOT EXISTS rp_nicknames (user_id INTEGER PRIMARY KEY, nickname TEXT NOT NULL)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS admin_configs (name TEXT PRIMARY KEY, rights TEXT)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS tag_config (param TEXT PRIMARY KEY, value TEXT)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS bot_blocklist (user_id INTEGER PRIMARY KEY)')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS rp_nicknames (
+                user_id INTEGER NOT NULL,
+                chat_id INTEGER NOT NULL,
+                nickname TEXT NOT NULL,
+                PRIMARY KEY (user_id, chat_id)
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS global_nicknames (
+                user_id INTEGER NOT NULL,
+                chat_id INTEGER NOT NULL,
+                nickname TEXT NOT NULL,
+                PRIMARY KEY (user_id, chat_id)
+            )
+        ''')
+
         cursor.execute('SELECT COUNT(*) FROM admin_rights_config')
         if cursor.fetchone()[0] == 0:
             default_rights = {
@@ -166,19 +239,15 @@ def init_db():
                 'pin_messages': 1, 'add_admins': 0, 'anonymous': 0, 'manage_call': 1,
                 'post_stories': 0, 'edit_stories': 0, 'delete_stories': 0
             }
-            cursor.executemany('INSERT INTO admin_rights_config (right_name, is_enabled) VALUES (?, ?)', list(default_rights.items()))
-        cursor.execute('SELECT group_id FROM error_log_group WHERE id = 1')
-        result = cursor.fetchone()
-        if result and result[0] is None: cursor.execute('DELETE FROM error_log_group WHERE id = 1')
-        cursor.execute('SELECT group_id FROM silence_log_group WHERE id = 1')
-        result = cursor.fetchone()
-        if result and result[0] is None: cursor.execute('DELETE FROM silence_log_group WHERE id = 1')
+            cursor.executemany('INSERT OR REPLACE INTO admin_rights_config (right_name, is_enabled) VALUES (?, ?)', list(default_rights.items()))
+
         conn.commit()
     except Exception as e:
         print(f"[Error] Ошибка инициализации базы данных: {e}")
         raise
     finally:
-        conn.close()
+        if conn:
+            conn.close()
 
 def load_config():
     global CONFIG
@@ -233,40 +302,37 @@ def save_admin_right(right_name, is_enabled):
     finally:
         conn.close()
 
-def get_rp_nick(user_id):
-    try:
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT nickname FROM rp_nicknames WHERE user_id = ?", (user_id,))
-        result = cursor.fetchone()
-        return result[0] if result else None
-    except Exception as e:
-        print(f"[Error] Ошибка получения RP ника: {e}")
-        return None
-    finally:
-        conn.close()
+def get_rp_nick(user_id, chat_id):
+    # Эта функция теперь просто достает значение, логика в get_rp_display_name
+    if chat_id in RP_NICKS and user_id in RP_NICKS[chat_id]:
+        return RP_NICKS[chat_id][user_id]
+    # Для глобального вызова передаем 0
+    if chat_id != 0:
+        return RP_NICKS[0].get(user_id)
+    return None
 
-def set_rp_nick(user_id, nickname):
+def set_rp_nick(user_id, chat_id, nickname):
+    conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute('INSERT OR REPLACE INTO rp_nicknames (user_id, nickname) VALUES (?, ?)', (user_id, nickname))
+        cursor.execute('INSERT OR REPLACE INTO rp_nicknames (user_id, chat_id, nickname) VALUES (?, ?, ?)', (user_id, chat_id, nickname))
         conn.commit()
-    except Exception as e:
-        print(f"[Error] Ошибка установки RP ника: {e}")
+        RP_NICKS[chat_id][user_id] = nickname
     finally:
-        conn.close()
+        if conn: conn.close()
 
-def delete_rp_nick(user_id):
+def delete_rp_nick(user_id, chat_id):
+    conn = None
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM rp_nicknames WHERE user_id = ?', (user_id,))
+        cursor.execute('DELETE FROM rp_nicknames WHERE user_id = ? AND chat_id = ?', (user_id, chat_id))
         conn.commit()
-    except Exception as e:
-        print(f"[Error] Ошибка удаления RP ника: {e}")
+        if chat_id in RP_NICKS and user_id in RP_NICKS[chat_id]:
+            del RP_NICKS[chat_id][user_id]
     finally:
-        conn.close()
+        if conn: conn.close()
 
 def load_silent_tags_config():
     global SILENT_TAGS_ENABLED, SILENT_TAGS_CONFIG
@@ -347,9 +413,14 @@ def load_rp_config():
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute("SELECT command, action, premium_emoji_id, standard_emoji FROM rp_commands")
+        # Читаем новую колонку premium_emoji_ids
+        cursor.execute("SELECT command, action, premium_emoji_ids, standard_emoji FROM rp_commands")
         for row in cursor.fetchall():
-            RP_COMMANDS[row[0]] = {'action': row[1], 'premium_emoji_id': row[2], 'standard_emoji': row[3]}
+            command, action, prem_ids_json, standard_emoji = row
+            # Преобразуем JSON-строку обратно в список, если она есть
+            prem_ids = json.loads(prem_ids_json) if prem_ids_json else []
+            RP_COMMANDS[command] = {'action': action, 'premium_emoji_ids': prem_ids, 'standard_emoji': standard_emoji}
+
         cursor.execute("SELECT chat_id FROM rp_enabled_chats")
         RP_ENABLED_CHATS = {row[0] for row in cursor.fetchall()}
         RP_ACCESS_LIST.clear()
@@ -364,11 +435,13 @@ def load_rp_config():
     finally:
         conn.close()
 
-def save_rp_command(command, action, prem_id, std_emoji):
+def save_rp_command(command, action, prem_ids, std_emoji):
     try:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        cursor.execute('INSERT OR REPLACE INTO rp_commands (command, action, premium_emoji_id, standard_emoji) VALUES (?, ?, ?, ?)', (command, action, prem_id, std_emoji))
+        # Преобразуем список ID в JSON-строку для сохранения
+        prem_ids_json = json.dumps(prem_ids) if prem_ids else None
+        cursor.execute('INSERT OR REPLACE INTO rp_commands (command, action, premium_emoji_ids, standard_emoji) VALUES (?, ?, ?, ?)', (command, action, prem_ids_json, std_emoji))
         conn.commit()
     finally:
         conn.close()
@@ -379,6 +452,89 @@ def delete_rp_command(command):
         cursor = conn.cursor()
         cursor.execute('DELETE FROM rp_commands WHERE command = ?', (command,))
         conn.commit()
+    finally:
+        conn.close()
+
+def load_rp_nicks():
+    global RP_NICKS
+    RP_NICKS = defaultdict(dict)
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, chat_id, nickname FROM rp_nicknames")
+        for user_id, chat_id, nickname in cursor.fetchall():
+            RP_NICKS[chat_id][user_id] = nickname
+    finally:
+        if conn: conn.close()
+
+def get_global_nick(user_id, chat_id):
+    # Эта функция теперь просто достает значение, логика в get_universal_display_name
+    if chat_id in GLOBAL_NICKS and user_id in GLOBAL_NICKS[chat_id]:
+        return GLOBAL_NICKS[chat_id][user_id]
+    # Для глобального вызова передаем 0
+    if chat_id != 0:
+        return GLOBAL_NICKS[0].get(user_id)
+    return None
+
+def set_global_nick(user_id, chat_id, nickname):
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('INSERT OR REPLACE INTO global_nicknames (user_id, chat_id, nickname) VALUES (?, ?, ?)', (user_id, chat_id, nickname))
+        conn.commit()
+        GLOBAL_NICKS[chat_id][user_id] = nickname
+    finally:
+        if conn: conn.close()
+
+def delete_global_nick(user_id, chat_id):
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM global_nicknames WHERE user_id = ? AND chat_id = ?', (user_id, chat_id))
+        conn.commit()
+        if chat_id in GLOBAL_NICKS and user_id in GLOBAL_NICKS[chat_id]:
+            del GLOBAL_NICKS[chat_id][user_id]
+    finally:
+        if conn: conn.close()
+
+def load_global_nicks():
+    global GLOBAL_NICKS
+    GLOBAL_NICKS = defaultdict(dict)
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, chat_id, nickname FROM global_nicknames")
+        for user_id, chat_id, nickname in cursor.fetchall():
+            GLOBAL_NICKS[chat_id][user_id] = nickname
+    finally:
+        if conn: conn.close()
+
+def save_admin_config(name, rights_dict):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        rights_json = json.dumps(rights_dict)
+        cursor.execute('INSERT OR REPLACE INTO admin_configs (name, rights) VALUES (?, ?)', (name, rights_json))
+        conn.commit()
+        ADMIN_CONFIGS[name] = rights_dict
+    except Exception as e:
+        print(f"[Error] Ошибка сохранения конфига админки: {e}")
+    finally:
+        conn.close()
+
+def load_admin_configs():
+    global ADMIN_CONFIGS
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name, rights FROM admin_configs")
+        ADMIN_CONFIGS = {name: json.loads(rights_json) for name, rights_json in cursor.fetchall()}
+    except Exception as e:
+        print(f"[Error] Ошибка загрузки конфигов админки: {e}")
     finally:
         conn.close()
 
@@ -417,6 +573,61 @@ def toggle_rp_public_access(chat_id, is_public):
         conn.commit()
     finally:
         conn.close()
+
+def format_last_seen(status):
+    if isinstance(status, types.UserStatusOnline):
+        return "В сети"
+    if isinstance(status, types.UserStatusOffline):
+        # Показываем точную дату и время, если они доступны
+        return f"был(а) в сети {status.was_online.strftime('%Y-%m-%d %H:%M')}"
+    if isinstance(status, types.UserStatusRecently):
+        return "Недавно"
+    if isinstance(status, types.UserStatusLastWeek):
+        return "На этой неделе"
+    if isinstance(status, types.UserStatusLastMonth):
+        return "В этом месяце"
+    if isinstance(status, types.UserStatusEmpty):
+        return "Давно"
+    return "Неизвестно" # Резервный вариант
+
+def save_tag_config():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        for param, value in TAG_CONFIG.items():
+            cursor.execute('INSERT OR REPLACE INTO tag_config (param, value) VALUES (?, ?)', (param, str(value)))
+        conn.commit()
+    except Exception as e:
+        print(f"[Error] Ошибка сохранения конфига тегов: {e}")
+    finally:
+        if conn: conn.close()
+
+def load_tag_config():
+    global TAG_CONFIG
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT param, value FROM tag_config")
+        db_config = {row[0]: row[1] for row in cursor.fetchall()}
+        TAG_CONFIG['delay'] = int(db_config.get('delay', 3))
+        TAG_CONFIG['priority'] = db_config.get('priority', 'id')
+        TAG_CONFIG['position'] = db_config.get('position', 'before')
+    except Exception as e:
+        print(f"[Error] Ошибка загрузки конфига тегов: {e}")
+    finally:
+        if conn: conn.close()
+
+def load_bot_blocklist():
+    global BOT_BLOCKED_USERS
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id FROM bot_blocklist")
+        BOT_BLOCKED_USERS = {row[0] for row in cursor.fetchall()}
+    except Exception as e:
+        print(f"[Error] Ошибка загрузки списка заблокированных: {e}")
+    finally:
+        if conn: conn.close()
 
 async def get_silence_log_group():
     print("[Debug] Получение ID группы Silent Tags")
@@ -815,14 +1026,33 @@ async def get_user_id(identifier):
             return None
 
 async def get_target_user(event):
-    args = event.raw_text.split(" ", 2)
-    if len(args) > 1:
-        identifier = args[1]
-        if identifier.isdigit(): identifier = int(identifier)
-        try: return await client.get_entity(identifier)
-        except (ValueError, TypeError): pass
+    identifier = None
+    if event.pattern_match:
+        for i in range(1, event.pattern_match.re.groups + 1):
+            try:
+                group_content = event.pattern_match.group(i)
+                if group_content and (group_content.startswith('@') or group_content.strip().isdigit()):
+                    identifier = group_content.strip()
+                    break
+            except IndexError:
+                continue
+
+    if identifier:
+        try:
+            clean_id = identifier.strip('@')
+            if clean_id.isdigit():
+                return await client.get_entity(int(clean_id))
+            return await client.get_entity(identifier)
+        except (ValueError, TypeError, AttributeError, Exception):
+            pass
+
     reply = await event.get_reply_message()
-    if reply: return await reply.get_sender()
+    if reply:
+        return await reply.get_sender()
+
+    if event.is_private:
+        return await event.get_chat()
+
     return None
 
 async def is_bot(user_id):
@@ -841,11 +1071,52 @@ async def get_chat_title(chat_id):
     except Exception:
         return "Неизвестный чат"
 
-async def get_rp_display_name(user_entity):
-    custom_nick = get_rp_nick(user_entity.id)
-    if custom_nick:
-        return custom_nick
-    return get_display_name(user_entity)
+async def get_rp_display_name(user_entity, chat_id):
+    if not user_entity: return "Неизвестный"
+    
+    # 1. Проверяем RP-ник для этого чата
+    chat_rp_nick = RP_NICKS.get(chat_id, {}).get(user_entity.id)
+    if chat_rp_nick:
+        # Если ник 'none', используем настоящее имя. Иначе - сам ник.
+        return get_display_name(user_entity) if chat_rp_nick.lower() == 'none' else chat_rp_nick
+
+    # 2. Если нет, проверяем глобальный RP-ник
+    global_rp_nick = RP_NICKS.get(0, {}).get(user_entity.id)
+    if global_rp_nick:
+        return global_rp_nick
+        
+    # 3. Если и его нет, используем универсальный ник (из .nonick)
+    universal_display_name = get_universal_display_name(user_entity, chat_id)
+    
+    # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+    # Убираем @username, если он случайно попался
+    if universal_display_name.startswith('@') and user_entity.username and universal_display_name[1:] == user_entity.username:
+         return get_display_name(user_entity) or f"User {user_entity.id}"
+
+    return universal_display_name
+
+def get_universal_display_name(user_entity, chat_id):
+    if not user_entity: return "Неизвестный"
+    
+    chat_global_nick = GLOBAL_NICKS.get(chat_id, {}).get(user_entity.id)
+    if chat_global_nick:
+        return get_display_name(user_entity) if chat_global_nick.lower() == 'none' else chat_global_nick
+        
+    global_nick = get_global_nick(user_entity.id, 0)
+    if global_nick:
+        return global_nick
+        
+    display_name = get_display_name(user_entity)
+    
+    if not display_name or not display_name.strip():
+        return f"User {user_entity.id}"
+    
+    return display_name
+
+def get_tag_display_name(user_entity, chat_id):
+    if TAG_CONFIG.get('priority') == 'username' and user_entity.username:
+        return f"@{user_entity.username}"
+    return get_universal_display_name(user_entity, chat_id)
 
 async def safe_edit_message(event, text, entities):
     print(f"[Debug] Безопасное редактирование сообщения: message_id={event.message.id}, text={text}")
@@ -854,15 +1125,19 @@ async def safe_edit_message(event, text, entities):
             print("[Debug] Сообщение отсутствует, отправка нового")
             await client.send_message(event.chat_id, text, formatting_entities=entities)
             return
-        await event.message.edit(text, formatting_entities=entities)
+        # Проверяем, содержит ли текст премиум-эмодзи
+        parsed_text, parsed_entities = parser.parse(text)
+        final_entities = entities if entities else parsed_entities
+        await event.message.edit(parsed_text, formatting_entities=final_entities)
     except Exception as e:
         error_msg = str(e)
         print(f"[Debug] Ошибка редактирования сообщения: {error_msg}")
-        if "The document file was invalid" in error_msg:
+        if "The document file was invalid" in error_msg or "Invalid constructor" in error_msg:
+            # Удаляем премиум-эмодзи и пробуем снова
             text_fallback = re.sub(r'\[([^\]]+)\]\(emoji/\d+\)', r'\1', text)
-            parsed_text, entities = parser.parse(text_fallback)
+            parsed_text, parsed_entities = parser.parse(text_fallback)
             await event.message.delete()
-            await client.send_message(event.chat_id, parsed_text, formatting_entities=entities)
+            await client.send_message(event.chat_id, parsed_text, formatting_entities=parsed_entities)
         else:
             await send_error_log(error_msg, "safe_edit_message", event)
             await client.send_message(event.chat_id, f"Ошибка: {error_msg}")
@@ -932,10 +1207,11 @@ async def help_handler(event):
         'version': f"**{prefix}version**\nПоказывает версию бота, ветку, платформу и проверяет обновления.",
         'сипался': f"**{prefix}сипался**\nПокидает группу с прощальным сообщением.",
         'dele': f"**{prefix}dele <число>**\nУдаляет до 100 сообщений в группе (нужны права).",
-        'add': f"**{prefix}add @username/ID**\nДобавляет пользователя в белый список для `{prefix}tag`.",
-        'remove': f"**{prefix}remove @username/ID**\nУдаляет пользователя из белого списка для `{prefix}tag`.",
-        'tag': f"**{prefix}tag [текст]**\nТегирует всех в группе, кроме ботов, whitelist и владельца.",
+        'add': f"**{prefix}add [@username/ID]**\nДобавляет пользователя в белый список для `{prefix}tag` (можно по ответу).",
+        'remove': f"**{prefix}remove [@username/ID]**\nУдаляет пользователя из белого списка для `{prefix}tag` (можно по ответу).",
+        'tag': f"**{prefix}tag [текст]** или **{prefix}tag [группа] | [шаблон] [-r]**\nТегирует участников чата.\n\n**Классический режим (без `|`):**\n`{prefix}tag текст с форматом`\nТеги будут сверху (или снизу, см. `.tagsettings`), под ними ваш текст.\n\n**Режим с шаблоном (требует `|`):**\n`{prefix}tag [группа] | шаблон [-r]`\n• **группа**: `all`, `admins`, `random N`\n• **шаблон**: Текст, где `{{name}}` или `@Admin` заменяется на тег.\n• **-r**: Добавить случайную реакцию.\n\n**Примеры:**\n`{prefix}tag ✅ Сбор!`\n`{prefix}tag admins | {{name}}, зайди в игру!`\n`{prefix}tag random 5 | 🔥 {{name}} 🔥 -r`",
         'stoptag': f"**{prefix}stoptag**\nОстанавливает выполнение `{prefix}tag`.",
+        'tagsettings': f"**{prefix}tagsettings [параметр] [значение]**\nНастраивает команду .tag.\n\n`delay <сек>` - задержка между тегами.\n`priority <id/username>` - приоритет отображения ника.\n`position <before/after>` - позиция тегов.",
         'name': f"**{prefix}name <ник>**\nМеняет имя аккаунта.",
         'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git-репозитория.",
         'spam': f"**{prefix}spam <число> <текст>**\nОтправляет до 100 сообщений с задержкой 0.5с.",
@@ -947,10 +1223,10 @@ async def help_handler(event):
         'off': f"**{prefix}off**\nВыключает бота (кроме `{prefix}on`).",
         'setprefix': f"**{prefix}setprefix <префикс>**\nМеняет префикс команд (до 5 символов).",
         'status': f"**{prefix}status**\nПоказывает статус бота, префикс, Silent Tags и время работы.",
-        'profile': f"**{prefix}profile @username/ID [groups]**\nПоказывает профиль пользователя.\nДобавьте `groups` для отображения общих групп.",
+        'profile': f"**{prefix}profile [@username/ID] [groups]**\nПоказывает профиль пользователя (можно по ответу на сообщение).\nОтображает глобальный и RP-ник.\nДобавьте `groups` для отображения общих групп.",
         'backup': f"**{prefix}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное.",
         'dice': f"**{prefix}dice**\nБросает анимированный кубик 🎲.",
-        'typing': f"**{prefix}typing <время>**\nИмитирует набор текста (s, m, h, d, y, до 1 часа).",
+        'typing': f"**{prefix}typing <время>**\nИмитирует набор текста (s, m, h, до 1 часа).",
         'stoptyping': f"**{prefix}stoptyping**\nОстанавливает имитацию набора текста.",
         'weather': f"**{prefix}weather <город>**\nПоказывает погоду для указанного города.",
         'addrp': f"**{prefix}addrp <команда/алиас>|<действие>|<эмодзи>**\nДобавляет RP-команду. Доступно владельцу и создателям RP.\n**Пример:** `{prefix}addrp обнять/обнял|крепко обнял(а)|🤗`",
@@ -960,16 +1236,23 @@ async def help_handler(event):
         'addrpcreator': f"**{prefix}addrpcreator @user**\nДает пользователю право создавать RP-команды.",
         'delrpcreator': f"**{prefix}delrpcreator @user**\nЗабирает у пользователя право создавать RP-команды.",
         'listrpcreators': f"**{prefix}listrpcreators**\nПоказывает список создателей RP-команд.",
-        'setrpnick': f"**{prefix}setrpnick @user <никнейм>**\nСохраняет кастомный ник для пользователя в RP-командах.",
-        'delrpnick': f"**{prefix}delrpnick @user**\nУдаляет кастомный RP-ник.",
-        'rpnick': f"**{prefix}rpnick @user**\nПоказывает текущий RP-ник пользователя.",
+        'setrpnick': f"**{prefix}setrpnick [-g] [@user] <ник>**\nУстанавливает RP-ник.\nПо умолчанию для текущего чата. Флаг `-g` устанавливает глобальный ник. Ник `none` отключает ник в чате.",
+        'delrpnick': f"**{prefix}delrpnick [-g] [@user]**\nОтключает ник для чата или удаляет глобальный (с флагом `-g`).",
+        'rpnick': f"**{prefix}rpnick [@user]**\nПоказывает RP-ники пользователя (для чата и глобальный).",
         'adminhelp': f"**{prefix}adminhelp**\nПоказывает список всех доступных прав для настройки администрирования.",
         'adminsettings': f"**{prefix}adminsettings**\nПоказывает текущие настройки прав для команды `{prefix}admin`.",
         'admins': f"**{prefix}admins <право> <on/off>**\nВключает или выключает право в настройках для команды `{prefix}admin`.",
         'prefix': f"**{prefix}prefix @user <звание>**\nУстанавливает пользователю только звание (префикс) без реальных прав.",
-        'admin': f"**{prefix}admin @user <звание>**\nНазначает пользователя админом с правами из `{prefix}adminsettings` и званием.",
+        'admin': f"**{prefix}admin [<конфиг>] @user <звание>**\nНазначает админа. Можно указать имя сохраненного конфига прав.",
         'unprefix': f"**{prefix}unprefix @user**\nСнимает с пользователя только звание (префикс), не трогая права.",
         'unadmin': f"**{prefix}unadmin @user**\nСнимает с пользователя все права администратора и звание.",
+        'nonick': f"**{prefix}nonick <add|del|list> [-g] ...**\nУправляет никами.\n`add [-g] <ник>` - добавить\n`del [-g]` - отключить/удалить ник.\n`list [-g]` - список ников.",
+        'block': f"**{prefix}block @user**\nБлокирует пользователя (добавляет в ЧС Telegram).",
+        'unblock': f"**{prefix}unblock @user**\nРазблокирует пользователя.",
+        'blocklist': f"**{prefix}blocklist**\nПоказывает ваш черный список Telegram.",
+        'adminsave': f"**{prefix}adminsave <имя>**\nСохраняет текущие настройки прав админа как именованный конфиг.",
+        'adminload': f"**{prefix}adminload <имя>**\nЗагружает сохраненный конфиг прав в текущие настройки.",
+        'admincfgs': f"**{prefix}admincfgs**\nПоказывает список всех сохраненных конфигов прав.",
     }
     if args:
         args = 'сипался' if args == 'сипался' else args
@@ -979,40 +1262,19 @@ async def help_handler(event):
         text = (
             f"**{help_emoji} Команды KoteUserBot:**\n\n"
             "**Основные**\n"
-            f"`{prefix}ping` — Пинг и время работы\n"
-            f"`{prefix}info` — Инфо об аккаунте\n"
-            f"`{prefix}version` — Версия и обновления\n"
-            f"`{prefix}help` — Эта справка\n"
-            f"`{prefix}name` — Сменить имя\n"
-            f"`{prefix}autoupdate` — Обновить бота\n"
-            f"`{prefix}on` / `{prefix}off` — Включить/выключить бота\n"
-            f"`{prefix}setprefix` — Сменить префикс\n"
-            f"`{prefix}status` — Статус бота\n"
-            f"`{prefix}backup` — Создать бэкап\n"
-            f"`{prefix}profile` — Профиль пользователя\n\n"
+            f"`{prefix}ping`, `{prefix}info`, `{prefix}version`, `{prefix}help`, `{prefix}on`, `{prefix}off`, `{prefix}setprefix`, `{prefix}status`, `{prefix}backup`, `{prefix}autoupdate`\n\n"
+            "**Управление пользователями**\n"
+            f"`{prefix}profile`, `{prefix}name`, `{prefix}nonick`, `{prefix}block`, `{prefix}unblock`, `{prefix}blocklist`\n\n"
             "**Управление группой**\n"
-            f"`{prefix}tag` / `{prefix}stoptag` — Тег всех / остановка\n"
-            f"`{prefix}add` / `{prefix}remove` — Добавить/убрать из whitelist\n"
-            f"`{prefix}helps` — Показать whitelist\n"
-            f"`{prefix}dele` — Удалить сообщения\n"
-            f"`{prefix}сипался` — Покинуть группу\n"
-            f"`{prefix}spam` / `{prefix}stopspam` — Спам / стоп\n"
-            f"`{prefix}mus` / `{prefix}dice` / `{prefix}weather`\n"
-            f"`{prefix}typing` / `{prefix}stoptyping`\n\n"
+            f"`{prefix}tag`, `{prefix}stoptag`, `{prefix}tagsettings`, `{prefix}add`, `{prefix}remove`, `{prefix}helps`, `{prefix}dele`, `{prefix}сипался`, `{prefix}spam`, `{prefix}stopspam`, `{prefix}mus`, `{prefix}dice`, `{prefix}weather`, `{prefix}typing`, `{prefix}stoptyping`\n\n"
             "**Администрирование**\n"
-            f"`{prefix}admin` / `{prefix}unadmin` — Назначить/снять админа\n"
-            f"`{prefix}prefix` / `{prefix}unprefix` — Дать/снять звание\n"
-            f"`{prefix}adminsettings` — Показать права для `.admin`\n"
-            f"`{prefix}admins` — Настроить права\n"
-            f"`{prefix}adminhelp` — Справка по правам\n\n"
+            f"`{prefix}admin`, `{prefix}unadmin`, `{prefix}prefix`, `{prefix}unprefix`, `{prefix}admins`, `{prefix}adminsettings`, `{prefix}adminhelp`\n\n"
+            "**Конфиги админ. прав**\n"
+            f"`{prefix}adminsave`, `{prefix}adminload`, `{prefix}admincfgs`\n\n"
             "**Silent Tags**\n"
-            f"`{prefix}stags` — Вкл/выкл\n"
-            f"`{prefix}stconfig` — Настройки\n\n"
-            "**RP-Команды**\n"
-            f"`{prefix}rp` — Управление RP в чате\n"
-            f"`{prefix}addrp` / `{prefix}delrp` / `{prefix}rplist`\n"
-            f"`{prefix}setrpnick` / `{prefix}delrpnick` / `{prefix}rpnick`\n"
-            f"`{prefix}addrpcreator` / `{prefix}delrpcreator`\n\n"
+            f"`{prefix}stags`, `{prefix}stconfig`\n\n"
+            "**RP-Команды и Ники**\n"
+            f"`{prefix}rp`, `{prefix}addrp`, `{prefix}delrp`, `{prefix}rplist`, `{prefix}setrpnick`, `{prefix}delrpnick`, `{prefix}rpnick`, `{prefix}addrpcreator`, `{prefix}delrpcreator`\n\n"
             f"Подробности: `{prefix}help <команда>`"
         )
     parsed_text, entities = parser.parse(text)
@@ -1074,7 +1336,7 @@ async def helps_handler(event):
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*add\s+(.+)$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*add(?:\s+(.+))?$', x)))
 @error_handler
 async def add_handler(event):
     if not await is_owner(event): return
@@ -1083,32 +1345,30 @@ async def add_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    identifier = event.pattern_match.group(1).strip() if event.pattern_match else None
-    if not identifier:
-        text = "**Ошибка:** Неверный @username или ID!"
+
+    user = await get_target_user(event)
+
+    if not user:
+        text = "**Ошибка:** Не удалось найти пользователя. Укажите @username/ID или ответьте на сообщение."
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    user_id = await get_user_id(event)
-    if not user_id:
-        text = "**Ошибка:** Неверный @username или ID!"
+
+    chat_id = event.chat_id
+    if user.id in WHITELISTS[chat_id]:
+        text = f"**Ошибка:** Пользователь `{get_universal_display_name(user, chat_id)}` уже в белом списке!"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    chat_id = (await event.get_chat()).id
-    if user_id in WHITELISTS[chat_id]:
-        text = "**Ошибка:** Пользователь уже в белом списке!"
-        parsed_text, entities = parser.parse(text)
-        await safe_edit_message(event, parsed_text, entities)
-        return
-    WHITELISTS[chat_id].append(user_id)
+
+    WHITELISTS[chat_id].append(user.id)
     save_whitelists()
     whitelist_emoji = await get_emoji('whitelist')
-    text = f"**{whitelist_emoji} Пользователь {identifier} добавлен в белый список!**"
+    text = f"**{whitelist_emoji} Пользователь `{get_universal_display_name(user, chat_id)}` добавлен в белый список!**"
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*remove\s+(.+)$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*remove(?:\s+(.+))?$', x)))
 @error_handler
 async def remove_handler(event):
     if not await is_owner(event): return
@@ -1117,50 +1377,78 @@ async def remove_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    identifier = event.pattern_match.group(1).strip() if event.pattern_match else None
-    if not identifier:
-        text = "**Ошибка:** Неверный @username или ID!"
+        
+    user = await get_target_user(event)
+
+    if not user:
+        text = "**Ошибка:** Не удалось найти пользователя. Укажите @username/ID или ответьте на сообщение."
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    user_id = await get_user_id(event)
-    if not user_id:
-        text = "**Ошибка:** Неверный @username или ID!"
+
+    chat_id = event.chat_id
+    if user.id not in WHITELISTS[chat_id]:
+        text = f"**Ошибка:** Пользователя `{get_universal_display_name(user, chat_id)}` нет в белом списке!"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    chat_id = (await event.get_chat()).id
-    if user_id not in WHITELISTS[chat_id]:
-        text = "**Ошибка:** Пользователь не в белом списке!"
-        parsed_text, entities = parser.parse(text)
-        await safe_edit_message(event, parsed_text, entities)
-        return
-    WHITELISTS[chat_id].remove(user_id)
+        
+    WHITELISTS[chat_id].remove(user.id)
     save_whitelists()
     whitelist_emoji = await get_emoji('whitelist')
-    text = f"**{whitelist_emoji} Пользователь {identifier} удалён из белого списка!**"
+    text = f"**{whitelist_emoji} Пользователь `{get_universal_display_name(user, chat_id)}` удалён из белого списка!**"
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*prefix(?:\s+(@?\S+))?(?:\s+([\s\S]+))?$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*prefix(?:\s+(.*))?$', x)))
 @error_handler
 async def prefix_handler(event):
     if not event.is_group:
         await event.edit("Эта команда работает только в группах.")
         return
     try:
+        args_str = (event.pattern_match.group(1) or "").strip()
+        
         user_to_promote = await get_target_user(event)
         if not user_to_promote:
             await event.edit("Не удалось найти пользователя.")
             return
-        rank = (event.pattern_match.group(2) or "").strip()
+
+        rank = ""
+        reply = await event.get_reply_message()
+        # Если это ответ на сообщение, то все аргументы - это звание
+        if reply:
+            rank = args_str
+        else:
+            # Если не ответ, то звание - это всё после юзернейма/ID
+            parts = args_str.split()
+            if parts and (parts[0].startswith('@') or parts[0].isdigit()):
+                rank = " ".join(parts[1:])
+            else:
+                rank = args_str
+
         if len(rank) > 16:
             await event.edit(f"Звание не может быть длиннее 16 символов. Вы указали {len(rank)}.")
             return
-        rights = ChatAdminRights(change_info=True)
-        await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_promote.id, admin_rights=rights, rank=rank))
+
+        # Получаем текущие права, чтобы не разжаловать админа, или даем минимальные права для звания
+        try:
+            participant = await client(GetParticipantRequest(channel=event.chat_id, participant=user_to_promote.id))
+            if isinstance(participant.participant, ChannelParticipantAdmin):
+                current_rights = participant.participant.admin_rights
+            else:
+                # Если пользователь не админ, даем ему минимальное право, чтобы он мог "держать" звание
+                current_rights = ChatAdminRights(change_info=True)
+        except UserNotParticipantError:
+            await event.edit("Пользователь не является участником этого чата.")
+            return
+        except Exception:
+             # На случай других ошибок или если пользователь не админ
+             current_rights = ChatAdminRights(change_info=True)
+
+        await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_promote.id, admin_rights=current_rights, rank=rank))
         prefix_emoji = await get_emoji('prefix')
-        text = f"**{prefix_emoji} Звание для {get_display_name(user_to_promote)} успешно изменено на «{rank}».**"
+        text = f"**{prefix_emoji} Звание для {get_universal_display_name(user_to_promote, event.chat_id)} успешно изменено на «{rank}».**"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
     except (ChatAdminRequiredError, RightForbiddenError, UserAdminInvalidError):
@@ -1169,25 +1457,65 @@ async def prefix_handler(event):
         await event.edit(f"Произошла ошибка: {str(e)}")
         await send_error_log(str(e), "prefix_handler", event)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*admin(?:\s+(@?\S+))?(?:\s+([\s\S]+))?$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*admin(?:\s+(.*))?$', x)))
 @error_handler
 async def admin_handler(event):
     if not event.is_group:
         await event.edit("Эта команда работает только в группах.")
         return
     try:
-        user_to_promote = await get_target_user(event)
+        args_str = (event.pattern_match.group(1) or "").strip()
+        args = args_str.split()
+        
+        user_to_promote = None
+        rank = ""
+        rights_to_set = ADMIN_RIGHTS_CONFIG.copy()
+        config_name_used = None
+
+        # Сначала ищем пользователя в реплае
+        reply = await event.get_reply_message()
+        if reply:
+            user_to_promote = await reply.get_sender()
+
+        # Теперь разбираем аргументы
+        if args:
+            # Проверяем, является ли первый аргумент существующим конфигом
+            if args[0] in ADMIN_CONFIGS:
+                config_name_used = args[0]
+                rights_to_set = ADMIN_CONFIGS[config_name_used].copy()
+                args.pop(0) # Убираем имя конфига из дальнейшего разбора
+
+            # Если пользователь ещё не определен (не было реплая), ищем его в оставшихся аргументах
+            if not user_to_promote and args:
+                try:
+                    # Пробуем сделать первый оставшийся аргумент пользователем
+                    user_to_promote = await client.get_entity(args[0])
+                    args.pop(0) # Если успешно, убираем его
+                except Exception:
+                    # Если не получилось, значит юзера в аргументах нет,
+                    # и все аргументы - это звание. Юзера возьмем из реплая (если он был)
+                    pass
+
+            # Все, что осталось в args - это звание
+            rank = " ".join(args)
+
         if not user_to_promote:
-            await event.edit("Не удалось найти пользователя.")
+            text = "**❌ Ошибка:** Не удалось найти пользователя. Укажите его через @/ID или ответьте на сообщение."
+            parsed_text, entities = parser.parse(text)
+            await safe_edit_message(event, parsed_text, entities)
             return
-        rank = (event.pattern_match.group(2) or "").strip()
+        
         if len(rank) > 16:
             await event.edit(f"Звание не может быть длиннее 16 символов. Вы указали {len(rank)}.")
             return
-        rights_to_set = ChatAdminRights(**{k: v for k, v in ADMIN_RIGHTS_CONFIG.items()})
-        await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_promote.id, admin_rights=rights_to_set, rank=rank))
+
+        final_rights = ChatAdminRights(**{k: v for k, v in rights_to_set.items() if isinstance(v, bool)})
+        await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_promote.id, admin_rights=final_rights, rank=rank))
         admin_emoji = await get_emoji('admin')
-        text = f"**{admin_emoji} {get_display_name(user_to_promote)} назначен(а) администратором с званием «{rank}» и правами из настроек.**"
+        text = f"**{admin_emoji} {get_universal_display_name(user_to_promote, event.chat_id)} назначен(а) администратором с званием «{rank}».**"
+        if config_name_used:
+            text += f"\n*(Применён конфиг прав '{config_name_used}')*"
+            
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
     except (ChatAdminRequiredError, RightForbiddenError, UserAdminInvalidError):
@@ -1214,7 +1542,7 @@ async def unprefix_handler(event):
         current_rights = participant.participant.admin_rights
         await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_demote.id, admin_rights=current_rights, rank=""))
         success_emoji = await get_emoji('success')
-        text = f"**{success_emoji} Звание с пользователя {get_display_name(user_to_demote)} успешно снято. Права сохранены.**"
+        text = f"**{success_emoji} Звание с пользователя {get_universal_display_name(user_to_demote, event.chat_id)} успешно снято. Права сохранены.**"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
     except (ChatAdminRequiredError, RightForbiddenError, UserAdminInvalidError):
@@ -1228,6 +1556,7 @@ async def unprefix_handler(event):
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*unadmin(?:\s+(@?\S+))?$', x)))
 @error_handler
 async def unadmin_handler(event):
+    if not await is_owner(event): return
     if not event.is_group:
         await event.edit("Эта команда работает только в группах.")
         return
@@ -1239,7 +1568,7 @@ async def unadmin_handler(event):
         rights = ChatAdminRights()
         await client(EditAdminRequest(channel=event.chat_id, user_id=user_to_demote.id, admin_rights=rights, rank=""))
         success_emoji = await get_emoji('success')
-        text = f"**{success_emoji} Все права и звание с пользователя {get_display_name(user_to_demote)} успешно сняты.**"
+        text = f"**{success_emoji} Все права и звание с пользователя {get_universal_display_name(user_to_demote, event.chat_id)} успешно сняты.**"
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
     except (ChatAdminRequiredError, RightForbiddenError, UserAdminInvalidError):
@@ -1415,10 +1744,20 @@ async def stopspam_handler(event):
 def convert_to_html(text: str, entities: list) -> str:
     if not text: return ""
     if not entities: return html.escape(text)
+    
+    text_bytes = text.encode('utf-16-le')
     boundaries = []
     for entity in entities:
         start_tag, end_tag = '', ''
         offset, length = entity.offset, entity.length
+
+        try:
+            start_index = len(text_bytes[:offset * 2].decode('utf-16-le'))
+            entity_text_slice = text_bytes[offset * 2 : (offset + length) * 2].decode('utf-16-le')
+            end_index = start_index + len(entity_text_slice)
+        except Exception:
+            continue
+            
         if isinstance(entity, types.MessageEntityBold): start_tag, end_tag = '<b>', '</b>'
         elif isinstance(entity, types.MessageEntityItalic): start_tag, end_tag = '<i>', '</i>'
         elif isinstance(entity, types.MessageEntityUnderline): start_tag, end_tag = '<u>', '</u>'
@@ -1429,76 +1768,235 @@ def convert_to_html(text: str, entities: list) -> str:
             start_tag = f'<pre><code class="language-{lang}">' if lang else '<pre>'
             end_tag = '</code></pre>' if lang else '</pre>'
         elif isinstance(entity, types.MessageEntityBlockquote): start_tag, end_tag = '<blockquote>', '</blockquote>'
+        elif isinstance(entity, types.MessageEntitySpoiler): start_tag, end_tag = '<tg-spoiler>', '</tg-spoiler>'
         elif isinstance(entity, types.MessageEntityTextUrl): start_tag, end_tag = f'<a href="{html.escape(entity.url)}">', '</a>'
+        elif isinstance(entity, types.MessageEntityCustomEmoji):
+            start_tag = f'<tg-emoji emoji-id="{entity.document_id}">'
+            end_tag = '</tg-emoji>'
+
         if start_tag:
-            boundaries.append((offset, False, start_tag))
-            boundaries.append((offset + length, True, end_tag))
-    boundaries.sort(key=lambda b: (b[0], b[1]))
+            boundaries.append((start_index, False, start_tag))
+            boundaries.append((end_index, True, end_tag))
+
+    # Эта сортировка гарантирует, что теги будут закрываться в правильном порядке
+    boundaries.sort(key=lambda b: (b[0], 1 if not b[1] else 0))
+    
     result, last_offset = [], 0
     for offset, is_closing, tag in boundaries:
         text_slice = text[last_offset:offset]
-        if text_slice: result.append(html.escape(text_slice))
+        if text_slice:
+            result.append(html.escape(text_slice))
         result.append(tag)
         last_offset = offset
-    if last_offset < len(text): result.append(html.escape(text[last_offset:]))
+
+    if last_offset < len(text):
+        result.append(html.escape(text[last_offset:]))
+        
     return "".join(result)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*tag\s*([\s\S]*)$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}tag(\s+[\s\S]*)?$', x, re.DOTALL)))
 @error_handler
 async def tag_handler(event):
     if not await is_owner(event): return
     if not event.is_group:
-        await event.edit("**Ошибка:** Эта команда работает только в группах!")
+        await safe_edit_message(event, "**❌ Ошибка:** Команда работает только в группах!", [])
         return
     if TAG_STATE.get('running'):
-        await event.edit(f"**Ошибка:** Тегирование уже выполняется! Используйте `{CONFIG['prefix']}stoptag` для остановки.")
+        await safe_edit_message(event, f"**❌ Ошибка:** Тегирование уже выполняется! Используйте `{CONFIG['prefix']}stoptag`", [])
         return
+
+    load_tag_config()
+    await safe_edit_message(event, "🚀 **Начинаю тегирование...**", [])
+    
+    raw_content_after_command = (event.pattern_match.group(1) or "").strip()
+    
+    use_template_style = '|' in raw_content_after_command
+    group_type = "all"
+    text_with_formatting = ""
+    template_str = "{name}"
+    
+    content_words = raw_content_after_command.split()
+    add_reaction = "-r" in content_words
+    
+    if use_template_style:
+        parts = raw_content_after_command.split('|', 1)
+        command_part = parts[0].strip()
+        template_str = parts[1].strip() if len(parts) > 1 else "{name}"
+        
+        command_part_words = command_part.split()
+        if command_part_words:
+            if "-r" in command_part_words: command_part_words.remove("-r")
+            potential_group = " ".join(command_part_words)
+            if potential_group and (potential_group in ["all", "admins"] or potential_group.startswith("random")):
+                group_type = potential_group
+        text_with_formatting = template_str
+    else:
+        text_with_formatting = raw_content_after_command
+
+    base_entities = []
+    base_text_clean = text_with_formatting.replace("-r", "").strip()
+    
+    if base_text_clean and event.message.entities:
+        text_start_in_raw = event.raw_text.find(base_text_clean)
+        if text_start_in_raw != -1:
+            offset_to_subtract_utf16 = len(event.raw_text[:text_start_in_raw].encode('utf-16-le')) // 2
+            for entity in event.message.entities:
+                entity_text_slice = event.raw_text.encode('utf-16-le')[entity.offset*2:(entity.offset + entity.length)*2].decode('utf-16-le')
+                if entity.offset >= offset_to_subtract_utf16 and entity_text_slice.strip() != '-r':
+                    new_entity_dict = entity.to_dict()
+                    new_entity_dict.pop('_', None)
+                    new_entity_dict['offset'] = entity.offset - offset_to_subtract_utf16
+                    base_entities.append(type(entity)(**new_entity_dict))
+    
     chat = await event.get_chat()
-    users_to_tag = []
+    all_participants = []
     async for user in client.iter_participants(chat):
-        if user.bot or user.id in WHITELISTS.get(chat.id, []) or user.id == owner_id or user.deleted: continue
-        users_to_tag.append(user)
+         if not (user.bot or user.id in WHITELISTS.get(chat.id, []) or user.id == owner_id or user.deleted):
+            all_participants.append(user)
+    
+    users_to_tag = []
+    if group_type == "all": users_to_tag = all_participants
+    elif group_type == "admins":
+        users_to_tag = [
+            user for user in await client.get_participants(chat, filter=types.ChannelParticipantsAdmins)
+            if not (user.bot or user.id in WHITELISTS.get(chat.id, []) or user.id == owner_id or user.deleted)
+        ]
+    elif group_type.startswith("random"):
+        try:
+            n = int(group_type.split()[1])
+            users_to_tag = random.sample(all_participants, min(n, len(all_participants)))
+        except (IndexError, ValueError):
+            await client.send_message(event.chat_id, "**❌ Ошибка:** Укажите число для `random N`.")
+            return
+
     if not users_to_tag:
-        await event.edit("**Ошибка:** Нет подходящих пользователей для тегирования!")
+        await client.send_message(event.chat_id, "**❌ Ошибка:** Нет подходящих пользователей для тегирования!")
+        try: await event.delete()
+        except: pass
         return
+
     TAG_STATE['running'] = True
-    TAG_STATE['last_message_id'] = event.message.id
     try:
-        command_prefix, base_text = f"{CONFIG['prefix']}tag", event.pattern_match.group(1).strip()
-        base_entities = []
-        if base_text and event.message.entities:
-            text_start_index = event.raw_text.find(base_text, len(command_prefix))
-            if text_start_index != -1:
-                offset_to_subtract = len(event.raw_text[:text_start_index].encode('utf-16-le')) // 2
-                for entity in event.message.entities:
-                    if entity.offset >= offset_to_subtract:
-                        entity.offset -= offset_to_subtract
-                        base_entities.append(entity)
-        await event.edit(f"🚀 **Тегирование начато: {len(users_to_tag)} пользователей!**")
+        await event.delete()
+        reactions = ['👍', '❤️', '🔥', '🥰', '😁', '🎉', '🤩', '👌', '👏', '✨', '😻', '💯', '😇', '🤗'] if add_reaction else []
+
         for i in range(0, len(users_to_tag), 5):
-            if not TAG_STATE['running']: break
+            if not TAG_STATE['running']:
+                break
+            
             group = users_to_tag[i:i+5]
-            tags_parts = []
-            for user in group:
-                name_to_display = ' '.join(filter(None, [user.first_name, user.last_name])) or "пользователь"
-                safe_name = html.escape(name_to_display)
-                tags_parts.append(f'<a href="tg://user?id={user.id}">{safe_name}</a>')
-            tags_html_string = ' '.join(tags_parts)
-            base_text_html = convert_to_html(base_text, base_entities)
-            final_text_html = tags_html_string
-            if base_text_html: final_text_html += f"\n\n{base_text_html}"
-            await client.send_message(event.chat_id, final_text_html, parse_mode='html')
-            if i + 5 < len(users_to_tag) and TAG_STATE['running']: await asyncio.sleep(TAG_COOLDOWN)
+
+            final_html = ""
+            if use_template_style:
+                template_clean = template_str.replace("-r", "").strip()
+                template_html_base = convert_to_html(template_clean, base_entities)
+                full_text_parts = []
+                for user in group:
+                    display_name = get_tag_display_name(user, event.chat_id)
+                    mention = f'<a href="tg://user?id={user.id}">{html.escape(display_name)}</a>'
+                    user_html = template_html_base.replace("{name}", mention).replace("@Admin", mention)
+                    full_text_parts.append(user_html)
+                final_html = "\n\n".join(full_text_parts)
+            else:
+                # ИСПРАВЛЕНО: base_text_str -> base_text_clean
+                base_text_clean_for_html = base_text_clean.replace("-r", "").strip()
+                tags_html_parts = []
+                for user in group:
+                    display_name = get_tag_display_name(user, event.chat_id)
+                    safe_name = html.escape(display_name)
+                    tags_html_parts.append(f'<a href="tg://user?id={user.id}">{safe_name}</a>')
+                tags_html_string = " ".join(tags_html_parts)
+                base_text_html = convert_to_html(base_text_clean_for_html, base_entities)
+                
+                if TAG_CONFIG['position'] == 'before':
+                    final_html = tags_html_string
+                    if base_text_html:
+                        final_html += f"\n\n{base_text_html}"
+                else:
+                    final_html = base_text_html
+                    if tags_html_string:
+                        final_html += f"\n\n{tags_html_string}" if base_text_html else tags_html_string
+
+            if final_html:
+                try:
+                    msg = await client.send_message(event.chat_id, final_html, parse_mode='html', reply_to=event.reply_to_msg_id)
+                    if add_reaction and reactions:
+                        try:
+                            await client(functions.messages.SendReactionRequest(
+                                peer=event.chat_id, msg_id=msg.id,
+                                reaction=[types.ReactionEmoji(emoticon=random.choice(reactions))]
+                            ))
+                        except Exception:
+                            pass
+                
+                # ИСПРАВЛЕНО: Добавлена обработка FloodWaitError
+                except errors.FloodWaitError as e:
+                    print(f"[Warning] Сработал флуд-контроль в tag_handler. Жду {e.seconds} секунд.")
+                    await send_error_log(f"Flood Wait: Пауза на {e.seconds} секунд.", "tag_handler", event, is_test=True)
+                    await asyncio.sleep(e.seconds + 1)
+                    # Повторная отправка сообщения после ожидания
+                    msg = await client.send_message(event.chat_id, final_html, parse_mode='html', reply_to=event.reply_to_msg_id)
+
+            if i + 5 < len(users_to_tag) and TAG_STATE['running']:
+                await asyncio.sleep(TAG_CONFIG['delay'])
+
     except Exception as e:
         error_msg = f"Ошибка в tag_handler: {str(e)}\n{traceback.format_exc()}"
         await send_error_log(error_msg, "tag_handler", event)
-        await event.edit(f"**Ошибка:** Не удалось выполнить тегирование: {str(e)}")
     finally:
         TAG_STATE['running'] = False
-        try:
-            await asyncio.sleep(2)
-            await event.delete()
-        except Exception: pass
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*tagsettings(?:\s+(.*))?$', x)))
+@error_handler
+async def tagsettings_handler(event):
+    if not await is_owner(event): return
+
+    args_str = (event.pattern_match.group(1) or "").strip()
+    
+    if not args_str:
+        # Показываем текущие настройки
+        text = (f"**⚙️ Настройки тегов:**\n\n"
+                f" Delay: `{TAG_CONFIG['delay']}` сек.\n"
+                f" Priority: `{TAG_CONFIG['priority']}` (`id` или `username`)\n"
+                f" Position: `{TAG_CONFIG['position']}` (`before` или `after`)\n\n"
+                f"**Пример:** `{CONFIG['prefix']}tagsettings delay 5`")
+    else:
+        args = args_str.split(" ", 1)
+        key = args[0].lower()
+        if len(args) < 2:
+            text = "❌ **Ошибка:** Укажите значение для параметра."
+        else:
+            value = args[1].lower()
+            if key == 'delay':
+                try:
+                    delay = int(value)
+                    if 0 <= delay <= 60:
+                        TAG_CONFIG['delay'] = delay
+                        save_tag_config()
+                        text = f"✅ **Задержка между тегами установлена на `{delay}` секунд.**"
+                    else:
+                        text = "❌ **Ошибка:** Задержка должна быть между 0 и 60 секундами."
+                except ValueError:
+                    text = "❌ **Ошибка:** Задержка должна быть числом."
+            elif key == 'priority':
+                if value in ['id', 'username']:
+                    TAG_CONFIG['priority'] = value
+                    save_tag_config()
+                    text = f"✅ **Приоритет тега установлен на `{value}`.**"
+                else:
+                    text = "❌ **Ошибка:** Приоритет может быть `id` или `username`."
+            elif key == 'position':
+                if value in ['before', 'after']:
+                    TAG_CONFIG['position'] = value
+                    save_tag_config()
+                    text = f"✅ **Позиция тегов установлена на `{value}` текста.**"
+                else:
+                    text = "❌ **Ошибка:** Позиция может быть `before` или `after`."
+            else:
+                text = "❌ **Ошибка:** Неизвестный параметр. Доступно: `delay`, `priority`, `position`."
+
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*stoptag$', x)))
 @error_handler
@@ -1684,7 +2182,7 @@ async def delete_handler(event):
 @error_handler
 async def version_handler(event):
     if not await is_owner(event): return
-    module_version = "1.0.5"
+    module_version = "1.0.6"
     uptime, user = get_uptime(), await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
     branch, prefix, platform = get_git_branch(), CONFIG['prefix'], detect_platform()
@@ -1925,10 +2423,12 @@ async def silent_tags_watcher(event):
             await client.send_read_acknowledge(event.chat_id, clear_mentions=True)
             print(f"[SilentTags] Упоминание от бота помечено как прочитанное и пропущено (ignore_bots=true): chat_id={event.chat_id}, sender_id={sender_id}")
             return
-        if ((sender_id in SILENT_TAGS_CONFIG['ignore_users'] and SILENT_TAGS_CONFIG['use_whitelist']) or (SILENT_TAGS_CONFIG['ignore_blocked'] and sender_id in BLOCKED_USERS)):
+        
+        if (sender_id in SILENT_TAGS_CONFIG['ignore_users']) or (SILENT_TAGS_CONFIG['ignore_blocked'] and sender_id in BLOCKED_USERS):
             print(f"[SilentTags] Упоминание пропущено: chat_id={event.chat_id}, normalized_chat_id={normalized_chat_id}, sender_id={sender_id}")
             return
-        chat_ignored = (SILENT_TAGS_CONFIG['use_chat_whitelist'] and normalized_chat_id in SILENT_TAGS_CONFIG['ignore_chats'])
+        
+        chat_ignored = (normalized_chat_id in SILENT_TAGS_CONFIG['ignore_chats'])
         cid = event.chat_id
         if chat_ignored:
             print(f"[SilentTags] Упоминание полностью игнорируется: chat_id={cid}")
@@ -1955,10 +2455,11 @@ async def silent_tags_watcher(event):
             print(f"[SilentTags] Упоминание помечено как прочитанное: chat_id={cid}")
         except Exception as e:
             print(f"[SilentTags] Ошибка при отметке сообщения как прочитанного: {str(e)}")
-        group_link = f"https.me/c/{str(normalized_chat_id)}" if not isinstance(chat, types.User) else ""
+        
+        group_link = f"t.me/c/{str(normalized_chat_id)}" if not isinstance(chat, types.User) else ""
         user_name = getattr(sender, 'first_name', 'Unknown') or getattr(sender, 'title', 'Unknown')
         silent_emoji = EMOJI_SET['regular']['silent']
-        message_text = (f"{silent_emoji} Вас упомянули в <a href=\"{group_link}\">{chat_title}</a> пользователем <a href=\"tg://openmessage?user_id={sender_id}\">{user_name}</a>\n<b>Сообщение:</b>\n<code>{event.raw_text}</code>\n<b>Ссылка:</b> <a href=\"https.me/c/{str(normalized_chat_id)}/{event.id}\">перейти</a>")
+        message_text = (f"{silent_emoji} Вас упомянули в <a href=\"{group_link}\">{chat_title}</a> пользователем <a href=\"tg://openmessage?user_id={sender_id}\">{user_name}</a>\n<b>Сообщение:</b>\n<code>{event.raw_text}</code>\n<b>Ссылка:</b> <a href=\"t.me/c/{str(normalized_chat_id)}/{event.id}\">перейти</a>")
         try:
             await send_log(message_text, "silent_tags_watcher", event, is_tag_log=True)
             print(f"[SilentTags] Упоминание отправлено в KoteUserBotSilence: chat_id={cid}, sender_id={sender_id}")
@@ -1972,6 +2473,50 @@ async def silent_tags_watcher(event):
             await send_log(str(e), "silent_tags_watcher", event)
         except Exception as e2:
             print(f"[SilentTags] Ошибка при логировании: {str(e2)}")
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*adminsave\s+(\w+)$', x)))
+@error_handler
+async def adminsave_handler(event):
+    if not await is_owner(event): return
+    config_name = event.pattern_match.group(1)
+    save_admin_config(config_name, ADMIN_RIGHTS_CONFIG)
+    text = f"✅ **Текущие настройки прав сохранены как `{config_name}`.**"
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*adminload(?:\s+(\w+))?$', x)))
+@error_handler
+async def adminload_handler(event):
+    global ADMIN_RIGHTS_CONFIG
+    if not await is_owner(event): return
+    
+    config_name = event.pattern_match.group(1)
+    if not config_name:
+        text = "❌ **Ошибка:** Укажите имя конфига для загрузки."
+    elif config_name in ADMIN_CONFIGS:
+        ADMIN_RIGHTS_CONFIG = ADMIN_CONFIGS[config_name].copy()
+        for right, value in ADMIN_RIGHTS_CONFIG.items():
+            save_admin_right(right, value)
+        text = f"✅ **Конфиг прав `{config_name}` загружен как текущий.**"
+    else:
+        text = f"❌ **Ошибка:** Конфиг с именем `{config_name}` не найден."
+
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*admincfgs$', x)))
+@error_handler
+async def admincfgs_handler(event):
+    if not await is_owner(event): return
+    if not ADMIN_CONFIGS:
+        text = "📋 **Нет сохраненных конфигураций прав.**"
+    else:
+        text = "📋 **Сохраненные конфигурации прав:**\n\n"
+        for name in ADMIN_CONFIGS.keys():
+            text += f"• `{name}`\n"
+    
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*backup$', x)))
 @error_handler
@@ -2007,42 +2552,63 @@ async def backup_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*profile\s+([^ ]+)(?:\s+(groups))?$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*profile(?:(?:\s+(@?\S+))?(?:\s+(groups))?)?$', x)))
 @error_handler
 async def profile_handler(event):
     if not await is_owner(event): return
-    identifier, show_groups = event.pattern_match.group(1).strip(), event.pattern_match.group(2) == "groups"
-    user_id = await get_user_id(event)
-    if not user_id:
-        text = "**Ошибка:** Неверный @username или ID!"
+    
+    show_groups = 'groups' in event.raw_text.lower()
+    user_entity = await get_target_user(event)
+
+    if not user_entity:
+        text = "**Ошибка:** Не удалось найти пользователя. Укажите его через @/ID или ответьте на сообщение."
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
+
     try:
-        user = await client(GetFullUserRequest(user_id))
-        user_entity = user.users[0]
+        user_full = await client(GetFullUserRequest(user_entity.id))
+        user = user_full.users[0]
+        
         name_emoji, username_emoji = await get_emoji('name'), await get_emoji('username')
-        id_emoji, premium_emoji = await get_emoji('id'), await get_emoji('premium')
-        username = f"@{user_entity.username}" if user_entity.username else "Нет"
-        first_name = user_entity.first_name or "Не указано"
-        premium_status = "Да" if user_entity.premium else "Нет"
-        last_seen = "Недавно" if user_entity.status else "Давно"
-        common_chats = []
+        id_emoji, premium_emoji, rp_nick_emoji = await get_emoji('id'), await get_emoji('premium'), await get_emoji('rp_nick')
+        
+        username = f"@{user.username}" if user.username else "Нет"
+        premium_status = "Да" if user.premium else "Нет"
+        
+        # Используем новую функцию для определения статуса
+        last_seen = format_last_seen(user.status)
+        
+        global_nick = get_global_nick(user.id, event.chat_id)
+        rp_nick = get_rp_nick(user.id, event.chat_id)
+        display_name = get_universal_display_name(user, event.chat_id)
+
+        text = (f"**{name_emoji} Профиль пользователя:**\n\n"
+                f"**Имя:** {display_name}\n"
+                f"**Username:** {username}\n"
+                f"**{id_emoji} ID:** {user.id}\n")
+
+        if global_nick:
+            text += f"**Глобальный ник:** `{global_nick}`\n"
+        if rp_nick:
+            text += f"**{rp_nick_emoji} RP-ник:** `{rp_nick}`\n"
+
+        text += (f"**{premium_emoji} Premium:** {premium_status}\n"
+                 f"**Последний раз онлайн:** {last_seen}\n")
+
         if show_groups:
+            common_chats_text = "**Общие группы:** "
             try:
-                common = await client(functions.messages.GetCommonChatsRequest(user_id=user_entity, max_id=0, limit=100))
-                for chat in common.chats:
-                    if isinstance(chat, (types.Chat, types.Channel)): common_chats.append(chat.title)
-                total_chats = len(common_chats)
-                if total_chats > 5:
-                    common_chats = common_chats[:5] + [f"...и другие (всего {total_chats})"]
-                elif total_chats == 0:
-                    common_chats = ["Нет"]
+                common = await client(functions.messages.GetCommonChatsRequest(user_id=user.id, max_id=0, limit=100))
+                common_chats = [chat.title for chat in common.chats if isinstance(chat, (types.Chat, types.Channel))]
+                if common_chats:
+                    common_chats_text += ", ".join(common_chats)
+                else:
+                    common_chats_text += "Нет"
             except Exception as e:
-                print(f"[Debug] Не удалось получить общие группы: {str(e)}")
-                common_chats = ["Ошибка при получении групп"]
-        text = f"**{name_emoji} Профиль пользователя:**\n\n**{name_emoji} Имя:** {first_name}\n**{username_emoji} Username:** {username}\n**{id_emoji} ID:** {user_id}\n**{premium_emoji} Premium:** {premium_status}\n**Последний раз онлайн:** {last_seen}\n"
-        if show_groups: text += f"**Общие группы:** {', '.join(common_chats)}\n"
+                common_chats_text += "Ошибка при получении"
+            text += f"{common_chats_text}\n"
+
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
     except Exception as e:
@@ -2171,91 +2737,122 @@ async def weather_handler(event):
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*addrp\s+([^|]+)\s*\|\s*([^|]+)\s*\|\s*([\s\S]+)$', x, re.DOTALL)))
 @error_handler
 async def addrp_handler(event):
+    has_permission = await is_owner(event) or event.sender_id in RP_CREATORS
+    if not has_permission:
+        return
+
     match = event.pattern_match
     aliases_str, action, emoji_text = match.group(1).strip(), match.group(2).strip(), match.group(3).strip()
     aliases = [alias.lower() for alias in aliases_str.split('/') if alias]
+
     if not aliases:
         text = f"❌ **Ошибка:** Вы не указали ни одной команды/алиаса.\nИспользуйте формат: `{CONFIG['prefix']}addrp команда|действие|эмодзи`"
         parsed_text, entities = parser.parse(text)
-        if await is_owner(event): await safe_edit_message(event, parsed_text, entities)
-        else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
         return
-    premium_emoji_id, standard_emoji = None, emoji_text
+
+    premium_emoji_ids = []
+    standard_emojis_parts = []
+
     if event.message.entities:
+        from telethon.tl.types import MessageEntityCustomEmoji
         for entity in event.message.entities:
-            if isinstance(entity, types.MessageEntityCustomEmoji):
-                premium_emoji_id = entity.document_id
-                standard_emoji = event.raw_text[entity.offset : entity.offset + entity.length]
-                break
+            if isinstance(entity, MessageEntityCustomEmoji):
+                premium_emoji_ids.append(entity.document_id)
+                emoji_char_bytes = event.raw_text.encode('utf-16-le')
+                entity_bytes = emoji_char_bytes[entity.offset*2:(entity.offset + entity.length)*2]
+                standard_emojis_parts.append(entity_bytes.decode('utf-16-le'))
+
+    standard_emoji = "".join(standard_emojis_parts) if standard_emojis_parts else emoji_text
+
     for alias in aliases:
-        RP_COMMANDS[alias] = {'action': action, 'premium_emoji_id': premium_emoji_id, 'standard_emoji': standard_emoji}
-        save_rp_command(alias, action, premium_emoji_id, standard_emoji)
+        RP_COMMANDS[alias] = {'action': action, 'premium_emoji_ids': premium_emoji_ids, 'standard_emoji': standard_emoji}
+        save_rp_command(alias, action, premium_emoji_ids, standard_emoji)
+
     success_emoji = await get_emoji('success')
     text = f"**{success_emoji} RP-команда(ы) `{', '.join(aliases)}` добавлена(ы)!**"
-    if premium_emoji_id: text += f"\n*Обнаружен премиум-эмодзи. Обычная версия: {standard_emoji}*"
-    parsed_text, entities = parser.parse(text)
-    if await is_owner(event): await safe_edit_message(event, parsed_text, entities)
-    else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+    if premium_emoji_ids:
+        text += f"\n*Сохранено {len(premium_emoji_ids)} премиум-эмодзи. Обычная версия: {standard_emoji}*"
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*delrp\s+([\S]+)$', x)))
+    parsed_text, entities = parser.parse(text)
+    if event.out:
+        await safe_edit_message(event, parsed_text, entities)
+    else:
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.id)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*delrp\s+(.+)$', x)))
 @error_handler
 async def delrp_handler(event):
-    command = event.pattern_match.group(1).lower()
+    has_permission = await is_owner(event) or event.sender_id in RP_CREATORS
+    if not has_permission:
+        return
+        
+    command = event.pattern_match.group(1).lower().strip()
     if command in RP_COMMANDS:
         del RP_COMMANDS[command]
         delete_rp_command(command)
         text = f"🗑️ **RP-команда `{command}` удалена!**"
     else:
         text = f"❌ **Ошибка:** Команда `{command}` не найдена."
+    
     parsed_text, entities = parser.parse(text)
-    if await is_owner(event): await safe_edit_message(event, parsed_text, entities)
-    else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+    if event.out:
+        await safe_edit_message(event, parsed_text, entities)
+    else:
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.id)
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rplist$', x)))
 @error_handler
 async def rplist_handler(event):
+    has_permission = await is_owner(event) or event.sender_id in RP_CREATORS
+    if not has_permission:
+        return
+
     if not RP_COMMANDS:
         text = "📋 **Список RP-команд пуст!**"
         parsed_text, entities = parser.parse(text)
-        if await is_owner(event): await safe_edit_message(event, parsed_text, entities)
-        else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
+        if event.out:
+            await safe_edit_message(event, parsed_text, entities)
+        else:
+            await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.id)
         return
+
     text = "📋 **Доступные RP-команды:**\n"
     actions = defaultdict(lambda: {'aliases': [], 'emoji_data': {}})
+
     for cmd, data in RP_COMMANDS.items():
-        key = (data['action'], data['premium_emoji_id'], data['standard_emoji'])
+        prem_ids_tuple = tuple(sorted(data.get('premium_emoji_ids', [])))
+        key = (data['action'], prem_ids_tuple, data['standard_emoji'])
         actions[key]['aliases'].append(cmd)
-        actions[key]['emoji_data'] = {'premium_emoji_id': data['premium_emoji_id'], 'standard_emoji': data['standard_emoji']}
+        actions[key]['emoji_data'] = {'premium_emoji_ids': data.get('premium_emoji_ids', []), 'standard_emoji': data['standard_emoji']}
+
     is_premium = await is_premium_user()
     for key, val in actions.items():
-        action, prem_id, std_emoji = key
+        action, prem_ids_tuple, std_emoji = key
+
+        # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        # Теперь собираем все эмодзи, а не один
         final_emoji = ""
-        if is_premium and prem_id: final_emoji = f"[{std_emoji}](emoji/{prem_id})"
-        else: final_emoji = std_emoji
+        if is_premium and prem_ids_tuple:
+            placeholders = std_emoji or '✨' * len(prem_ids_tuple)
+            emoji_links = []
+            for i, emoji_id in enumerate(prem_ids_tuple):
+                placeholder_char = placeholders[i] if i < len(placeholders) else '✨'
+                emoji_links.append(f"[{placeholder_char}](emoji/{emoji_id})")
+            final_emoji = "".join(emoji_links)
+        else:
+            final_emoji = std_emoji
+
         aliases_str = ', '.join(f"`{a}`" for a in sorted(val['aliases']))
         text += f"• {aliases_str} - {action} {final_emoji}\n"
-    parsed_text, entities = parser.parse(text)
-    if await is_owner(event): await safe_edit_message(event, parsed_text, entities)
-    else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rp\s+(on|off)$', x)))
-@error_handler
-async def rp_toggle_handler(event):
-    if not await is_owner(event): return
-    chat_id, action = event.chat_id, event.pattern_match.group(1)
-    success_emoji = await get_emoji('success')
-    if action == 'on':
-        RP_ENABLED_CHATS.add(chat_id)
-        toggle_rp_chat(chat_id, True)
-        text = f"**{success_emoji} RP-команды в этом чате ВКЛЮЧЕНЫ!**"
+    parsed_text, entities = parser.parse(text)
+    if event.out:
+        await safe_edit_message(event, parsed_text, entities)
     else:
-        RP_ENABLED_CHATS.discard(chat_id)
-        toggle_rp_chat(chat_id, False)
-        text = f"⛔️ **RP-команды в этом чате ВЫКЛЮЧЕНЫ!**"
-    parsed_text, entities = parser.parse(text)
-    await safe_edit_message(event, parsed_text, entities)
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.id)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rp\s+access\s+(add|remove)\s+(.+)$', x, re.IGNORECASE)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rp\s+access\s+(add|remove)(?:\s+(.+))?$', x, re.IGNORECASE)))
 @error_handler
 async def rp_access_handler(event):
     if not await is_owner(event): return
@@ -2264,34 +2861,48 @@ async def rp_access_handler(event):
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    chat_id, action, identifier = event.chat_id, event.pattern_match.group(1).lower(), event.pattern_match.group(2).lower().strip()
+        
+    action = event.pattern_match.group(1).lower()
+    identifier = (event.pattern_match.group(2) or "").lower().strip()
+    chat_id = event.chat_id
     success_emoji = await get_emoji('success')
+    
     if identifier == 'all':
         if action == 'add':
             RP_PUBLIC_CHATS.add(chat_id)
             toggle_rp_public_access(chat_id, True)
             text = f"**{success_emoji} Доступ к RP-командам в этом чате открыт для ВСЕХ!**"
-        else:
+        else: # remove
             RP_PUBLIC_CHATS.discard(chat_id)
             toggle_rp_public_access(chat_id, False)
             text = f"🗑️ **Публичный доступ к RP-командам в этом чате ЗАКРЫТ!**"
+            
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
-    user_id = await get_user_id(event)
-    if not user_id:
-        text = f"❌ **Ошибка:** Не удалось найти пользователя `{identifier}`."
+
+    user = await get_target_user(event)
+    
+    if not user:
+        text = f"❌ **Ошибка:** Не удалось найти пользователя"
+        if identifier:
+            text += f" `{identifier}`."
         parsed_text, entities = parser.parse(text)
         await safe_edit_message(event, parsed_text, entities)
         return
+    
+    user_id = user.id
+    display_name = get_universal_display_name(user, event.chat_id)
+    
     if action == 'add':
         RP_ACCESS_LIST[chat_id].add(user_id)
         toggle_rp_access(chat_id, user_id, True)
-        text = f"**{success_emoji} Пользователь `{identifier}` получил доступ к RP-командам в этом чате.**"
-    else:
+        text = f"**{success_emoji} Пользователь `{display_name}` получил доступ к RP-командам в этом чате.**"
+    else: # remove
         RP_ACCESS_LIST[chat_id].discard(user_id)
         toggle_rp_access(chat_id, user_id, False)
-        text = f"🗑️ **Пользователь `{identifier}` лишен доступа к RP-командам в этом чате.**"
+        text = f"🗑️ **Пользователь `{display_name}` лишен доступа к RP-командам в этом чате.**"
+        
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
@@ -2320,11 +2931,14 @@ async def rp_access_list_handler(event):
             try:
                 user = await client.get_entity(user_id)
                 username = f"@{user.username}" if user.username else f"ID: {user_id}"
-                user_lines.append(f"• {get_display_name(user)} ({username})")
+                display_name = get_universal_display_name(user, event.chat_id)
+                user_lines.append(f"• {display_name} ({username})")
             except Exception:
                 user_lines.append(f"• Не удалось найти пользователя (ID: {user_id})")
         text += "\n".join(user_lines)
-    text += "\n\n*Владелец бота всегда имеет доступ.*"
+    
+    text += "\n\n**Владелец бота всегда имеет доступ.**"
+    
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
@@ -2373,6 +2987,32 @@ async def delrpcreator_handler(event):
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rp\s+(on|off)$', x, re.IGNORECASE)))
+@error_handler
+async def rp_toggle_handler(event):
+    if not await is_owner(event): return
+    action = event.pattern_match.group(1).lower()
+    chat_id = event.chat_id
+    success_emoji = await get_emoji('success')
+
+    if action == 'on':
+        if chat_id in RP_ENABLED_CHATS:
+            text = "✅ **RP-команды уже включены в этом чате.**"
+        else:
+            RP_ENABLED_CHATS.add(chat_id)
+            toggle_rp_chat(chat_id, True)
+            text = f"**{success_emoji} RP-команды теперь ВКЛЮЧЕНЫ в этом чате.**"
+    else:
+        if chat_id not in RP_ENABLED_CHATS:
+            text = "ℹ️ **RP-команды и так были выключены в этом чате.**"
+        else:
+            RP_ENABLED_CHATS.discard(chat_id)
+            toggle_rp_chat(chat_id, False)
+            text = f"🗑️ **RP-команды теперь ВЫКЛЮЧЕНЫ в этом чате.**"
+    
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*listrpcreators$', x)))
 @error_handler
 async def listrpcreators_handler(event):
@@ -2386,61 +3026,98 @@ async def listrpcreators_handler(event):
             try:
                 user = await client.get_entity(user_id)
                 username = f"@{user.username}" if user.username else f"ID: {user_id}"
-                user_lines.append(f"• {get_display_name(user)} ({username})")
+                user_lines.append(f"• {get_universal_display_name(user)} ({username})")
             except Exception:
                 user_lines.append(f"• Не удалось найти пользователя (ID: {user_id})")
         text += "\n".join(user_lines)
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*setrpnick\s+(@?\S+)\s+(.+)$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*setrpnick((?:\s+-g)?)\s+([\s\S]+)$', x)))
 @error_handler
 async def setrpnick_handler(event):
     if not await is_owner(event): return
-    identifier, nickname = event.pattern_match.group(1), event.pattern_match.group(2).strip()
+
+    is_global = bool(event.pattern_match.group(1))
+    text_args = event.pattern_match.group(2).strip()
+    
     user = await get_target_user(event)
-    success_emoji = await get_emoji('success')
+    parts = text_args.split()
+    nickname = text_args
+    
     if not user:
-        text = f"❌ **Ошибка:** Не удалось найти пользователя `{identifier}`."
-    elif not nickname:
-        text = "❌ **Ошибка:** Вы не указали никнейм."
-    else:
-        set_rp_nick(user.id, nickname)
-        text = f"**{success_emoji} RP-ник для `{get_display_name(user)}` установлен на:** `{nickname}`."
+        try:
+            potential_user = await client.get_entity(parts[0])
+            if isinstance(potential_user, types.User):
+                user = potential_user
+                nickname = " ".join(parts[1:])
+        except (ValueError, TypeError, AttributeError): pass
+
+    if not user:
+        await safe_edit_message(event, "**❌ Ошибка:** Не удалось найти пользователя.", [])
+        return
+    if not nickname:
+        await safe_edit_message(event, "**❌ Ошибка:** Вы не указали никнейм.", [])
+        return
+
+    chat_id = 0 if is_global else event.chat_id
+    set_rp_nick(user.id, chat_id, nickname)
+    
+    nick_type = "Глобальный RP-ник" if is_global else "RP-ник для этого чата"
+    text = f"✅ **{nick_type} для `{get_universal_display_name(user, event.chat_id)}` установлен на:** `{nickname}`."
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*delrpnick\s+(@?\S+)$', x)))
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*delrpnick((?:\s+-g)?)(?:\s+(@?\S+))?$', x)))
 @error_handler
 async def delrpnick_handler(event):
     if not await is_owner(event): return
-    identifier = event.pattern_match.group(1)
+    
+    is_global = bool(event.pattern_match.group(1))
     user = await get_target_user(event)
+    
     if not user:
-        text = f"❌ **Ошибка:** Не удалось найти пользователя `{identifier}`."
-    elif not get_rp_nick(user.id):
-        text = f"ℹ️ У пользователя `{get_display_name(user)}` не установлен RP-ник."
+        await safe_edit_message(event, "**❌ Ошибка:** Не удалось найти пользователя.", [])
+        return
+        
+    display_name = get_universal_display_name(user, event.chat_id).replace('[','').replace(']','')
+
+    if is_global:
+        # Логика для удаления глобального ника
+        if get_rp_nick(user.id, 0):
+            delete_rp_nick(user.id, 0)
+            text = f"🗑️ **Глобальный RP-ник для `{display_name}` удалён.**"
+        else:
+            text = f"ℹ️ У пользователя `{display_name}` не установлен глобальный RP-ник."
     else:
-        delete_rp_nick(user.id)
-        text = f"🗑️ **RP-ник для `{get_display_name(user)}` удалён.**"
+        # Новая логика: отключаем ник для текущего чата, устанавливая "none"
+        set_rp_nick(user.id, event.chat_id, 'none')
+        text = f"✅ **Отображение RP-ника для `{display_name}` в этом чате отключено.** Теперь будет использоваться его настоящее имя."
+
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
-
-@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rpnick\s+(@?\S+)$', x)))
+    
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*rpnick(?:\s+(@?\S+))?$', x)))
 @error_handler
 async def rpnick_handler(event):
     if not await is_owner(event): return
-    identifier = event.pattern_match.group(1)
+
     user = await get_target_user(event)
-    rp_nick_emoji = await get_emoji('rp_nick')
     if not user:
-        text = f"❌ **Ошибка:** Не удалось найти пользователя `{identifier}`."
-    else:
-        nickname = get_rp_nick(user.id)
-        if nickname:
-            text = f"**{rp_nick_emoji} RP-ник для `{get_display_name(user)}`:** `{nickname}`."
-        else:
-            text = f"ℹ️ У пользователя `{get_display_name(user)}` не установлен RP-ник."
+        await safe_edit_message(event, "**❌ Ошибка:** Не удалось найти пользователя.", [])
+        return
+
+    chat_nick = get_rp_nick(user.id, event.chat_id)
+    global_nick = get_rp_nick(user.id, 0)
+    rp_nick_emoji = await get_emoji('rp_nick')
+    
+    # Очищаем имя перед выводом
+    display_name = get_universal_display_name(user, event.chat_id).replace('[','').replace(']','')
+    
+    text = f"**{rp_nick_emoji} RP-ники для `{display_name}`:**\n"
+    text += f"• **В этом чате:** `{chat_nick}`\n" if chat_nick else "• **В этом чате:** не установлен\n"
+    text += f"• **Глобальный:** `{global_nick}`" if global_nick else "• **Глобальный:** не установлен"
+    
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
@@ -2448,54 +3125,296 @@ async def rpnick_handler(event):
 @error_handler
 async def generic_rp_handler(event):
     if not event.raw_text: return
-    parts = event.raw_text.split()
+
+    is_prefixed = event.raw_text.startswith(CONFIG['prefix'])
+    command_text = event.raw_text[len(CONFIG['prefix']):] if is_prefixed else event.raw_text
+    
+    parts = command_text.split()
     if not parts: return
+
     command = parts[0].lower()
-    args = parts[1:]
+
     if command not in RP_COMMANDS: return
     if event.chat_id not in RP_ENABLED_CHATS: return
+    
     if event.is_group and not await is_owner(event):
-        is_public_chat, has_personal_access = event.chat_id in RP_PUBLIC_CHATS, event.sender_id in RP_ACCESS_LIST.get(event.chat_id, set())
+        is_public_chat = event.chat_id in RP_PUBLIC_CHATS
+        has_personal_access = event.sender_id in RP_ACCESS_LIST.get(event.chat_id, set())
         if not (is_public_chat or has_personal_access): return
+
     rp_data = RP_COMMANDS[command]
     sender = await event.get_sender()
-    sender_display_name = await get_rp_display_name(sender)
-    sender_link = f"[{sender_display_name}](tg://user?id={sender.id})"
-    target_user, comment_text = None, ""
+    sender_display_name = await get_rp_display_name(sender, event.chat_id)
+
+    # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+    # Возвращаем простую и надёжную очистку имени от символов, ломающих ссылку.
+    clean_sender_name = sender_display_name.replace('[', '').replace(']', '')
+    sender_link = f"[{clean_sender_name}](tg://user?id={sender.id})"
+
+    target_user = None
+    raw_args_text = ""
+    
+    command_and_args = command_text.split(maxsplit=1)
     reply = await event.get_reply_message()
     if reply:
-        target_user, comment_text = await reply.get_sender(), " ".join(args)
-    elif args:
+        target_user = await reply.get_sender()
+        if len(command_and_args) > 1: raw_args_text = command_and_args[1]
+    elif len(command_and_args) > 1:
+        args_part = command_and_args[1]
+        args_parts = args_part.split(maxsplit=1)
         try:
-            potential_target = await client.get_entity(args[0])
-            if isinstance(potential_target, types.User):
-                target_user, comment_text = potential_target, " ".join(args[1:])
-            else:
-                comment_text = " ".join(args)
+            potential_target = await client.get_entity(args_parts[0])
+            target_user = potential_target
+            if len(args_parts) > 1: raw_args_text = args_parts[1]
         except Exception:
-            comment_text = " ".join(args)
-    if not target_user and event.is_private:
-        if event.out: target_user = await event.get_chat()
-        else: target_user = await client.get_me()
+            target_user, raw_args_text = None, args_part
+    
+    if not target_user and event.is_private: target_user = await event.get_chat()
+
     target_link = ""
     if target_user:
-        target_display_name = await get_rp_display_name(target_user)
-        target_link = f" [{target_display_name}](tg://user?id={target_user.id})"
+        target_display_name = await get_rp_display_name(target_user, event.chat_id)
+        # Возвращаем простую и надёжную очистку.
+        clean_target_name = target_display_name.replace('[', '').replace(']', '')
+        target_link = f" [{clean_target_name}](tg://user?id={target_user.id})"
+
     me = await client.get_me()
     is_premium = me.premium
-    final_emoji = rp_data.get('standard_emoji', '')
-    if is_premium and rp_data.get('premium_emoji_id'):
-        final_emoji = f"[{final_emoji}](emoji/{rp_data['premium_emoji_id']})"
+    
+    base_emoji_md = ""
+    prem_ids = rp_data.get('premium_emoji_ids', [])
+    if is_premium and prem_ids:
+        placeholders = rp_data.get('standard_emoji', '')
+        if placeholders and len(placeholders) == len(prem_ids):
+            emoji_links = []
+            for i, doc_id in enumerate(prem_ids):
+                emoji_links.append(f"[{placeholders[i]}](emoji/{doc_id})")
+            base_emoji_md = "".join(emoji_links)
+        elif prem_ids:
+            placeholder = placeholders[0] if placeholders else '✨'
+            base_emoji_md = f"[{placeholder}](emoji/{random.choice(prem_ids)})"
+    else:
+        base_emoji_md = rp_data.get('standard_emoji', '')
+
     rp_action = rp_data['action']
-    message_text = ""
-    if not target_link: message_text = f"{final_emoji} | {sender_link} **{rp_action}** самого/саму себя"
-    else: message_text = f"{final_emoji} | {sender_link} **{rp_action}**{target_link}"
-    if comment_text:
-        comment_emoji = await get_emoji('comment')
-        message_text += f"\n{comment_emoji} {html.escape(comment_text)}"
-    parsed_text, entities = parser.parse(message_text)
-    if event.out: await event.edit(parsed_text, formatting_entities=entities)
-    else: await client.send_message(event.chat_id, parsed_text, formatting_entities=entities)
+    
+    if not target_link:
+        final_md_text = f"{base_emoji_md} | {sender_link} **{rp_action}** самого/саму себя"
+    else:
+        final_md_text = f"{base_emoji_md} | {sender_link} **{rp_action}**{target_link}"
+
+    final_text, final_entities = parser.parse(final_md_text)
+    final_entities = final_entities or []
+    
+    if raw_args_text:
+        comment_emoji_md = await get_emoji('comment')
+        parsed_emoji_text, emoji_entities = parser.parse(comment_emoji_md)
+        comment_prefix = f"\n{parsed_emoji_text} "
+        
+        len_before_prefix_utf16 = len(final_text.encode('utf-16-le')) // 2
+        if emoji_entities:
+            entity = emoji_entities[0]
+            entity.offset += len_before_prefix_utf16 + 1
+            final_entities.append(entity)
+        
+        len_before_comment_utf16 = len_before_prefix_utf16 + len(comment_prefix.encode('utf-16-le')) // 2
+        if event.message.entities:
+            try:
+                original_comment_offset_utf16 = (event.raw_text.encode('utf-16-le')).find(raw_args_text.encode('utf-16-le')) // 2
+                original_comment_len_utf16 = len(raw_args_text.encode('utf-16-le')) // 2
+                offset_difference = len_before_comment_utf16 - original_comment_offset_utf16
+                
+                for entity in event.message.entities:
+                    if entity.offset >= original_comment_offset_utf16 and \
+                       (entity.offset + entity.length) <= (original_comment_offset_utf16 + original_comment_len_utf16):
+                        new_entity_dict = entity.to_dict()
+                        new_entity_dict.pop('_', None)
+                        new_entity_dict['offset'] = entity.offset + offset_difference
+                        new_entity = type(entity)(**new_entity_dict)
+                        final_entities.append(new_entity)
+            except Exception as e:
+                await send_error_log(f"Ошибка обработки сущностей комментария: {e}", "generic_rp_handler", event)
+
+        final_text += comment_prefix + raw_args_text
+
+    if event.out:
+        await safe_edit_message(event, final_text, final_entities)
+    else:
+        await client.send_message(event.chat_id, final_text, formatting_entities=final_entities, reply_to=event.id)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*nonick\s+add((?:\s+-g)?)\s+([\s\S]+)$', x)))
+@error_handler
+async def nonick_add_handler(event):
+    if not await is_owner(event): return
+
+    is_global = bool(event.pattern_match.group(1))
+    text_args = event.pattern_match.group(2).strip()
+    
+    user = await get_target_user(event)
+    parts = text_args.split()
+    nickname = text_args
+    
+    if not user:
+        try:
+            potential_user = await client.get_entity(parts[0])
+            if isinstance(potential_user, types.User):
+                user = potential_user
+                nickname = " ".join(parts[1:])
+        except: pass
+
+    if not user:
+        await safe_edit_message(event, "**❌ Ошибка:** Не удалось найти пользователя.", [])
+        return
+    if not nickname:
+        await safe_edit_message(event, "**❌ Ошибка:** Вы не указали никнейм.", [])
+        return
+    
+    chat_id = 0 if is_global else event.chat_id
+    set_global_nick(user.id, chat_id, nickname)
+    
+    nick_type = "Глобальный ник" if is_global else "Ник для этого чата"
+    text = f"✅ **{nick_type} для `{get_display_name(user)}` установлен на:** `{nickname}`."
+    
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*nonick\s+del((?:\s+-g)?)(?:\s+(@?\S+))?$', x)))
+@error_handler
+async def nonick_del_handler(event):
+    if not await is_owner(event): return
+    
+    is_global = bool(event.pattern_match.group(1))
+    user = await get_target_user(event)
+    
+    if not user:
+        await safe_edit_message(event, "**❌ Ошибка:** Не удалось найти пользователя.", [])
+        return
+        
+    display_name = get_universal_display_name(user, event.chat_id).replace('[','').replace(']','')
+
+    if is_global:
+        # Логика для удаления глобального ника
+        if get_global_nick(user.id, 0):
+            delete_global_nick(user.id, 0)
+            text = f"🗑️ **Глобальный ник для `{display_name}` удалён.**"
+        else:
+            text = f"ℹ️ У пользователя `{display_name}` не установлен глобальный ник."
+    else:
+        # Новая логика: отключаем ник для текущего чата, устанавливая "none"
+        set_global_nick(user.id, event.chat_id, 'none')
+        text = f"✅ **Отображение универсального ника для `{display_name}` в этом чате отключено.**"
+
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*nonick\s+list((?:\s+-g)?)$', x)))
+@error_handler
+async def nonick_list_handler(event):
+    if not await is_owner(event): return
+    
+    is_global_list = bool(event.pattern_match.group(1))
+    chat_id = 0 if is_global_list else event.chat_id
+    nick_dict = GLOBAL_NICKS[chat_id]
+    list_type = "глобальных ников" if is_global_list else "ников для этого чата"
+    
+    if not nick_dict:
+        text = f"📋 **Список {list_type} пуст.**"
+    else:
+        text = f"📋 **Список {list_type}:**\n\n"
+        for user_id, nick in nick_dict.items():
+            try:
+                user = await client.get_entity(user_id)
+                text += f"• `{get_display_name(user)}` (`{user_id}`) -> `{nick}`\n"
+            except Exception:
+                text += f"• `ID: {user_id}` -> `{nick}`\n"
+                
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*block(?:\s+(@?\S+))?$', x)))
+@error_handler
+async def block_handler(event):
+    if not await is_owner(event): return
+    user_to_block = await get_target_user(event)
+    if not user_to_block:
+        text = "❌ **Ошибка:** Не удалось найти пользователя для блокировки."
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+    try:
+        await client(BlockRequest(id=user_to_block.id))
+        
+        # Логика для нового .blocklist
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO bot_blocklist (user_id) VALUES (?)", (user_to_block.id,))
+        conn.commit()
+        conn.close()
+        if user_to_block.id not in BOT_BLOCKED_USERS:
+            BOT_BLOCKED_USERS.add(user_to_block.id)
+
+        text = f"🔒 **Пользователь `{get_universal_display_name(user_to_block, event.chat_id)}` успешно заблокирован.**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+    except Exception as e:
+        text = f"❌ **Ошибка блокировки:** {str(e)}"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        await send_error_log(str(e), "block_handler", event)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*unblock(?:\s+(@?\S+))?$', x)))
+@error_handler
+async def unblock_handler(event):
+    if not await is_owner(event): return
+    user_to_unblock = await get_target_user(event)
+    if not user_to_unblock:
+        text = "❌ **Ошибка:** Не удалось найти пользователя для разблокировки."
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+    try:
+        await client(UnblockRequest(id=user_to_unblock.id))
+        
+        # Логика для нового .blocklist
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM bot_blocklist WHERE user_id = ?", (user_to_unblock.id,))
+        conn.commit()
+        conn.close()
+        BOT_BLOCKED_USERS.discard(user_to_unblock.id)
+
+        text = f"🔓 **Пользователь `{get_universal_display_name(user_to_unblock, event.chat_id)}` успешно разблокирован.**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+    except Exception as e:
+        text = f"❌ **Ошибка разблокировки:** {str(e)}"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        await send_error_log(str(e), "unblock_handler", event)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*blocklist$', x)))
+@error_handler
+async def blocklist_handler(event):
+    if not await is_owner(event): return
+    
+    if not BOT_BLOCKED_USERS:
+        text = "🚫 **Список заблокированных через бота пуст.**"
+        parsed_text, entities = parser.parse(text)
+        await safe_edit_message(event, parsed_text, entities)
+        return
+
+    text = "🚫 **Заблокированные через юзербот:**\n\n"
+    users_info = []
+    for user_id in BOT_BLOCKED_USERS:
+        try:
+            user = await client.get_entity(user_id)
+            users_info.append(f"• `{get_universal_display_name(user, event.chat_id)}` (ID: `{user.id}`)")
+        except Exception:
+            users_info.append(f"• `Не удалось получить инфо` (ID: `{user_id}`)")
+    
+    text += "\n".join(users_info)
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
 
 def debug_db():
     print("[Debug] Отладка базы данных")
@@ -2515,7 +3434,7 @@ def debug_db():
         print(f"[Error] Ошибка отладки базы данных: {e}")
 
 async def main():
-    global owner_id, BLOCKED_USERS
+    global owner_id, BOT_BLOCKED_USERS
     async with client:
         print("[Debug] Запуск основной функции внутри контекста клиента")
         try:
@@ -2533,18 +3452,22 @@ async def main():
             load_rp_creators()
             print("[Debug] Загрузка конфигурации прав администратора")
             load_admin_rights_config()
+            print("[Debug] Загрузка конфигов админки")
+            load_admin_configs()
+            print("[Debug] Загрузка конфига тегов")
+            load_tag_config()
+            print("[Debug] Загрузка глобальных ников")
+            load_global_nicks()
+            print("[Debug] Загрузка RP-ников")
+            load_rp_nicks()
+            print("[Debug] Загрузка списка заблокированных")
+            load_bot_blocklist()
             print("[Debug] Отладка базы данных")
             debug_db()
             me = await client.get_me()
             owner_id = me.id
             print(f"[Debug] Owner ID: {owner_id}")
-            try:
-                blocked = await client(GetBlockedRequest(offset=0, limit=100))
-                BLOCKED_USERS = [user.id for user in blocked.users]
-                print(f"[Debug] Загружено {len(BLOCKED_USERS)} заблокированных пользователей")
-            except Exception as e:
-                print(f"[Error] Ошибка загрузки заблокированных пользователей: {e}")
-                await send_error_log(str(e), "main")
+            
             await send_error_log("KoteUserBot запущен!", "main", is_test=True)
             print("[Debug] KoteUserBot успешно запущен и ожидает событий...")
             await client.run_until_disconnected()
