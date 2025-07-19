@@ -160,28 +160,22 @@ def init_db():
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
 
-        # Проверяем, существует ли таблица rp_commands вообще
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_commands'")
-        table_exists = cursor.fetchone()
+        # --- НАЧАЛО ИСПРАВЛЕНИЯ ---
 
-        if table_exists:
-            # Если таблица есть, проверяем её структуру на наличие старой колонки
+        # Миграция для rp_commands (уже была, оставляем)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_commands'")
+        if cursor.fetchone():
             cursor.execute("PRAGMA table_info(rp_commands)")
             columns = [column[1] for column in cursor.fetchall()]
-
-            # Если существует старая колонка premium_emoji_id, но нет новой premium_emoji_ids
             if 'premium_emoji_id' in columns and 'premium_emoji_ids' not in columns:
                 print("[Debug] Обнаружена старая структура 'rp_commands'. Миграция...")
                 cursor.execute('ALTER TABLE rp_commands RENAME TO rp_commands_old')
-                # Создаем новую таблицу с правильной структурой
                 cursor.execute('''CREATE TABLE rp_commands (
                                     command TEXT PRIMARY KEY,
                                     action TEXT NOT NULL,
-                                    premium_emoji_ids TEXT, -- Хранение списка как JSON-строки
+                                    premium_emoji_ids TEXT,
                                     standard_emoji TEXT)
                                ''')
-                # Переносим данные, преобразуя одиночный ID в JSON-массив
-                # Убедимся, что json_array доступна
                 cursor.execute('''INSERT INTO rp_commands (command, action, premium_emoji_ids, standard_emoji)
                                   SELECT command, action,
                                          CASE WHEN premium_emoji_id IS NOT NULL THEN json_array(premium_emoji_id) ELSE NULL END,
@@ -192,15 +186,64 @@ def init_db():
                 conn.commit()
                 print("[Debug] Миграция 'rp_commands' завершена.")
 
-        # Если таблицы не было или миграция завершена, создаем таблицу с новой структурой (если ее все еще нет)
+        # НОВАЯ МИГРАЦИЯ для rp_nicknames
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_nicknames'")
+        if cursor.fetchone():
+            cursor.execute("PRAGMA table_info(rp_nicknames)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'chat_id' not in columns:
+                print("[Debug] Обнаружена старая структура 'rp_nicknames'. Миграция...")
+                cursor.execute('ALTER TABLE rp_nicknames RENAME TO rp_nicknames_old')
+                cursor.execute('''
+                    CREATE TABLE rp_nicknames (
+                        user_id INTEGER NOT NULL,
+                        chat_id INTEGER NOT NULL,
+                        nickname TEXT NOT NULL,
+                        PRIMARY KEY (user_id, chat_id)
+                    )
+                ''')
+                # Переносим данные, предполагая что старые ники были глобальными (chat_id = 0)
+                cursor.execute('''
+                    INSERT INTO rp_nicknames (user_id, chat_id, nickname)
+                    SELECT user_id, 0, nickname FROM rp_nicknames_old
+                ''')
+                cursor.execute('DROP TABLE rp_nicknames_old')
+                conn.commit()
+                print("[Debug] Миграция 'rp_nicknames' завершена.")
+
+        # НОВАЯ МИГРАЦИЯ для global_nicknames (на всякий случай)
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='global_nicknames'")
+        if cursor.fetchone():
+            cursor.execute("PRAGMA table_info(global_nicknames)")
+            columns = [column[1] for column in cursor.fetchall()]
+            if 'chat_id' not in columns:
+                print("[Debug] Обнаружена старая структура 'global_nicknames'. Миграция...")
+                cursor.execute('ALTER TABLE global_nicknames RENAME TO global_nicknames_old')
+                cursor.execute('''
+                    CREATE TABLE global_nicknames (
+                        user_id INTEGER NOT NULL,
+                        chat_id INTEGER NOT NULL,
+                        nickname TEXT NOT NULL,
+                        PRIMARY KEY (user_id, chat_id)
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT INTO global_nicknames (user_id, chat_id, nickname)
+                    SELECT user_id, 0, nickname FROM global_nicknames_old
+                ''')
+                cursor.execute('DROP TABLE global_nicknames_old')
+                conn.commit()
+                print("[Debug] Миграция 'global_nicknames' завершена.")
+
+        # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+        # Создание таблиц (если их нет)
         cursor.execute('''CREATE TABLE IF NOT EXISTS rp_commands (
                             command TEXT PRIMARY KEY,
                             action TEXT NOT NULL,
                             premium_emoji_ids TEXT,
                             standard_emoji TEXT)
                        ''')
-
-        # Остальные таблицы (этот код уже есть у вас, он здесь для полноты)
         cursor.execute('CREATE TABLE IF NOT EXISTS silent_tags_config (param TEXT PRIMARY KEY, value TEXT)')
         cursor.execute('CREATE TABLE IF NOT EXISTS error_log_group (id INTEGER PRIMARY KEY, group_id INTEGER UNIQUE)')
         cursor.execute('CREATE TABLE IF NOT EXISTS silence_log_group (id INTEGER PRIMARY KEY, group_id INTEGER UNIQUE)')
@@ -2182,7 +2225,7 @@ async def delete_handler(event):
 @error_handler
 async def version_handler(event):
     if not await is_owner(event): return
-    module_version = "1.0.6"
+    module_version = "1.0.7"
     uptime, user = get_uptime(), await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
     branch, prefix, platform = get_git_branch(), CONFIG['prefix'], detect_platform()
