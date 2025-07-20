@@ -34,6 +34,9 @@ import asyncio
 import sqlite3
 import aiohttp
 import random
+from PIL import Image
+import io
+import google.generativeai as genai
 from collections import defaultdict
 from typing import List, Dict, Any
 import zipfile
@@ -55,11 +58,17 @@ except ImportError as e:
 
 def create_env_file():
     print("\n[Setup] Файл .env не найден. Создаём новый.")
+    print("--- Настройка Telegram ---")
     print("1. Перейдите на https://my.telegram.org")
     print("2. Войдите и выберите 'API development tools'")
     print("3. Создайте приложение, получите API_ID и API_HASH")
     api_id = input("\nВведите API_ID: ").strip()
     api_hash = input("Введите API_HASH: ").strip()
+
+    print("\n--- Настройка Gemini API ---")
+    print("1. Перейдите в Google AI Studio: https://aistudio.google.com/app/apikey")
+    print("2. Нажмите 'Create API key' и скопируйте ключ.")
+    gemini_key = input("3. Вставьте ваш Gemini API ключ сюда: ").strip()
 
     if not api_id.isdigit() or not api_hash:
         print("[Error] API_ID — число, API_HASH — не пустой!")
@@ -69,13 +78,36 @@ def create_env_file():
         with open('.env', 'w') as f:
             f.write(f"API_ID={api_id}\n")
             f.write(f"API_HASH={api_hash}\n")
+            if gemini_key:
+                f.write(f"GEMINI_API_KEY={gemini_key}\n")
         os.chmod('.env', 0o600)
+        print("\n[Setup] Файл .env успешно создан!")
     except Exception as e:
         print(f"[Error] Ошибка создания .env: {e}")
         sys.exit(1)
 
 if not os.path.exists('.env'):
     create_env_file()
+
+def update_env_file(key_to_update, new_value):
+    env_file = '.env'
+    lines = []
+    key_found = False
+    
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            lines = f.readlines()
+
+    with open(env_file, 'w') as f:
+        for line in lines:
+            if line.strip().startswith(f'{key_to_update}='):
+                f.write(f'{key_to_update}={new_value}\n')
+                key_found = True
+            else:
+                f.write(line)
+        
+        if not key_found:
+            f.write(f'{key_to_update}={new_value}\n')
 
 load_dotenv()
 api_id = int(os.getenv('API_ID'))
@@ -84,6 +116,34 @@ session = 'my_session'
 start_time = time.time()
 owner_id = None
 RESTART_FLAG = False
+chat_session = None
+
+GITHUB_REPO_URL = "https://github.com/AresUser1/KoteModules"
+
+SYSTEM_PROMPT = (
+    "Ты — KoteUserBot, остроумный и немного саркастичный ИИ-ассистент, встроенный в юзербот Telegram. "
+    "Твоя главная задача — действовать как прямое продолжение твоего пользователя ('хозяина'). "
+    "Ты должен в точности выполнять его инструкции, а не анализировать их со стороны. "
+    "Если хозяин просит 'потыкай в ответ', ты должен вывести 'тык тык тык', а не рассуждать о его просьбе. "
+    "Тебе будет предоставлена история предыдущих сообщений из чата для контекста. Используй этот контекст, чтобы твои ответы были в тему. "
+    "Ты помнишь предыдущие диалоги с хозяином. "
+    "Стиль общения — неформальный, с юмором. Ответы должны быть краткими и креативными, если не указано иное."
+)
+
+try:
+    gemini_api_key = os.getenv('GEMINI_API_KEY')
+    if gemini_api_key:
+        genai.configure(api_key=gemini_api_key)
+        gemini_model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=SYSTEM_PROMPT)
+
+        chat_session = gemini_model.start_chat(history=[]) # Просто присваиваем значение
+
+        print("[Debug] Клиент Gemini успешно настроен с сессией чата.")
+    else:
+        gemini_model = None
+except Exception as e:
+    print(f"[Error] Ошибка настройки Gemini: {e}")
+    gemini_model = None
 
 CONFIG = {
     'prefix': '.',
@@ -1243,71 +1303,79 @@ async def help_handler(event):
     args = event.pattern_match.group(1).lower().strip() if event.pattern_match and event.pattern_match.group(1) else None
     help_emoji = await get_emoji('help')
     prefix = CONFIG['prefix']
+    
     commands_help = {
-        'ping': f"**{prefix}ping**\nПоказывает скорость отклика Telegram и время работы бота.",
+        'add': f"**{prefix}add [@username/ID]**\nДобавляет пользователя в белый список для `{prefix}tag` (можно по ответу).",
+        'addrp': f"**{prefix}addrp <команда/алиас>|<действие>|<эмодзи>**\nДобавляет RP-команду. Доступно владельцу и создателям RP.\n**Пример:** `{prefix}addrp обнять/обнял|крепко обнял(а)|🤗`",
+        'addrpcreator': f"**{prefix}addrpcreator @user**\nДает пользователю право создавать RP-команды.",
+        'admin': f"**{prefix}admin [<конфиг>] @user <звание>**\nНазначает админа. Можно указать имя сохраненного конфига прав.",
+        'admincfgs': f"**{prefix}admincfgs**\nПоказывает список всех сохраненных конфигов прав.",
+        'adminhelp': f"**{prefix}adminhelp**\nПоказывает список всех доступных прав для настройки администрирования.",
+        'adminload': f"**{prefix}adminload <имя>**\nЗагружает сохраненный конфиг прав в текущие настройки.",
+        'admins': f"**{prefix}admins <право> <on/off>**\nВключает или выключает право в настройках для команды `{prefix}admin`.",
+        'adminsave': f"**{prefix}adminsave <имя>**\nСохраняет текущие настройки прав админа как именованный конфиг.",
+        'adminsettings': f"**{prefix}adminsettings**\nПоказывает текущие настройки прав для команды `{prefix}admin`.",
+        'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git-репозитория и автоматически перезапускает его.",
+        'backup': f"**{prefix}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное.",
+        'block': f"**{prefix}block @user**\nБлокирует пользователя (добавляет в ЧС Telegram).",
+        'blocklist': f"**{prefix}blocklist**\nПоказывает ваш черный список Telegram.",
+        'dele': f"**{prefix}dele <число>**\nУдаляет до 100 сообщений в группе (нужны права).",
+        'delrp': f"**{prefix}delrp <команда>**\nУдаляет RP-команду. Доступно владельцу и создателям RP.",
+        'delrpcreator': f"**{prefix}delrpcreator @user**\nЗабирает у пользователя право создавать RP-команды.",
+        'delrpnick': f"**{prefix}delrpnick [-g] [@user]**\nОтключает ник для чата или удаляет глобальный (с флагом `-g`).",
+        'dice': f"**{prefix}dice**\nБросает анимированный кубик 🎲.",
+        'g': f"**{prefix}g [инструкция]** (ответом на сообщение/фото)\nОсновная команда для взаимодействия с ИИ Gemini.\n\n• **Анализ фото:** Ответьте на фото и напишите инструкцию.\n• **Анализ текста:** Ответьте на сообщение и дайте инструкцию.\n• **Память:** Бот помнит предыдущие диалоги с ним.\n• **Контекст:** Бот анализирует несколько сообщений до вашего, чтобы лучше понять ситуацию.\n\n**Пример:** Ответить на фото кота и написать `{prefix}g придумай смешную подпись`.",
+        'greset': f"**{prefix}greset**\nПолностью очищает память (историю диалога) у Gemini.",
         'help': f"**{prefix}help [команда]**\nПоказывает список команд или справку по команде.",
         'helps': f"**{prefix}helps**\nПоказывает белый список для `{prefix}tag` в текущей группе.",
-        'info': f"**{prefix}info**\nПоказывает данные аккаунта (ник, username, ID, Premium).",
-        'version': f"**{prefix}version**\nПоказывает версию бота, ветку, платформу и проверяет обновления.",
-        'сипался': f"**{prefix}сипался**\nПокидает группу с прощальным сообщением.",
-        'dele': f"**{prefix}dele <число>**\nУдаляет до 100 сообщений в группе (нужны права).",
-        'add': f"**{prefix}add [@username/ID]**\nДобавляет пользователя в белый список для `{prefix}tag` (можно по ответу).",
-        'remove': f"**{prefix}remove [@username/ID]**\nУдаляет пользователя из белого списка для `{prefix}tag` (можно по ответу).",
-        'tag': f"**{prefix}tag [текст]** или **{prefix}tag [группа] | [шаблон] [-r]**\nТегирует участников чата.\n\n**Классический режим (без `|`):**\n`{prefix}tag текст с форматом`\nТеги будут сверху (или снизу, см. `.tagsettings`), под ними ваш текст.\n\n**Режим с шаблоном (требует `|`):**\n`{prefix}tag [группа] | шаблон [-r]`\n• **группа**: `all`, `admins`, `random N`\n• **шаблон**: Текст, где `{{name}}` или `@Admin` заменяется на тег.\n• **-r**: Добавить случайную реакцию.\n\n**Примеры:**\n`{prefix}tag ✅ Сбор!`\n`{prefix}tag admins | {{name}}, зайди в игру!`\n`{prefix}tag random 5 | 🔥 {{name}} 🔥 -r`",
-        'stoptag': f"**{prefix}stoptag**\nОстанавливает выполнение `{prefix}tag`.",
-        'tagsettings': f"**{prefix}tagsettings [параметр] [значение]**\nНастраивает команду .tag.\n\n`delay <сек>` - задержка между тегами.\n`priority <id/username>` - приоритет отображения ника.\n`position <before/after>` - позиция тегов.",
-        'name': f"**{prefix}name <ник>**\nМеняет имя аккаунта.",
-        'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git-репозитория и автоматически перезапускает его.",
-        'restart': f"**{prefix}restart**\nПерезапускает бота для применения обновлений или в случае ошибок.",
-        'spam': f"**{prefix}spam <число> <текст>**\nОтправляет до 100 сообщений с задержкой 0.5с.",
-        'stopspam': f"**{prefix}stopspam**\nОстанавливает выполнение `{prefix}spam`.",
-        'stags': f"**{prefix}stags [on/off]**\nВключает или выключает Silent Tags (логи упоминаний).",
-        'stconfig': f"**{prefix}stconfig [параметр] [значение]**\nПоказывает или меняет настройки Silent Tags.\nПримеры:\n`{prefix}stconfig` - показать настройки\n`{prefix}stconfig silent true` - включить тихий режим\n`{prefix}stconfig ignore_users add @username` - добавить в игнор",
-        'mus': f"**{prefix}mus <запрос>**\nИщет музыку через @lybot и отправляет трек.",
-        'on': f"**{prefix}on**\nВключает бота для обработки команд.",
-        'off': f"**{prefix}off**\nВыключает бота (кроме `{prefix}on`).",
-        'setprefix': f"**{prefix}setprefix <префикс>**\nМеняет префикс команд (до 5 символов).",
-        'status': f"**{prefix}status**\nПоказывает статус бота, префикс, Silent Tags и время работы.",
-        'profile': f"**{prefix}profile [@username/ID] [groups]**\nПоказывает профиль пользователя (можно по ответу на сообщение).\nОтображает глобальный и RP-ник.\nДобавьте `groups` для отображения общих групп.",
-        'backup': f"**{prefix}backup**\nСоздаёт архив (.env, БД, whitelist) и отправляет в избранное.",
-        'dice': f"**{prefix}dice**\nБросает анимированный кубик 🎲.",
-        'typing': f"**{prefix}typing <время>**\nИмитирует набор текста (s, m, h, до 1 часа).",
-        'stoptyping': f"**{prefix}stoptyping**\nОстанавливает имитацию набора текста.",
-        'weather': f"**{prefix}weather <город>**\nПоказывает погоду для указанного города.",
-        'addrp': f"**{prefix}addrp <команда/алиас>|<действие>|<эмодзи>**\nДобавляет RP-команду. Доступно владельцу и создателям RP.\n**Пример:** `{prefix}addrp обнять/обнял|крепко обнял(а)|🤗`",
-        'delrp': f"**{prefix}delrp <команда>**\nУдаляет RP-команду. Доступно владельцу и создателям RP.",
-        'rplist': f"**{prefix}rplist**\nПоказывает список всех RP-команд. Доступно владельцу и создателям RP.",
-        'rp': f"**{prefix}rp <on/off|access add/remove/list @user/all>**\nУправление RP-командами в чате.",
-        'addrpcreator': f"**{prefix}addrpcreator @user**\nДает пользователю право создавать RP-команды.",
-        'delrpcreator': f"**{prefix}delrpcreator @user**\nЗабирает у пользователя право создавать RP-команды.",
+        'info': f"**{prefix}info**\nПоказывает данные вашего аккаунта (ник, username, ID, Premium).",
         'listrpcreators': f"**{prefix}listrpcreators**\nПоказывает список создателей RP-команд.",
-        'setrpnick': f"**{prefix}setrpnick [-g] [@user] <ник>**\nУстанавливает RP-ник.\nПо умолчанию для текущего чата. Флаг `-g` устанавливает глобальный ник. Ник `none` отключает ник в чате.",
-        'delrpnick': f"**{prefix}delrpnick [-g] [@user]**\nОтключает ник для чата или удаляет глобальный (с флагом `-g`).",
-        'rpnick': f"**{prefix}rpnick [@user]**\nПоказывает RP-ники пользователя (для чата и глобальный).",
-        'adminhelp': f"**{prefix}adminhelp**\nПоказывает список всех доступных прав для настройки администрирования.",
-        'adminsettings': f"**{prefix}adminsettings**\nПоказывает текущие настройки прав для команды `{prefix}admin`.",
-        'admins': f"**{prefix}admins <право> <on/off>**\nВключает или выключает право в настройках для команды `{prefix}admin`.",
-        'prefix': f"**{prefix}prefix @user <звание>**\nУстанавливает пользователю только звание (префикс) без реальных прав.",
-        'admin': f"**{prefix}admin [<конфиг>] @user <звание>**\nНазначает админа. Можно указать имя сохраненного конфига прав.",
-        'unprefix': f"**{prefix}unprefix @user**\nСнимает с пользователя только звание (префикс), не трогая права.",
-        'unadmin': f"**{prefix}unadmin @user**\nСнимает с пользователя все права администратора и звание.",
+        'mus': f"**{prefix}mus <запрос>**\nИщет музыку через @lybot и отправляет трек.",
+        'name': f"**{prefix}name <ник>**\nМеняет имя вашего аккаунта.",
         'nonick': f"**{prefix}nonick <add|del|list> [-g] ...**\nУправляет никами.\n`add [-g] <ник>` - добавить\n`del [-g]` - отключить/удалить ник.\n`list [-g]` - список ников.",
-        'block': f"**{prefix}block @user**\nБлокирует пользователя (добавляет в ЧС Telegram).",
+        'off': f"**{prefix}off**\nВыключает бота (кроме `{prefix}on`).",
+        'on': f"**{prefix}on**\nВключает бота для обработки команд.",
+        'ping': f"**{prefix}ping**\nПоказывает скорость отклика Telegram и время работы бота.",
+        'prefix': f"**{prefix}prefix @user <звание>**\nУстанавливает пользователю только звание (префикс) без реальных прав.",
+        'profile': f"**{prefix}profile [@username/ID] [groups]**\nПоказывает профиль пользователя (можно по ответу на сообщение).",
+        'remove': f"**{prefix}remove [@username/ID]**\nУдаляет пользователя из белого списка для `{prefix}tag` (можно по ответу).",
+        'restart': f"**{prefix}restart**\nПерезапускает бота.",
+        'rp': f"**{prefix}rp <on/off|access add/remove/list @user/all>**\nУправление RP-командами в чате.",
+        'rplist': f"**{prefix}rplist**\nПоказывает список всех RP-команд.",
+        'rpnick': f"**{prefix}rpnick [@user]**\nПоказывает RP-ники пользователя (для чата и глобальный).",
+        'sendub': f"**{prefix}sendub**\nОтправляет красивую инструкцию по установке юзербота.",
+        'setup': f"**{prefix}setup**\nЗапускает интерактивную настройку Gemini AI, если ключ не был установлен.",
+        'setprefix': f"**{prefix}setprefix <префикс>**\nМеняет префикс команд (до 5 символов).",
+        'setrpnick': f"**{prefix}setrpnick [-g] [@user] <ник>**\nУстанавливает RP-ник.\nПо умолчанию для текущего чата. Флаг `-g` устанавливает глобальный ник. Ник `none` отключает ник в чате.",
+        'сипался': f"**{prefix}сипался**\nПокидает группу с прощальным сообщением.",
+        'spam': f"**{prefix}spam <число> <текст>**\nОтправляет до 100 сообщений.",
+        'stags': f"**{prefix}stags [on/off]**\nВключает или выключает Silent Tags (логи упоминаний).",
+        'status': f"**{prefix}status**\nПоказывает статус бота, префикс, Silent Tags и время работы.",
+        'stconfig': f"**{prefix}stconfig [параметр] [значение]**\nНастраивает Silent Tags.",
+        'stopspam': f"**{prefix}stopspam**\nОстанавливает выполнение `{prefix}spam`.",
+        'stoptag': f"**{prefix}stoptag**\nОстанавливает выполнение `{prefix}tag`.",
+        'stoptyping': f"**{prefix}stoptyping**\nОстанавливает имитацию набора текста.",
+        'tag': f"**{prefix}tag [текст]** или **{prefix}tag [группа] | [шаблон] [-r]**\nТегирует участников чата.",
+        'tagsettings': f"**{prefix}tagsettings [параметр] [значение]**\nНастраивает команду .tag.",
+        'typing': f"**{prefix}typing <время>**\nИмитирует набор текста (s, m, h, до 1 часа).",
+        'unadmin': f"**{prefix}unadmin @user**\nСнимает с пользователя все права администратора и звание.",
         'unblock': f"**{prefix}unblock @user**\nРазблокирует пользователя.",
-        'blocklist': f"**{prefix}blocklist**\nПоказывает ваш черный список Telegram.",
-        'adminsave': f"**{prefix}adminsave <имя>**\nСохраняет текущие настройки прав админа как именованный конфиг.",
-        'adminload': f"**{prefix}adminload <имя>**\nЗагружает сохраненный конфиг прав в текущие настройки.",
-        'admincfgs': f"**{prefix}admincfgs**\nПоказывает список всех сохраненных конфигов прав.",
+        'unprefix': f"**{prefix}unprefix @user**\nСнимает с пользователя только звание (префикс), не трогая права.",
+        'version': f"**{prefix}version**\nПоказывает версию бота, ветку, платформу и проверяет обновления.",
+        'weather': f"**{prefix}weather <город>**\nПоказывает погоду для указанного города.",
     }
+    
     if args:
-        args = 'сипался' if args == 'сипался' else args
-        text = commands_help.get(args, f"**Ошибка:** Команда `{args}` не найдена! Используйте `{prefix}help`.")
-        text = f"{help_emoji} **Справка по команде `{args}`:**\n\n{text}"
+        args_clean = 'сипался' if args == 'сипался' else args
+        text = commands_help.get(args_clean, f"**Ошибка:** Команда `{args_clean}` не найдена! Используйте `{prefix}help`.")
+        text = f"{help_emoji} **Справка по команде `{args_clean}`:**\n\n{text}"
     else:
         text = (
             f"**{help_emoji} Команды KoteUserBot:**\n\n"
             "**Основные**\n"
-            f"`{prefix}ping`, `{prefix}info`, `{prefix}version`, `{prefix}help`, `{prefix}on`, `{prefix}off`, `{prefix}setprefix`, `{prefix}status`, `{prefix}backup`, `{prefix}autoupdate`, `{prefix}restart`\n\n"
+            f"`{prefix}ping`, `{prefix}info`, `{prefix}version`, `{prefix}help`, `{prefix}on`, `{prefix}off`, `{prefix}setprefix`, `{prefix}status`, `{prefix}backup`, `{prefix}autoupdate`, `{prefix}restart`, `{prefix}sendub`\n\n"
+            "**✨ AI / Gemini**\n"
+            f"`{prefix}g`, `{prefix}greset`, `{prefix}setup`\n\n"
             "**Управление пользователями**\n"
             f"`{prefix}profile`, `{prefix}name`, `{prefix}nonick`, `{prefix}block`, `{prefix}unblock`, `{prefix}blocklist`\n\n"
             "**Управление группой**\n"
@@ -1322,6 +1390,7 @@ async def help_handler(event):
             f"`{prefix}rp`, `{prefix}addrp`, `{prefix}delrp`, `{prefix}rplist`, `{prefix}setrpnick`, `{prefix}delrpnick`, `{prefix}rpnick`, `{prefix}addrpcreator`, `{prefix}delrpcreator`\n\n"
             f"Подробности: `{prefix}help <команда>`"
         )
+        
     parsed_text, entities = parser.parse(text)
     await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
     await event.message.delete()
@@ -2245,7 +2314,7 @@ async def delete_handler(event):
 @error_handler
 async def version_handler(event):
     if not await is_owner(event): return
-    module_version = "1.0.8"
+    module_version = "2.0.1"
     uptime, user = get_uptime(), await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
     branch, prefix, platform = get_git_branch(), CONFIG['prefix'], detect_platform()
@@ -3198,7 +3267,7 @@ async def generic_rp_handler(event):
     command = parts[0].lower()
 
     if command not in RP_COMMANDS: return
-    if event.chat_id not in RP_ENABLED_CHATS: return
+    if event.is_group and (event.chat_id not in RP_ENABLED_CHATS): return
     
     if event.is_group and not await is_owner(event):
         is_public_chat = event.chat_id in RP_PUBLIC_CHATS
@@ -3209,8 +3278,6 @@ async def generic_rp_handler(event):
     sender = await event.get_sender()
     sender_display_name = await get_rp_display_name(sender, event.chat_id)
 
-    # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-    # Возвращаем простую и надёжную очистку имени от символов, ломающих ссылку.
     clean_sender_name = sender_display_name.replace('[', '').replace(']', '')
     sender_link = f"[{clean_sender_name}](tg://user?id={sender.id})"
 
@@ -3232,12 +3299,17 @@ async def generic_rp_handler(event):
         except Exception:
             target_user, raw_args_text = None, args_part
     
-    if not target_user and event.is_private: target_user = await event.get_chat()
+    # --- НАЧАЛО ИСПРАВЛЕНИЯ ЛОГИКИ ДЛЯ ЛС ---
+    if not target_user and event.is_private:
+        if event.out:
+            target_user = await event.get_chat()
+        else:
+            target_user = await client.get_me()
+    # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
     target_link = ""
     if target_user:
         target_display_name = await get_rp_display_name(target_user, event.chat_id)
-        # Возвращаем простую и надёжную очистку.
         clean_target_name = target_display_name.replace('[', '').replace(']', '')
         target_link = f" [{clean_target_name}](tg://user?id={target_user.id})"
 
@@ -3303,6 +3375,7 @@ async def generic_rp_handler(event):
     if event.out:
         await safe_edit_message(event, final_text, final_entities)
     else:
+        # Для входящих сообщений мы отвечаем на них, а не редактируем
         await client.send_message(event.chat_id, final_text, formatting_entities=final_entities, reply_to=event.id)
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*nonick\s+add((?:\s+-g)?)\s+([\s\S]+)$', x)))
@@ -3479,6 +3552,212 @@ async def blocklist_handler(event):
     parsed_text, entities = parser.parse(text)
     await safe_edit_message(event, parsed_text, entities)
 
+gemini_usage_counter = 0
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}g\b.*', x, re.DOTALL)))
+@error_handler
+async def gemini_handler(event):
+    if not await is_owner(event):
+        return
+
+    if not gemini_model or not chat_session:
+        await safe_edit_message(event, "❌ **Ошибка:** Модель Gemini не настроена.\nИспользуйте `.setup` для настройки.", [])
+        return
+        
+    reply_message = await event.get_reply_message()
+    if not reply_message:
+        await safe_edit_message(event, "❗️ **Ошибка:** Команда `.g` должна быть ответом на сообщение.", [])
+        return
+
+    await safe_edit_message(event, "📝 **Собираю контекст...**", [])
+    
+    command_text = event.raw_text.split(maxsplit=1)
+    prompt_text = command_text[1] if len(command_text) > 1 else ""
+
+    chat_history = []
+    try:
+        limit = 10
+        offset_id = reply_message.id
+        
+        async for msg in client.iter_messages(event.chat_id, limit=limit, offset_id=offset_id, reverse=True):
+            sender = await msg.get_sender()
+            sender_name = get_display_name(sender) if sender else "Неизвестный"
+            chat_history.append(f"[{sender_name}]: {msg.text}")
+    except Exception as e:
+        print(f"[Error] Не удалось получить историю чата: {e}")
+
+    context_str = "\n".join(chat_history)
+    
+    inputs = []
+    
+    if context_str:
+        inputs.append(f"Вот несколько предыдущих сообщений в чате для контекста:\n---\n{context_str}\n---")
+
+    if reply_message.photo:
+        try:
+            photo_bytes = await client.download_media(reply_message.photo, file=bytes)
+            img = Image.open(io.BytesIO(photo_bytes))
+            inputs.append(img)
+        except Exception as e:
+            await safe_edit_message(event, f"❌ **Ошибка:** Не удалось обработать фото: {e}", [])
+            return
+
+    if reply_message.text:
+        sender = await reply_message.get_sender()
+        sender_name = get_display_name(sender) if sender else "Неизвестный"
+        inputs.append(f"Текущее сообщение от [{sender_name}], на которое я отвечаю: \"{reply_message.text}\"")
+
+    if prompt_text:
+        inputs.append(f"Моя инструкция: \"{prompt_text}\"")
+    else:
+        inputs.append("Моя инструкция: \"Остроумно и к месту отреагируй на текущее сообщение, учитывая контекст диалога.\"")
+
+    global gemini_usage_counter
+    gemini_usage_counter += 1
+    
+    await safe_edit_message(event, "🧠 **Думаю над вашим запросом...**", [])
+    
+    try:
+        response = await chat_session.send_message_async(inputs)
+        
+        final_text = (
+            f"🧠 [{gemini_usage_counter}/∞]\n\n"
+            f"✨ **Gemini:**\n{response.text}"
+        )
+        await safe_edit_message(event, final_text, [])
+
+    except Exception as e:
+        error_text = f"❌ **Произошла ошибка при обращении к Gemini:**\n`{str(e)}`"
+        await safe_edit_message(event, error_text, [])
+        await send_error_log(str(e), "gemini_handler", event)
+
+@client.on(events.NewMessage)
+async def gemini_setup_handler(event):
+    # Проверяем, что это личное сообщение, ответ и от владельца
+    if not (event.is_private and event.is_reply and await is_owner(event)):
+        return
+
+    try:
+        # Получаем ID сообщения, на которое отвечаем
+        reply_to_id = event.message.reply_to.reply_to_msg_id
+        # Получаем само сообщение по его ID
+        reply_to_msg = await client.get_messages(event.chat_id, ids=reply_to_id)
+        
+        # Дальнейшая логика остается без изменений
+        if reply_to_msg and '#GEMINI_SETUP' in reply_to_msg.text:
+            api_key = event.text.strip()
+            
+            if not api_key or ' ' in api_key or len(api_key) < 30:
+                await event.reply("❌ **Ошибка.** Похоже, это невалидный ключ. Попробуйте скопировать и вставить еще раз.")
+                return
+
+            # 1. Сохраняем ключ в файл для будущих запусков
+            update_env_file('GEMINI_API_KEY', api_key)
+            print("[Setup] Ключ Gemini успешно получен и сохранен в .env.")
+
+            # 2. Настраиваем Gemini в текущей сессии, чтобы не ждать перезапуска
+            global gemini_model, gemini_api_key
+            try:
+                genai.configure(api_key=api_key)
+                gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+                gemini_api_key = api_key # Обновляем глобальную переменную
+                print("[Setup] Клиент Gemini настроен в текущей сессии.")
+                
+                success_text = (
+                    "✅ **Отлично! Ключ сохранен и немедленно активирован.**\n\n"
+                    "Команда `.g` теперь должна работать. Перезапуск больше не требуется."
+                )
+                await event.reply(success_text)
+
+            except Exception as e:
+                # Если ключ невалидный, сообщаем об этом
+                gemini_model = None
+                gemini_api_key = None
+                await event.reply(f"❌ **Ошибка при активации ключа:** {e}\n\nКлюч был сохранен в файл, но он не работает. Пожалуйста, проверьте ключ и попробуйте снова через `.setup`.")
+                return
+
+    except Exception as e:
+        await event.reply(f"Произошла непредвиденная ошибка при сохранении ключа: {e}")
+        print(f"[Error] Ошибка в gemini_setup_handler: {e}")
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}setup$', x)))
+@error_handler
+async def setup_handler(event):
+    if not await is_owner(event):
+        return
+
+    # Проверяем, нужен ли ключ Gemini
+    if not gemini_api_key:
+        setup_message_text = (
+            "**✨ Настройка модуля Gemini AI**\n\n"
+            "Привет! Похоже, у тебя не настроен API-ключ для Gemini.\n\n"
+            "**Что делать:**\n"
+            "1. Перейди в [Google AI Studio](https://aistudio.google.com/app/apikey) и создай свой бесплатный API-ключ.\n"
+            "2. Скопируй его.\n"
+            "3. **Ответь на это сообщение**, вставив скопированный ключ.\n\n"
+            "Я автоматически сохраню его, и команда `.g` начнет работать после перезапуска.\n\n"
+            "*(#GEMINI_SETUP)*"
+        )
+        try:
+            await client.send_message('me', setup_message_text, parse_mode='markdown')
+            await event.edit("✅ **Инструкция по настройке Gemini отправлена вам в Избранное.**")
+        except Exception as e:
+            await event.edit(f"❌ **Ошибка:** Не удалось отправить сообщение: {e}")
+    else:
+        await event.edit("✅ **Ключ Gemini уже настроен!**")
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}greset$', x)))
+@error_handler
+async def greset_handler(event):
+    if not await is_owner(event):
+        return
+
+    global chat_session
+    if gemini_model:
+        chat_session = gemini_model.start_chat(history=[])
+        await safe_edit_message(event, "🧠 **Память Gemini очищена.**", [])
+    else:
+        await safe_edit_message(event, "❌ **Ошибка:** Модель Gemini не инициализирована.", [])
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}sendub$', x)))
+@error_handler
+async def sendub_handler(event):
+    if not await is_owner(event):
+        return
+
+    me = await client.get_me()
+    my_link = f"[{get_display_name(me)}](tg://user?id={me.id})"
+
+    text = f"""
+**📦 KoteUserBot | Установка**
+
+Привет! Вот инструкция по установке и настройке этого юзербота.
+
+**1️⃣ Требования:**
+   • `Python 3.10+`
+   • `Git`
+   • `pip` (менеджер пакетов Python)
+
+**2️⃣ Установка:**
+   1. Клонируй репозиторий:
+      `git clone {GITHUB_REPO_URL} && cd KoteModules`
+   2. Установи зависимости:
+      `pip install -r requirements.txt`
+   3. Запусти бота:
+      `python3 KoteUserBot.py`
+   4. Бот сам проведет тебя по настройке API ключей в консоли.
+
+**🚀 Первые шаги:**
+   • `{CONFIG['prefix']}help` - список всех команд.
+   • `{CONFIG['prefix']}setup` - (если нужно) запустить настройку Gemini AI.
+
+**❓ Поддержка:**
+   • По всем вопросам обращайся к {my_link}.
+"""
+
+    await client.send_message(event.chat_id, text, link_preview=False)
+    await event.delete()
+
 def debug_db():
     print("[Debug] Отладка базы данных")
     try:
@@ -3501,36 +3780,28 @@ async def main():
     async with client:
         print("[Debug] Запуск основной функции внутри контекста клиента")
         try:
-            print("[Debug] Инициализация базы данных")
+            # Все ваши функции загрузки остаются здесь
             init_db()
-            print("[Debug] Загрузка конфигурации")
             load_config()
-            print("[Debug] Загрузка белых списков")
             load_whitelists()
-            print("[Debug] Загрузка конфигурации Silent Tags")
             load_silent_tags_config()
-            print("[Debug] Загрузка конфигурации RP")
             load_rp_config()
-            print("[Debug] Загрузка создателей RP")
             load_rp_creators()
-            print("[Debug] Загрузка конфигурации прав администратора")
             load_admin_rights_config()
-            print("[Debug] Загрузка конфигов админки")
             load_admin_configs()
-            print("[Debug] Загрузка конфига тегов")
             load_tag_config()
-            print("[Debug] Загрузка глобальных ников")
             load_global_nicks()
-            print("[Debug] Загрузка RP-ников")
             load_rp_nicks()
-            print("[Debug] Загрузка списка заблокированных")
             load_bot_blocklist()
-            print("[Debug] Отладка базы данных")
             debug_db()
+            
             me = await client.get_me()
             owner_id = me.id
             print(f"[Debug] Owner ID: {owner_id}")
             
+            # Мы убрали отсюда автоматическую отправку сообщения.
+            # Теперь вы будете вызывать настройку вручную.
+
             await send_error_log("KoteUserBot запущен!", "main", is_test=True)
             print("[Debug] KoteUserBot успешно запущен и ожидает событий...")
             await client.run_until_disconnected()
@@ -3546,7 +3817,8 @@ if __name__ == '__main__':
         asyncio.run(main())
         if RESTART_FLAG:
             print("[Info] Перезапуск бота...")
-            os.execv(sys.executable, ['python'] + sys.argv)
+            # Эта строка теперь использует правильный путь к python/python3
+            os.execv(sys.executable, [sys.executable] + sys.argv)
     except KeyboardInterrupt:
         print("\n[Debug] Бот остановлен пользователем.")
     except Exception as e:
