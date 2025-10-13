@@ -13,7 +13,7 @@
 # Name: KoteUserBot
 # Authors: Kote
 # Commands:
-# .help | .ping | .info | .version | .status | .on | .off | .restart | .autoupdate | .backup | .setprefix
+# .help | .ping | .info | .version | .status | .on | .off | .restart | .autoupdate | .backup | .setprefix | .ай
 # .g | .gclear | .gres | .gmodel | .gmemon | .gmemoff | .gmemshow
 # .dox | .setdoxbot | .idprem
 # .name | .profile | .block | .unblock | .blocklist | .nonick
@@ -23,7 +23,6 @@
 # .autread | .autreadlist | .autoapprove | .autoapprovelist
 # .spam | .stopspam | .mus | .dice | .weather | .typing | .stoptyping | .fakeclear | .депаю | .заебу | .ghoul
 # .stags | .stconfig
-# .setemoji | .resetemoji | .listemoji
 # scope: Telegram_Only
 # meta developer: @Aaaggrrr
 
@@ -60,7 +59,7 @@ try:
     from telethon.extensions import markdown, html
     from telethon.tl.functions.channels import LeaveChannelRequest, EditAdminRequest, GetParticipantRequest
     from telethon.tl.functions.users import GetFullUserRequest
-    from telethon.tl.functions.contacts import GetBlockedRequest, UnblockRequest, BlockRequest
+    from telethon.tl.functions.contacts import AddContactRequest, DeleteContactsRequest, GetBlockedRequest, UnblockRequest, BlockRequest
     from telethon.tl.functions.account import UpdateProfileRequest
     from telethon.tl.types import PeerChannel, ChatAdminRights, ChannelParticipantAdmin
     from telethon.utils import get_display_name, get_peer_id
@@ -232,6 +231,10 @@ DB_FILE = 'koteuserbot.db'
 AUTO_READ_CHATS = set() # Добавьте эту строку
 AUTO_APPROVE_CHATS = set() # И эту
 
+CANNED_RESPONSES = {}
+USER_COOLDOWNS = {}  # Словарь для хранения времени последнего использования {user_id: timestamp}
+COOLDOWN_SECONDS = 15  # Длительность кулдауна в секундах
+
 def init_db():
     print("[Debug] Инициализация базы данных")
     conn = None
@@ -239,9 +242,7 @@ def init_db():
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
 
-        # --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-
-        # Миграция для rp_commands (уже была, оставляем)
+        # --- Миграции (оставляем без изменений) ---
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_commands'")
         if cursor.fetchone():
             cursor.execute("PRAGMA table_info(rp_commands)")
@@ -265,7 +266,6 @@ def init_db():
                 conn.commit()
                 print("[Debug] Миграция 'rp_commands' завершена.")
 
-        # НОВАЯ МИГРАЦИЯ для rp_nicknames
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rp_nicknames'")
         if cursor.fetchone():
             cursor.execute("PRAGMA table_info(rp_nicknames)")
@@ -281,7 +281,6 @@ def init_db():
                         PRIMARY KEY (user_id, chat_id)
                     )
                 ''')
-                # Переносим данные, предполагая что старые ники были глобальными (chat_id = 0)
                 cursor.execute('''
                     INSERT INTO rp_nicknames (user_id, chat_id, nickname)
                     SELECT user_id, 0, nickname FROM rp_nicknames_old
@@ -290,7 +289,6 @@ def init_db():
                 conn.commit()
                 print("[Debug] Миграция 'rp_nicknames' завершена.")
 
-        # НОВАЯ МИГРАЦИЯ для global_nicknames (на всякий случай)
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='global_nicknames'")
         if cursor.fetchone():
             cursor.execute("PRAGMA table_info(global_nicknames)")
@@ -314,9 +312,7 @@ def init_db():
                 conn.commit()
                 print("[Debug] Миграция 'global_nicknames' завершена.")
 
-        # --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
-        # Создание таблиц (если их нет)
+        # --- Создание всех таблиц ---
         cursor.execute('''CREATE TABLE IF NOT EXISTS rp_commands (
                             command TEXT PRIMARY KEY,
                             action TEXT NOT NULL,
@@ -337,7 +333,7 @@ def init_db():
         cursor.execute('CREATE TABLE IF NOT EXISTS bot_blocklist (user_id INTEGER PRIMARY KEY)')
         cursor.execute('CREATE TABLE IF NOT EXISTS auto_read_chats (chat_id INTEGER PRIMARY KEY)')
         cursor.execute('CREATE TABLE IF NOT EXISTS auto_approve_chats (chat_id INTEGER PRIMARY KEY)')
-
+        cursor.execute('CREATE TABLE IF NOT EXISTS name_history (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, timestamp TEXT NOT NULL)')
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS rp_nicknames (
                 user_id INTEGER NOT NULL,
@@ -354,8 +350,6 @@ def init_db():
                 PRIMARY KEY (user_id, chat_id)
             )
         ''')
-
-        # --- Gemini Tables ---
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS gemini_conversations (
                 chat_id TEXT PRIMARY KEY,
@@ -373,6 +367,16 @@ def init_db():
                 chat_id TEXT PRIMARY KEY
             )
         ''')
+
+        # --- Таблица для сохраненных ответов с правами и областью видимости ---
+        cursor.execute('''CREATE TABLE IF NOT EXISTS canned_responses (
+                            trigger_word TEXT PRIMARY KEY,
+                            response_chat_id INTEGER NOT NULL,
+                            response_message_id INTEGER NOT NULL,
+                            creator_id INTEGER NOT NULL,
+                            access_type TEXT NOT NULL DEFAULT 'owner',
+                            scope_chat_id INTEGER NOT NULL DEFAULT 0
+                        )''')
 
         cursor.execute('SELECT COUNT(*) FROM admin_rights_config')
         if cursor.fetchone()[0] == 0:
@@ -1062,6 +1066,25 @@ def load_bot_blocklist():
     finally:
         if conn: conn.close()
 
+def load_canned_responses():
+    """Загружает сохраненные ответы, права и область видимости из БД в память."""
+    global CANNED_RESPONSES
+    CANNED_RESPONSES.clear()
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    # Обновляем запрос, чтобы читать новое поле scope_chat_id
+    cursor.execute("SELECT trigger_word, response_chat_id, response_message_id, creator_id, access_type, scope_chat_id FROM canned_responses")
+    for trigger, chat_id, msg_id, creator_id, access, scope_id in cursor.fetchall():
+        CANNED_RESPONSES[trigger] = {
+            "chat_id": chat_id,
+            "msg_id": msg_id,
+            "creator_id": creator_id,
+            "access_type": access,
+            "scope_chat_id": scope_id
+        }
+    conn.close()
+    print(f"[Debug] Загружено {len(CANNED_RESPONSES)} сохраненных ответов.")
+
 async def get_silence_log_group():
     print("[Debug] Получение ID группы Silent Tags")
     try:
@@ -1438,6 +1461,20 @@ async def get_emoji(key):
     except Exception:
         return EMOJI_SET['regular'].get(key, '❔')
 
+async def get_emoji_html(key):
+    """Gets an emoji and formats it for HTML, handling custom emojis."""
+    emoji_md = await get_emoji(key)
+    # Проверяем, является ли эмодзи кастомным в формате Markdown
+    match = re.match(r'\[(.*?)\]\(emoji/(\d+)\)', emoji_md)
+    if match:
+        text = match.group(1)
+        emoji_id = match.group(2)
+        # Для HTML кастомные эмодзи используют специальный тег tg-emoji
+        return f'<tg-emoji emoji-id="{emoji_id}">{text}</tg-emoji>'
+    else:
+        # Обычные эмодзи являются просто текстовыми символами и не требуют обработки
+        return emoji_md
+
 async def is_owner(event):
     return event.sender_id == owner_id
 
@@ -1462,42 +1499,29 @@ async def get_user_id(identifier):
 
 async def get_target_user(event):
     """Улучшенная функция для определения цели команды."""
-    identifier = None
-    
-    # Сначала пытаемся найти явное указание (@username, ID) в тексте команды
+    # Сначала ищем явное указание (@username, ID) в тексте команды
     text_after_command = " ".join(event.text.split()[1:])
     if text_after_command:
-        # Проверяем, есть ли упоминание в сущностях сообщения
-        if event.message.entities:
-            for entity, text_slice in event.message.get_entities_text():
-                if isinstance(entity, (types.MessageEntityMentionName, types.MessageEntityTextUrl)):
-                    try:
-                        return await client.get_entity(entity.user_id if hasattr(entity, 'user_id') else text_slice)
-                    except Exception:
-                        pass # Если не получилось, пробуем дальше
-        
-        # Если в сущностях нет, пробуем первый аргумент
         identifier = text_after_command.split()[0]
-
-    # Если нашли идентификатор в тексте, работаем только с ним
-    if identifier:
         try:
-            # Пытаемся получить пользователя по @username или ID
-            return await client.get_entity(identifier)
+            # Пытаемся получить пользователя по @username, ID, и т.д.
+            user = await client.get_entity(identifier)
+            # Если успешно, сразу возвращаем этого пользователя
+            return user
         except Exception:
-            # Если указали пользователя, но он не найден, возвращаем ошибку (None)
-            # и не ищем дальше, чтобы не пробить случайно собеседника
-            return None
+            # Если не получилось, ничего страшного. Просто продолжим и проверим ответ.
+            pass
 
-    # Если в тексте никого не указали, ищем цель в ответе на сообщение
+    # Если в тексте не было пользователя (или найти не удалось), ищем цель в ответе
     reply = await event.get_reply_message()
     if reply:
         return await reply.get_sender()
 
-    # И только в последнюю очередь, если это ЛС, берем собеседника
+    # В последнюю очередь, если это ЛС, берем собеседника
     if event.is_private:
         return await event.get_chat()
 
+    # Если никого не нашли
     return None
 
 async def get_target_and_text(event):
@@ -1687,173 +1711,524 @@ async def help_handler(event):
     args_str = event.pattern_match.group(1)
     args = args_str.lower().strip() if args_str else None
     
-    help_emoji = await get_emoji('help')
     prefix = CONFIG['prefix']
-    
-    stags_help_text = (
-        f"**{prefix}stags [on/off]**\n"
-        "Включает/выключает секретное отслеживание упоминаний.\n\n"
-        "Silent Tags — это система, которая тайно отслеживает все упоминания вашего аккаунта в чатах и пересылает их в специальную группу-лог, не оставляя в исходном чате прочитанных уведомлений.\n\n"
-        "**Использование:**\n"
-        f"• `{prefix}stags on` - Включить систему.\n"
-        f"• `{prefix}stags off` - Выключить систему.\n"
-        f"• `{prefix}stags` - Проверить текущий статус.\n\n"
-        f"Для тонкой настройки используйте команду `{prefix}stconfig`."
-    )
-    
-    stconfig_help_text = (
-        f"**{prefix}stconfig [параметр] [значение]**\n"
-        "Настройки для .stags.\n\n"
-        "Команда для тонкой настройки поведения Silent Tags. Вызов без аргументов покажет текущие настройки.\n\n"
-        "**1. Переключатели (true/false):**\n"
-        f"• `silent <true/false>` - если `true`, бот не будет писать в чат временное сообщение \"Silent Tags теперь включены\".\n"
-        f"  *Пример:* `{prefix}stconfig silent true`\n"
-        f"• `ignore_bots <true/false>` - если `true`, упоминания от других ботов будут игнорироваться.\n"
-        f"  *Пример:* `{prefix}stconfig ignore_bots true`\n"
-        f"• `ignore_blocked <true/false>` - если `true`, упоминания от заблокированных вами пользователей будут игнорироваться.\n"
-        f"  *Пример:* `{prefix}stconfig ignore_blocked true`\n\n"
-        "**2. Списки исключений (add/remove):**\n"
-        f"• `ignore_users <add/remove> <@user/ID>` - добавить или удалить пользователя в список игнорируемых.\n"
-        f"  *Пример:* `{prefix}stconfig ignore_users add @username`\n"
-        f"• `ignore_chats <add/remove> <ID/this>` - добавить или удалить чат в список исключений.\n"
-        f"  *Пример:* `{prefix}stconfig ignore_chats add this`"
-    )
 
-    commands_help = {
-        'help': f"**{prefix}help [команда]**\nПоказывает этот список команд или подробную справку по конкретной команде.",
-        'ping': f"**{prefix}ping**\nПоказывает скорость отклика Telegram и время работы бота (аптайм).",
-        'info': f"**{prefix}info**\nПоказывает информацию о вашем аккаунте.",
-        'version': f"**{prefix}version**\nПоказывает версию бота и проверяет обновления.",
-        'status': f"**{prefix}status**\nПоказывает текущий статус бота.",
-        'on': f"**{prefix}on**\nВключает бота для обработки всех команд.",
-        'off': f"**{prefix}off**\nВыключает бота (кроме команды `{prefix}on`).",
-        'restart': f"**{prefix}restart**\nПерезапускает юзербота.",
-        'autoupdate': f"**{prefix}autoupdate**\nОбновляет файлы бота из Git и перезапускает его.",
-        'backup': f"**{prefix}backup**\nСоздаёт бэкап и отправляет в избранное.",
-        'setprefix': f"**{prefix}setprefix <новый префикс>**\nМеняет префикс для вызова команд.",
-        'g': f"**{prefix}g [текст | медиа]**\nЗадать вопрос Gemini AI (понимает контекст из ответов).",
-        'gclear': f"**{prefix}gclear**\nОчищает историю диалога с Gemini в этом чате.",
-        'gres': f"**{prefix}gres**\nСбрасывает всю память Gemini во всех чатах.",
-        'gmodel': f"**{prefix}gmodel [название]**\nУзнать или сменить модель Gemini.",
-        'gmemon': f"**{prefix}gmemon**\nВключает память Gemini в этом чате.",
-        'gmemoff': f"**{prefix}gmemoff**\nОтключает память Gemini в этом чате.",
-        'gmemshow': f"**{prefix}gmemshow**\nПоказывает историю памяти Gemini.",
-        'name': f"**{prefix}name <новый ник>**\nМеняет имя вашего аккаунта.",
-        'profile': f"**{prefix}profile [@user] [groups]**\nПоказывает подробный профиль пользователя.",
-        'block': f"**{prefix}block @user**\nБлокирует пользователя.",
-        'unblock': f"**{prefix}unblock @user**\nРазблокирует пользователя.",
-        'blocklist': f"**{prefix}blocklist**\nПоказывает список заблокированных через бота.",
-        'nonick': f"**{prefix}nonick <add|del|list> ...**\nУправляет универсальными никами.",
-        'tag': (f"**{prefix}tag [кого?] | [текст] [-r]**\nОчень гибкая команда для упоминания участников чата.\n\n"
-                f"Подробности: `{prefix}help tag`"),
-        'stoptag': f"**{prefix}stoptag**\nОстанавливает тегирование.",
-        'tagsettings': f"**{prefix}tagsettings [параметр] [значение]**\nНастраивает команду .tag.",
-        'add': f"**{prefix}add [@user]**\nДобавляет юзера в белый список тега.",
-        'remove': f"**{prefix}remove [@user]**\nУдаляет юзера из белого списка тега.",
-        'helps': f"**{prefix}helps**\nПоказывает белый список тега для этого чата.",
-        'dele': f"**{prefix}dele <число>**\nУдаляет сообщения (нужны права).",
-        'сипался': f"**{prefix}сипался**\nВыход из текущей группы.",
-        'admin': f"**{prefix}admin [@user] [звание]**\nНазначает пользователя админом.",
-        'unadmin': f"**{prefix}unadmin @user**\nСнимает все права и звание.",
-        'prefix': f"**{prefix}prefix @user <звание>**\nУстанавливает только звание.",
-        'unprefix': f"**{prefix}unprefix @user**\nСнимает только звание.",
-        'admins': f"**{prefix}admins <право> <on/off>**\nНастраивает права по умолчанию для `.admin`.",
-        'adminsettings': f"**{prefix}adminsettings**\nПоказывает текущие настройки прав для `.admin`.",
-        'adminhelp': f"**{prefix}adminhelp**\nСправка по доступным правам админа.",
-        'adminsave': f"**{prefix}adminsave <имя>**\nСохраняет текущие права как конфиг.",
-        'adminload': f"**{prefix}adminload <имя>**\nЗагружает конфиг прав.",
-        'admincfgs': f"**{prefix}admincfgs**\nСписок сохраненных конфигов прав.",
-        'rp': f"**{prefix}rp <on/off|access ...>**\nУправляет доступом к РП-командам в чате.",
-        'addrp': f"**{prefix}addrp <команда>|<действие>|<эмодзи>**\nДобавляет РП-команду.",
-        'delrp': f"**{prefix}delrp <команда|all|prem|simple>**\nУдаляет РП-команды.",
-        'rplist': f"**{prefix}rplist**\nСписок всех РП-команд.",
-        'rpcopy': f"**{prefix}rpcopy**\nКопирует РП-команды из списка другого бота (в ответе).",
-        'setrpnick': f"**{prefix}setrpnick [-g] [@user] <ник>**\nУстанавливает РП-ник.",
-        'delrpnick': f"**{prefix}delrpnick [-g] [@user]**\nУдаляет/отключает РП-ник.",
-        'rpnick': f"**{prefix}rpnick [@user]**\nПоказывает РП-ники пользователя.",
-        'addrpcreator': f"**{prefix}addrpcreator @user**\nДает право создавать РП.",
-        'delrpcreator': f"**{prefix}delrpcreator @user**\nЗабирает право создавать РП.",
-        'listrpcreators': f"**{prefix}listrpcreators**\nСписок создателей РП.",
-        'spam': f"**{prefix}spam <число> <текст>**\nНачинает спам сообщениями.",
-        'stopspam': f"**{prefix}stopspam**\nОстанавливает спам.",
-        'mus': f"**{prefix}mus <запрос>**\nИщет и отправляет музыку.",
-        'dice': f"**{prefix}dice**\nОтправляет анимированный кубик 🎲.",
-        'weather': f"**{prefix}weather <город>**\nПоказывает погоду.",
-        'typing': f"**{prefix}typing <время>**\nИмитирует набор текста.",
-        'stoptyping': f"**{prefix}stoptyping**\nОстанавливает имитацию.",
-        'fakeclear': f"**{prefix}fakeclear**\nШуточная очистка диалога.",
-        'депаю': f"**{prefix}депаю <ставка>**\nИспытай удачу в казино.",
-        'заебу': f"**{prefix}заебу <число> <ответ>**\nНачинает \"заёбывать\" пользователя.",
-        'ghoul': f"**{prefix}ghoul**\nЗапускает тот самый \"1000-7\" счетчик.",
-        'stags': stags_help_text,
-        'stconfig': stconfig_help_text,
-        'autread': f"**{prefix}autread <on/off> [this]**\nВключает авточтение сообщений (везде или в этом чате).",
-        'autreadlist': f"**{prefix}autreadlist**\nПоказывает, где включено авточтение.",
-        'autoapprove': f"**{prefix}autoapprove <on/off> [this]**\nВключает автоодобрение заявок на вступление.",
-        'autoapprovelist': f"**{prefix}autoapprovelist**\nПоказывает, где включено автоодобрение.",
-        'idprem': f"**{prefix}idprem**\nПоказывает ID премиум-эмодзи.",
-        'dox': f"**{prefix}dox [@user]**\nИщет информацию о пользователе.",
-        'setdoxbot': f"**{prefix}setdoxbot [@bot]**\nУстанавливает вашего личного Dox-бота.",
+    commands_data = {
+        # --- ⚙️ Основные ---
+        'help': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}help [команда]`", "short_desc": "Показывает это меню или подробную справку.",
+            "full_desc": "Отображает список всех доступных команд. Если указать название команды, покажет подробную справку только по ней.",
+            "examples": [f"`{prefix}help`", f"`{prefix}help tag`"]
+        },
+        'ping': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}ping`", "short_desc": "Проверяет скорость ответа и аптайм.",
+            "full_desc": "Отправляет запрос к серверам Telegram для измерения задержки (пинга). Также показывает, как долго бот находится в рабочем состоянии (аптайм).",
+            "examples": [f"`{prefix}ping`"]
+        },
+        'status': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}status`", "short_desc": "Показывает статус модулей бота.",
+            "full_desc": "Отображает текущее состояние основных модулей юзербота: включен ли сам бот, активны ли Silent Tags, а также текущий префикс и аптайм.",
+            "examples": [f"`{prefix}status`"]
+        },
+        'restart': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}restart`", "short_desc": "Перезапускает юзербота.",
+            "full_desc": "Безопасно останавливает и снова запускает процесс юзербота. Полезно для применения обновлений или исправления зависаний.",
+            "examples": [f"`{prefix}restart`"]
+        },
+        'on': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}on`", "short_desc": "Включает бота.",
+            "full_desc": "Активирует обработку всех команд. Если бот был выключен через `.off`, эта команда вернет его в рабочее состояние.",
+            "examples": [f"`{prefix}on`"]
+        },
+        'off': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}off`", "short_desc": "Выключает бота.",
+            "full_desc": "Деактивирует обработку всех команд (кроме `.on`) и фоновых задач (stags, авточтение). Полезно для временной приостановки работы.",
+            "examples": [f"`{prefix}off`"]
+        },
+        'ай': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}ай`", "short_desc": "Показывает ваш ID или ID пользователя в ответе.",
+            "full_desc": "Быстрая команда для получения ID. Если написать просто, покажет ваш ID и юзернейм. Если ответить на сообщение другого пользователя, покажет его ID и юзернейм.",
+            "examples": [f"`{prefix}ай`", f"`{prefix}ай` (в ответе на сообщение)"]
+        },
+        'info': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}info`", "short_desc": "Показывает информацию о вашем аккаунте.",
+            "full_desc": "Выводит основную информацию о вашем аккаунте: ник, юзернейм, ID и статус Telegram Premium.",
+            "examples": [f"`{prefix}info`"]
+        },
+        'version': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}version`", "short_desc": "Показывает версию бота и обновления.",
+            "full_desc": "Отображает текущую версию юзербота, ветку Git, аптайм и проверяет наличие новых версий на GitHub.",
+            "examples": [f"`{prefix}version`"]
+        },
+        'autoupdate': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}autoupdate`", "short_desc": "Обновляет бота и перезапускает.",
+            "full_desc": "Автоматически скачивает последнюю версию файлов из репозитория GitHub и перезапускает бота для применения изменений.",
+            "examples": [f"`{prefix}autoupdate`"]
+        },
+        'backup': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}backup`", "short_desc": "Создаёт бэкап и отправляет в избранное.",
+            "full_desc": "Создает zip-архив с важными файлами конфигурации и базами данных, после чего отправляет его вам в 'Избранное'.",
+            "examples": [f"`{prefix}backup`"]
+        },
+        'setprefix': {
+            "category": "⚙️ Основные", "usage": f"`{prefix}setprefix <новый_префикс>`", "short_desc": "Меняет префикс для команд.",
+            "full_desc": "Устанавливает новый символ или строку, с которой будут начинаться все команды юзербота.",
+            "examples": [f"`{prefix}setprefix !`", f"`{prefix}setprefix .`"]
+        },
+        'g': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}g <запрос>`", "short_desc": "Задать вопрос нейросети Gemini.",
+            "full_desc": "Отправляет запрос к модели Google Gemini. Может работать с текстом, отвечать на сообщения с медиа (фото, видео, аудио) и помнить контекст диалога в пределах одного чата.",
+            "examples": [f"`{prefix}g напиши короткий стих о котах`", f"Ответом на фото: `{prefix}g что на картинке?`"]
+        },
+        'gclear': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gclear`", "short_desc": "Очищает память Gemini в чате.",
+            "full_desc": "Стирает историю диалога с Gemini для текущего чата. Полезно, если нейросеть начала 'зацикливаться' или нужно начать разговор с чистого листа.",
+            "examples": [f"`{prefix}gclear`"]
+        },
+        'gres': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gres`", "short_desc": "Сбрасывает всю память Gemini.",
+            "full_desc": "Полностью стирает всю историю диалогов с Gemini во всех чатах. Используйте с осторожностью.",
+            "examples": [f"`{prefix}gres`"]
+        },
+        'gmodel': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gmodel [название_модели]`", "short_desc": "Узнать или сменить модель Gemini.",
+            "full_desc": "Показывает текущую модель Gemini. Если указать название, переключает на новую модель (например, 'gemini-1.5-pro').",
+            "examples": [f"`{prefix}gmodel`", f"`{prefix}gmodel gemini-1.5-pro`"]
+        },
+        'gmemon': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gmemon`", "short_desc": "Включает память Gemini в чате.",
+            "full_desc": "Включает сохранение истории диалога для текущего чата, если она была отключена.",
+            "examples": [f"`{prefix}gmemon`"]
+        },
+        'gmemoff': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gmemoff`", "short_desc": "Отключает память Gemini в чате.",
+            "full_desc": "Отключает сохранение истории диалога для текущего чата. Новые запросы не будут учитывать предыдущий контекст.",
+            "examples": [f"`{prefix}gmemoff`"]
+        },
+        'gmemshow': {
+            "category": "✨ AI / Gemini", "usage": f"`{prefix}gmemshow`", "short_desc": "Показывает историю памяти Gemini.",
+            "full_desc": "Отображает последние сообщения из сохраненной истории диалога с Gemini для текущего чата.",
+            "examples": [f"`{prefix}gmemshow`"]
+        },
+        'dox': {
+            "category": "🕵️‍♂️ Поиск информации", "usage": f"`{prefix}dox [@user/ID]`", "short_desc": "Ищет информацию о пользователе.",
+            "full_desc": "Использует вашего персонального Dox-бота для поиска информации (например, номера телефона) по ID пользователя Telegram.",
+            "examples": [f"`{prefix}dox @username`", f"`{prefix}dox` (в ответе на сообщение)"]
+        },
+        'setdoxbot': {
+            "category": "🕵️‍♂️ Поиск информации", "usage": f"`{prefix}setdoxbot <@username_бота>`", "short_desc": "Устанавливает вашего Dox-бота.",
+            "full_desc": "Привязывает вашего личного Dox-бота (созданного через @KoteUserBotDoxbot) к юзерботу для работы команды .dox.",
+            "examples": [f"`{prefix}setdoxbot @my_dox_bot`"]
+        },
+        'idprem': {
+            "category": "🕵️‍♂️ Поиск информации", "usage": f"`{prefix}idprem`", "short_desc": "Показывает ID премиум-эмодзи.",
+            "full_desc": "Ответьте на сообщение с премиум-эмодзи, и команда покажет их уникальные ID, которые можно использовать в .addrp.",
+            "examples": [f"`{prefix}idprem` (в ответе на сообщение с эмодзи)"]
+        },
+        'name': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}name <новое_имя>`", "short_desc": "Меняет имя вашего аккаунта.",
+            "full_desc": "Устанавливает новое имя (first_name) для вашего профиля в Telegram.",
+            "examples": [f"`{prefix}name Легенда`"]
+        },
+        'sname': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}sname`", "short_desc": "Сохраняет текущее имя в историю.",
+            "full_desc": "Сохраняет ваше текущее имя (first_name) в базу данных для последующего просмотра в истории.",
+            "examples": [f"`{prefix}sname`"]
+        },
+        'lname': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}lname`", "short_desc": "Показывает историю ваших ников.",
+            "full_desc": "Отображает список всех имен, которые вы сохранили с помощью команды .sname, с датами сохранения.",
+            "examples": [f"`{prefix}lname`"]
+        },
+        'profile': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}profile [@user/ID] [groups]`", "short_desc": "Показывает профиль пользователя.",
+            "full_desc": "Отображает подробную информацию о пользователе. С флагом `groups` ищет общие чаты.",
+            "examples": [f"`{prefix}profile` (в ответе)", f"`{prefix}profile @username`", f"`{prefix}profile @username groups`"]
+        },
+        'block': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}block [@user/ID]`", "short_desc": "Блокирует пользователя.",
+            "full_desc": "Добавляет пользователя в черный список вашего аккаунта.",
+            "examples": [f"`{prefix}block @spammer`"]
+        },
+        'unblock': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}unblock [@user/ID]`", "short_desc": "Разблокирует пользователя.",
+            "full_desc": "Удаляет пользователя из черного списка.",
+            "examples": [f"`{prefix}unblock @friend`"]
+        },
+        'blocklist': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}blocklist`", "short_desc": "Список заблокированных через бота.",
+            "full_desc": "Показывает список пользователей, которые были заблокированы с помощью команды `.block`.",
+            "examples": [f"`{prefix}blocklist`"]
+        },
+        'nonick': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}nonick <add/del/list> [-g] [@user] [ник]`", "short_desc": "Установка/удаление ников для пользователей.",
+            "full_desc": "Устанавливает или удаляет постоянный никнейм для пользователя. Этот ник используется во всех командах вместо реального имени. Флаг `-g` делает ник глобальным (для всех чатов).",
+            "examples": [f"`{prefix}nonick add @username Великий`", f"`{prefix}nonick add -g @username Бог`", f"`{prefix}nonick del @username`", f"`{prefix}nonick list`"]
+        },
+        'ct': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}ct <@user> <Имя>`", "short_desc": "Добавляет пользователя в контакты.",
+            "full_desc": "Сохраняет пользователя в список контактов вашего Telegram-аккаунта под указанным именем.",
+            "examples": [f"`{prefix}ct Новое Имя` (в ответе)", f"`{prefix}ct @username Иван`"]
+        },
+        'mct': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}mct <@user> <Имя>`", "short_desc": "Добавляет взаимный контакт.",
+            "full_desc": "Добавляет пользователя в контакты и делится вашим номером телефона (если его настройки приватности позволяют).",
+            "examples": [f"`{prefix}mct Коллега` (в ответе)", f"`{prefix}mct @username Коллега`"]
+        },
+        'rct': {
+            "category": "👤 Управление аккаунтом", "usage": f"`{prefix}rct <@user>`", "short_desc": "Удаляет пользователя из контактов.",
+            "full_desc": "Удаляет пользователя из вашего списка контактов.",
+            "examples": [f"`{prefix}rct` (в ответе)", f"`{prefix}rct @username`"]
+        },
+        'tag': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}tag [кого?] | [текст]`", "short_desc": "Упомянуть участников чата.",
+            "full_desc": "Очень гибкая команда. `all` (всех), `admins` (админов), `random N` (N случайных). Можно использовать `{{name}}` для подстановки имени в тексте.",
+            "examples": [f"`{prefix}tag Внимание!`", f"`{prefix}tag admins | общий сбор`", f"`{prefix}tag all | Привет, {{name}}!`", f"`{prefix}tag random 10 | Счастливчики дня:`"]
+        },
+        'stoptag': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}stoptag`", "short_desc": "Останавливает тегирование.",
+            "full_desc": "Принудительно останавливает запущенный процесс тегирования.",
+            "examples": [f"`{prefix}stoptag`"]
+        },
+        'tagsettings': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}tagsettings <delay/priority/position> <значение>`", "short_desc": "Настройка задержки, приоритета и позиции тегов.",
+            "full_desc": "Управляет поведением команды `.tag`.\n`delay`: задержка в секундах между пачками тегов.\n`priority`: что использовать для ника (`id` или `username`).\n`position`: где будет текст (`before` или `after` тегов).",
+            "examples": [f"`{prefix}tagsettings delay 5`", f"`{prefix}tagsettings priority username`", f"`{prefix}tagsettings position after`"]
+        },
+        'add': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}add [@user/ID]`", "short_desc": "Добавляет юзера в вайтлист тега.",
+            "full_desc": "Добавляет пользователя в белый список для текущего чата. Пользователи из этого списка НЕ будут упоминаться командой `.tag all`.",
+            "examples": [f"`{prefix}add @admin`"]
+        },
+        'remove': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}remove [@user/ID]`", "short_desc": "Удаляет юзера из вайтлиста тега.",
+            "full_desc": "Удаляет пользователя из белого списка для текущего чата.",
+            "examples": [f"`{prefix}remove @admin`"]
+        },
+        'helps': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}helps`", "short_desc": "Показывает вайтлист тега.",
+            "full_desc": "Показывает всех пользователей, добавленных в белый список (список исключений для `.tag all`) в текущем чате.",
+            "examples": [f"`{prefix}helps`"]
+        },
+        'dele': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}dele <число>`", "short_desc": "Удаляет ваши последние сообщения.",
+            "full_desc": "Удаляет указанное количество ваших последних сообщений в текущем чате (до 100 за раз).",
+            "examples": [f"`{prefix}dele 5`"]
+        },
+        'сипался': {
+            "category": "💬 Управление чатом", "usage": f"`{prefix}сипался`", "short_desc": "Выход из текущей группы.",
+            "full_desc": "Заставляет юзербота покинуть текущую группу или канал.",
+            "examples": [f"`{prefix}сипался`"]
+        },
+        'admin': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}admin [@user] [звание]`", "short_desc": "Назначает пользователя админом.",
+            "full_desc": "Выдает пользователю права администратора в чате. Права настраиваются командой `.admins`. Также можно указать звание (титул).",
+            "examples": [f"`{prefix}admin` (в ответе)", f"`{prefix}admin @username Смотрящий`"]
+        },
+        'unadmin': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}unadmin [@user/ID]`", "short_desc": "Снимает все права и звание.",
+            "full_desc": "Полностью разжалует администратора, снимая с него все права и звание.",
+            "examples": [f"`{prefix}unadmin @user`"]
+        },
+        'prefix': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}prefix [@user] [звание]`", "short_desc": "Устанавливает только звание админу.",
+            "full_desc": "Устанавливает или изменяет звание (титул) администратора, не затрагивая его права.",
+            "examples": [f"`{prefix}prefix @user Новый титул`"]
+        },
+        'unprefix': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}unprefix [@user]`", "short_desc": "Снимает только звание админа.",
+            "full_desc": "Полностью разжалует администратора. Эффективно снимает права и префикс.",
+            "examples": [f"`{prefix}unprefix @user`"]
+        },
+        'admins': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}admins <право> <on/off>`", "short_desc": "Вкл/выкл права для команды .admin.",
+            "full_desc": "Настраивает, какие права по умолчанию будет выдавать команда `.admin`. Можно включать и выключать каждое право по отдельности. Список прав можно посмотреть командой `.adminhelp`.",
+            "examples": [f"`{prefix}admins pin on`", f"`{prefix}admins ban off`"]
+        },
+        'adminsettings': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}adminsettings`", "short_desc": "Показывает настройки прав для .admin.",
+            "full_desc": "Отображает текущий шаблон прав, который используется при выдаче админки через команду `.admin`.",
+            "examples": [f"`{prefix}adminsettings`"]
+        },
+        'adminhelp': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}adminhelp`", "short_desc": "Справка по правам админа.",
+            "full_desc": "Показывает список всех доступных прав и их ключевые слова для использования в команде `.admins`.",
+            "examples": [f"`{prefix}adminhelp`"]
+        },
+        'adminsave': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}adminsave <название>`", "short_desc": "Сохраняет конфиг прав админа.",
+            "full_desc": "Сохраняет текущий набор прав для команды `.admin` под указанным именем. Позже его можно будет загрузить.",
+            "examples": [f"`{prefix}adminsave mod_rights`"]
+        },
+        'adminload': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}adminload <название>`", "short_desc": "Загружает конфиг прав админа.",
+            "full_desc": "Загружает ранее сохраненный набор прав и делает его текущим для команды `.admin`.",
+            "examples": [f"`{prefix}adminload mod_rights`"]
+        },
+        'admincfgs': {
+            "category": "🛡️ Администрирование", "usage": f"`{prefix}admincfgs`", "short_desc": "Список конфигов прав админа.",
+            "full_desc": "Показывает список всех сохраненных конфигураций (шаблонов) прав администратора.",
+            "examples": [f"`{prefix}admincfgs`"]
+        },
+        'rp': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}rp <on/off/access>`", "short_desc": "Вкл/выкл РП и управляет доступом юзеров.",
+            "full_desc": "Главная команда для управления РП-модулем.\n`on/off`: включает/выключает РП в чате.\n`access add/remove [@user/all]`: управляет доступом.\n`access list`: показывает, кто имеет доступ.",
+            "examples": [f"`{prefix}rp on`", f"`{prefix}rp access add @username`", f"`{prefix}rp access add all`"]
+        },
+        'addrp': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}addrp <команда/алиасы> | <действие> | <эмодзи>`", "short_desc": "Добавляет РП-команду.",
+            "full_desc": "Создает новую РП-команду. Можно указать несколько алиасов через `/`. Эмодзи (включая премиум) можно просто вставить в конец.",
+            "examples": [f"`{prefix}addrp обнять/обнял | обнимает | 🤗`"]
+        },
+        'delrp': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}delrp <команда/all/prem/simple>`", "short_desc": "Удаляет РП-команды.",
+            "full_desc": "Удаляет РП-команду. `all` - удаляет все. `prem` - только с премиум-эмодзи. `simple` - только без премиум-эмодзи.",
+            "examples": [f"`{prefix}delrp обнять`", f"`{prefix}delrp all`"]
+        },
+        'rplist': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}rplist`", "short_desc": "Список всех РП-команд.",
+            "full_desc": "Показывает полный список всех созданных РП-команд, их алиасов и действий.",
+            "examples": [f"`{prefix}rplist`"]
+        },
+        'rpcopy': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}rpcopy`", "short_desc": "Копирует РП-команды из списка.",
+            "full_desc": "Ответьте этой командой на сообщение со списком РП-команд (например, от другого юзербота), и она добавит их все к вам.",
+            "examples": [f"`{prefix}rpcopy` (в ответе на сообщение)"]
+        },
+        'setrpnick': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}setrpnick [-g] [@user] <ник>`", "short_desc": "Устанавливает РП-ник.",
+            "full_desc": "Устанавливает РП-ник для пользователя, который будет использоваться в РП-командах. Флаг `-g` делает ник глобальным.",
+            "examples": [f"`{prefix}setrpnick @user Дракон`", f"`{prefix}setrpnick -g @user Легенда`"]
+        },
+        'delrpnick': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}delrpnick [-g] [@user]`", "short_desc": "Удаляет/отключает РП-ник.",
+            "full_desc": "Удаляет глобальный РП-ник (с флагом `-g`) или отключает отображение РП-ника в текущем чате (без флага).",
+            "examples": [f"`{prefix}delrpnick @user`", f"`{prefix}delrpnick -g @user`"]
+        },
+        'rpnick': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}rpnick [@user]`", "short_desc": "Показывает РП-ники пользователя.",
+            "full_desc": "Показывает, какой РП-ник установлен для пользователя в текущем чате и глобально.",
+            "examples": [f"`{prefix}rpnick @user`"]
+        },
+        'addrpcreator': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}addrpcreator [@user]`", "short_desc": "Дает право создавать РП.",
+            "full_desc": "Добавляет пользователя в список тех, кто может использовать команды `.addrp` и `.delrp`.",
+            "examples": [f"`{prefix}addrpcreator @friend`"]
+        },
+        'delrpcreator': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}delrpcreator [@user]`", "short_desc": "Забирает право создавать РП.",
+            "full_desc": "Убирает пользователя из списка создателей РП-команд.",
+            "examples": [f"`{prefix}delrpcreator @friend`"]
+        },
+        'listrpcreators': {
+            "category": "🎭 РП-Команды", "usage": f"`{prefix}listrpcreators`", "short_desc": "Список создателей РП.",
+            "full_desc": "Показывает список всех пользователей, у которых есть право на создание РП-команд.",
+            "examples": [f"`{prefix}listrpcreators`"]
+        },
+        'autread': {
+            "category": "🚀 Автоматизация", "usage": f"`{prefix}autread <on/off> [this]`", "short_desc": "Включает авточтение сообщений.",
+            "full_desc": "Автоматически помечает входящие сообщения как прочитанные. Можно включить глобально или только для текущего чата с аргументом `this`.",
+            "examples": [f"`{prefix}autread on`", f"`{prefix}autread on this`"]
+        },
+        'autreadlist': {
+            "category": "🚀 Автоматизация", "usage": f"`{prefix}autreadlist`", "short_desc": "Показывает, где включено авточтение.",
+            "full_desc": "Отображает список чатов, для которых включено авточтение, или показывает, что оно включено глобально.",
+            "examples": [f"`{prefix}autreadlist`"]
+        },
+        'autoapprove': {
+            "category": "🚀 Автоматизация", "usage": f"`{prefix}autoapprove <on/off> [this]`", "short_desc": "Включает автоодобрение заявок.",
+            "full_desc": "Автоматически одобряет заявки на вступление в группы/каналы. Можно включить глобально или только для текущего чата с аргументом `this`.",
+            "examples": [f"`{prefix}autoapprove on`", f"`{prefix}autoapprove on this`"]
+        },
+        'autoapprovelist': {
+            "category": "🚀 Автоматизация", "usage": f"`{prefix}autoapprovelist`", "short_desc": "Показывает, где включено автоодобрение.",
+            "full_desc": "Отображает список чатов, для которых включено автоодобрение заявок.",
+            "examples": [f"`{prefix}autoapprovelist`"]
+        },
+        'cmd': {
+            "category": "🚀 Автоматизация", "usage": f"`{prefix}cmd <add/del/list> <название> [all] [this]`", "short_desc": "Управляет сохраненными ответами.",
+            "full_desc": (
+                "Создает и управляет сохраненными ответами (кансервами). Позволяет сохранить любое сообщение и быстро пересылать его по короткой команде, начинающейся с `.`, `!` или `/`.\n\n"
+                "**Действия:**\n"
+                "`add`: **(в ответ на сообщение)** сохраняет его как ответ.\n"
+                "`del`: удаляет сохраненный ответ.\n"
+                "`list`: показывает список всех сохраненных ответов.\n\n"
+                "**Параметры (можно комбинировать):**\n"
+                "`all`: делает команду доступной для всех пользователей.\n"
+                "`this`: делает команду локальной (работает только в текущем чате).\n"
+                "*(по умолчанию команда доступна только вам и работает глобально)*"
+            ),
+            "examples": [
+                f"`{prefix}cmd add привет` (в ответе, только для вас, везде)",
+                f"`{prefix}cmd add правила all` (в ответе, для всех, везде)",
+                f"`{prefix}cmd add локалка this` (в ответе, только для вас, в этом чате)",
+                f"`{prefix}cmd add инфо all this` (в ответе, для всех, в этом чате)",
+                f"`{prefix}cmd list`",
+                f"`{prefix}cmd del привет`"
+            ]
+        },
+        'spam': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}spam <кол-во> <текст>`", "short_desc": "Начинает спам сообщениями.",
+            "full_desc": "Отправляет указанный текст заданное количество раз. Максимум 100 сообщений.",
+            "examples": [f"`{prefix}spam 10 Привет`"]
+        },
+        'stopspam': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}stopspam`", "short_desc": "Останавливает спам.",
+            "full_desc": "Принудительно останавливает запущенный процесс спама.",
+            "examples": [f"`{prefix}stopspam`"]
+        },
+        'mus': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}mus <название_трека>`", "short_desc": "Ищет и отправляет музыку.",
+            "full_desc": "Ищет музыку по названию через инлайн-бота и отправляет найденный трек в чат.",
+            "examples": [f"`{prefix}mus Skillet - Hero`"]
+        },
+        'dice': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}dice`", "short_desc": "Отправляет анимированный кубик 🎲.",
+            "full_desc": "Отправляет в чат анимированный игральный кубик.",
+            "examples": [f"`{prefix}dice`"]
+        },
+        'weather': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}weather <город>`", "short_desc": "Показывает погоду.",
+            "full_desc": "Запрашивает и отображает текущую погоду для указанного города.",
+            "examples": [f"`{prefix}weather Berlin`"]
+        },
+        'typing': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}typing <время>`", "short_desc": "Имитирует набор текста.",
+            "full_desc": "Показывает статус 'печатает...' в чате на указанное время. Например: 10s (секунды), 5m (минуты).",
+            "examples": [f"`{prefix}typing 30s`"]
+        },
+        'stoptyping': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}stoptyping`", "short_desc": "Останавливает имитацию.",
+            "full_desc": "Останавливает запущенную имитацию набора текста.",
+            "examples": [f"`{prefix}stoptyping`"]
+        },
+        'fakeclear': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}fakeclear`", "short_desc": "Шуточная очистка диалога.",
+            "full_desc": "Запускает забавную анимацию 'очистки диалога', которая на самом деле ничего не удаляет.",
+            "examples": [f"`{prefix}fakeclear`"]
+        },
+        'депаю': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}депаю <ставка>`", "short_desc": "Испытай удачу в казино.",
+            "full_desc": "Запускает анимированный слот-автомат. Попробуй выиграть!",
+            "examples": [f"`{prefix}депаю всё`"]
+        },
+        'заебу': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}заебу [кол-во]`", "short_desc": "Начинает \"заёбывать\" пользователя.",
+            "full_desc": "Ответьте на сообщение пользователя, чтобы начать быстро удалять и отправлять ему сообщения 'Заёбушка'.",
+            "examples": [f"`{prefix}заебу 100` (в ответе)"]
+        },
+        'ghoul': {
+            "category": "🎉 Фан и Утилиты", "usage": f"`{prefix}ghoul`", "short_desc": "Запускает \"1000-7\" счетчик.",
+            "full_desc": "Анимация, в которой бот отсчитывает от 1000 по 7. I'm ghoul.",
+            "examples": [f"`{prefix}ghoul`"]
+        },
+        'stags': {
+            "category": "🤫 Silent Tags", "usage": f"`{prefix}stags <on/off>`", "short_desc": "Включает/выключает секретные теги.",
+            "full_desc": "Включает или выключает модуль Silent Tags. Когда он включен, юзербот будет перехватывать упоминания, помечать их прочитанными и пересылать вам в специальную группу логов.",
+            "examples": [f"`{prefix}stags on`", f"`{prefix}stags off`"]
+        },
+        'stconfig': {
+            "category": "🤫 Silent Tags", "usage": f"`{prefix}stconfig <параметр> <действие> [значение]`", "short_desc": "Управляет режимами и списками игнора для stags.",
+            "full_desc": (
+                "Настраивает поведение Silent Tags.\n"
+                "**Параметры (true/false):**\n"
+                "`silent`: не отправлять уведомление о включении в чат.\n"
+                "`ignore_bots`: игнорировать упоминания от ботов.\n"
+                "`ignore_blocked`: игнорировать заблокированных.\n"
+                "**`use_chat_whitelist`**: активирует игнорирование чатов из списка `ignore_chats`.\n\n"
+                "**Списки (add/remove):**\n"
+                "`ignore_users`: добавить/убрать юзера из игнора.\n"
+                "`ignore_chats`: добавить/убрать чат в список игнора (работает только с `use_chat_whitelist true`)."
+            ),
+            "examples": [
+                f"`{prefix}stconfig silent true`", 
+                f"`{prefix}stconfig ignore_users add @spammer`", 
+                f"`{prefix}stconfig use_chat_whitelist true`",
+                f"`{prefix}stconfig ignore_chats add this`"
+            ]
+        },
     }
     
-    if args:
-        args_clean = 'сипался' if args == 'сипался' else args
-        
-        if args_clean == 'tag':
-             text = (
-                f"**{prefix}tag [кого?] | [текст] [-r]**\n"
-                "Очень гибкая команда для упоминания участников чата.\n\n"
-                "**Как работает:**\n"
-                f"1. **Кого тегать?** (указывается в начале, необязательно)\n"
-                f"   - `all` - тегать всех (по умолчанию).\n"
-                f"   - `admins` - тегать только администраторов.\n"
-                f"   - `random N` - тегнуть N случайных участников (например, `random 5`).\n\n"
-                f"2. **Разделитель `|`** (обязателен, если вы указывали, кого тегать).\n\n"
-                f"3. **Текст** (необязательно)\n"
-                f"   - Просто текст, который будет прикреплен к тегам.\n"
-                f"   - Можно использовать `{{name}}` для подстановки имени каждого упоминаемого.\n\n"
-                f"4. **Флаг `-r`** (необязательно)\n"
-                f"   - Добавляет случайную позитивную реакцию к сообщению с тегом.\n\n"
-                f"**Примеры:**\n"
-                f"• `{prefix}tag` - тегнуть всех без текста.\n"
-                f"• `{prefix}tag Внимание!` - тегнуть всех с текстом \"Внимание!\".\n"
-                f"• `{prefix}tag admins | админы, общий сбор` - тегнуть админов с текстом.\n"
-                f"• `{prefix}tag random 3 | победители` - тегнуть 3 случайных людей.\n"
-                f"• `{prefix}tag all | Привет, {{name}}!` - отправить персональное приветствие каждому.\n\n"
-                f"**Настройки:** Поведение команды (задержка, позиция текста) меняется командой `{prefix}tagsettings`."
-            )
-        else:
-             text = commands_help.get(args_clean, f"**Ошибка:** Команда `{args_clean}` не найдена!")
+    await event.delete()
 
-        final_text = f"{help_emoji} **Справка по команде `{prefix}{args_clean}`:**\n\n{text}"
+    if args and args in commands_data:
+        cmd_data = commands_data[args]
+        help_emoji = await get_emoji('help')
+        
+        final_text = f"{help_emoji} **Команда: {cmd_data.get('usage', 'Не указано')}**\n\n"
+        final_text += f"**Описание:** {cmd_data.get('full_desc', 'Нет описания.')}\n\n"
+        
+        if cmd_data.get('examples'):
+            final_text += "**Примеры использования:**\n"
+            for ex in cmd_data.get('examples', []):
+                final_text += f"  • {ex}\n"
+
+        parsed_text, entities = parser.parse(final_text)
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, link_preview=False)
+
+    elif args:
+        final_text = f"**❌ Ошибка:** Команда `{args}` не найдена!"
+        parsed_text, entities = parser.parse(final_text)
+        await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, link_preview=False)
+        
     else:
+        help_emoji_md = await get_emoji('help')
+        emoji_char, emoji_entities = parser.parse(help_emoji_md)
+        the_custom_emoji_entity = emoji_entities[0] if emoji_entities else None
+
+        prefix_html = html.escape(prefix)
+        html_body = f" <b>Команды KoteUserBot. Prefix: <code>{prefix_html}</code></b>\n\n"
+        
         categories = {
-            "⚙️ Основные": ['help', 'ping', 'info', 'version', 'status', 'on', 'off', 'restart', 'autoupdate', 'backup', 'setprefix'],
-            "✨ AI / Gemini": ['g', 'gclear', 'gres', 'gmodel', 'gmemon', 'gmemoff', 'gmemshow'],
-            "🕵️‍♂️ Поиск информации": ['dox', 'setdoxbot', 'idprem'],
-            "👤 Управление аккаунтом": ['name', 'profile', 'block', 'unblock', 'blocklist', 'nonick'],
-            "💬 Управление чатом": ['tag', 'stoptag', 'tagsettings', 'add', 'remove', 'helps', 'dele', 'сипался'],
-            "🛡️ Администрирование": ['admin', 'unadmin', 'prefix', 'unprefix', 'admins', 'adminsettings', 'adminhelp', 'adminsave', 'adminload', 'admincfgs'],
-            "🎭 РП-Команды и Ники": ['rp', 'addrp', 'delrp', 'rplist', 'rpcopy', 'setrpnick', 'delrpnick', 'rpnick', 'addrpcreator', 'delrpcreator', 'listrpcreators'],
-            "🚀 Автоматизация": ['autread', 'autreadlist', 'autoapprove', 'autoapprovelist'],
-            "🎉 Фан и Утилиты": ['spam', 'stopspam', 'mus', 'dice', 'weather', 'typing', 'stoptyping', 'fakeclear', 'депаю', 'заебу', 'ghoul'],
-            "🤫 Silent Tags": ['stags', 'stconfig']
+            "⚙️ Основные": [], "✨ AI / Gemini": [], "🕵️‍♂️ Поиск информации": [],
+            "👤 Управление аккаунтом": [], "💬 Управление чатом": [], "🛡️ Администрирование": [],
+            "🎭 РП-Команды": [], "🚀 Автоматизация": [], "🎉 Фан и Утилиты": [], "🤫 Silent Tags": []
         }
         
-        final_text = f"**{help_emoji} Команды KoteUserBot. Prefix: `{prefix}`**\n\n"
+        for cmd, data in commands_data.items():
+            if data['category'] in categories:
+                categories[data['category']].append(cmd)
+
         for category_name, command_list in categories.items():
-            final_text += f"**{category_name}**\n"
-            for cmd in command_list:
-                full_desc = commands_help.get(cmd, "")
-                description_lines = full_desc.split('\n')
-                short_desc = description_lines[1].strip() if len(description_lines) > 1 else ""
-                final_text += f"`{prefix}{cmd}` - {short_desc}\n"
-            final_text += "\n"
-        final_text += f"**Подробности:** `{prefix}help <команда>`"
+            if not command_list: 
+                continue
+            
+            html_body += f"<b>{html.escape(category_name)}</b>\n"
+            
+            lines = []
+            for cmd in sorted(command_list):
+                cmd_data = commands_data[cmd]
+                escaped_desc = html.escape(cmd_data.get('short_desc', ''))
+                escaped_cmd = html.escape(cmd)
+                lines.append(f"<code>{prefix_html}{escaped_cmd}</code> - {escaped_desc}")
+            
+            content = "\n".join(lines)
+            
+            # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            # Просто добавляем все категории в blockquote, убрав условие if.
+            html_body += f"<blockquote>{content}</blockquote>\n"
         
-    parsed_text, entities = parser.parse(final_text)
-    await client.send_message(event.chat_id, parsed_text, formatting_entities=entities, reply_to=event.message.id)
-    await event.message.delete()
+        html_body += f"\n<b>Подробности:</b> <code>{prefix_html}help &lt;команда&gt;</code>"
+
+        body_text, body_entities = html.parse(html_body)
+
+        final_text = emoji_char + body_text
+        final_entities = []
+
+        if the_custom_emoji_entity:
+            final_entities.append(the_custom_emoji_entity)
+
+        emoji_len_utf16 = len(emoji_char.encode('utf-16-le')) // 2
+        for entity in body_entities:
+            entity.offset += emoji_len_utf16
+            final_entities.append(entity)
+
+        await client.send_message(
+            event.chat_id,
+            final_text,
+            formatting_entities=final_entities,
+            link_preview=False
+        )
 
 @client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}\s*mus\s*(.*)$', x)))
 @error_handler
@@ -2779,7 +3154,7 @@ async def delete_handler(event):
 @error_handler
 async def version_handler(event):
     if not await is_owner(event): return
-    module_version = "2.0.2"
+    module_version = "2.0.3"
     uptime, user = get_uptime(), await client.get_me()
     owner_username = f"@{user.username}" if user.username else "Не указан"
     branch, prefix, platform = get_git_branch(), CONFIG['prefix'], detect_platform()
@@ -2988,6 +3363,7 @@ async def stconfig_handler(event):
 
 @client.on(events.NewMessage(incoming=True))
 async def silent_tags_watcher(event):
+    if not BOT_ENABLED: return
     global FW_PROTECT
     if not event.mentioned or not SILENT_TAGS_ENABLED: return
     print(f"[SilentTags] Обработка упоминания: chat_id={event.chat_id}, sender_id={event.sender_id}")
@@ -3021,7 +3397,7 @@ async def silent_tags_watcher(event):
             print(f"[SilentTags] Упоминание от бота помечено как прочитанное и пропущено (ignore_bots=true): chat_id={event.chat_id}, sender_id={sender_id}")
             return
         
-        if (sender_id in SILENT_TAGS_CONFIG['ignore_users']) or (SILENT_TAGS_CONFIG['ignore_blocked'] and sender_id in BLOCKED_USERS):
+        if (sender_id in SILENT_TAGS_CONFIG['ignore_users']) or (SILENT_TAGS_CONFIG['ignore_blocked'] and sender_id in BOT_BLOCKED_USERS):
             print(f"[SilentTags] Упоминание пропущено: chat_id={event.chat_id}, normalized_chat_id={normalized_chat_id}, sender_id={sender_id}")
             return
         
@@ -3549,11 +3925,12 @@ async def rp_access_handler(event):
         return
         
     action = event.pattern_match.group(1).lower()
-    identifier = (event.pattern_match.group(2) or "").lower().strip()
+    # Убираем .lower() с идентификатора, т.к. @username чувствителен к регистру
+    identifier = (event.pattern_match.group(2) or "").strip()
     chat_id = event.chat_id
     success_emoji = await get_emoji('success')
     
-    if identifier == 'all':
+    if identifier.lower() == 'all':
         if action == 'add':
             RP_PUBLIC_CHATS.add(chat_id)
             toggle_rp_public_access(chat_id, True)
@@ -3567,7 +3944,19 @@ async def rp_access_handler(event):
         await safe_edit_message(event, parsed_text, entities)
         return
 
-    user = await get_target_user(event)
+    # --- ИСПРАВЛЕННАЯ ЛОГИКА ПОИСКА ПОЛЬЗОВАТЕЛЯ ---
+    user = None
+    if identifier:
+        try:
+            user = await client.get_entity(identifier)
+        except Exception:
+            pass # Если не нашли, попробуем найти в ответе
+
+    if not user:
+        reply = await event.get_reply_message()
+        if reply:
+            user = await reply.get_sender()
+    # --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ---
     
     if not user:
         text = f"❌ **Ошибка:** Не удалось найти пользователя"
@@ -4479,6 +4868,7 @@ async def autreadlist_handler(event):
 
 @client.on(events.NewMessage(incoming=True, func=lambda e: not e.out))
 async def auto_read_watcher(event):
+    if not BOT_ENABLED: return
     # Проверяем, включено ли авточтение для "всех чатов" (ID 0) или для этого конкретного чата
     if 0 in AUTO_READ_CHATS or event.chat_id in AUTO_READ_CHATS:
         try:
@@ -4545,6 +4935,7 @@ async def autoapprovelist_handler(event):
 
 @client.on(events.Raw(types.UpdatePendingJoinRequests))
 async def join_request_handler(event):
+    if not BOT_ENABLED: return
     # ИСПРАВЛЕНИЕ 1: Правильно и надежно получаем ID чата
     chat_id = get_peer_id(event.peer)
 
@@ -4844,6 +5235,314 @@ async def dox_handler(event):
         await safe_edit_message(event, f"{dox_fail_emoji} **Произошла непредвиденная ошибка:** {str(e)}")
         await send_error_log(str(e), "dox_handler", event)
 
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}ct\s+.*', x)))
+@error_handler
+async def ct_handler(event):
+    if not await is_owner(event): return
+
+    user, first_name = await get_target_and_text(event)
+
+    if not user:
+        await safe_edit_message(event, "🧐 **Не могу найти, кого добавить.**\nОтветьте на сообщение пользователя или укажите его @username/ID.")
+        return
+
+    if not first_name:
+        await safe_edit_message(event, "📝 **Укажите имя для контакта.**\n`.ct @username Новое Имя` или ответом `.ct Новое Имя`.")
+        return
+
+    try:
+        await client(functions.contacts.AddContactRequest(
+            id=user.id,
+            first_name=first_name,
+            last_name="",
+            phone="",
+            add_phone_privacy_exception=False
+        ))
+        await safe_edit_message(event, f"✅ **Пользователь `{get_universal_display_name(user, event.chat_id)}` добавлен в контакты как `{first_name}`.**")
+    except Exception as e:
+        await safe_edit_message(event, f"❌ **Ошибка добавления контакта:**\n`{e}`")
+        await send_error_log(str(e), "ct_handler", event)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}mct\s+.*', x)))
+@error_handler
+async def mct_handler(event):
+    if not await is_owner(event): return
+
+    user, first_name = await get_target_and_text(event)
+
+    if not user:
+        await safe_edit_message(event, "🧐 **Не могу найти, кого добавить.**\nОтветьте на сообщение пользователя или укажите его @username/ID.")
+        return
+
+    if not first_name:
+        await safe_edit_message(event, "📝 **Укажите имя для контакта.**\n`.mct @username Новое Имя` или ответом `.mct Новое Имя`.")
+        return
+
+    try:
+        await client(functions.contacts.AddContactRequest(
+            id=user.id,
+            first_name=first_name,
+            last_name="",
+            phone="",
+            add_phone_privacy_exception=True
+        ))
+        await safe_edit_message(event, f"✅ **Пользователь `{get_universal_display_name(user, event.chat_id)}` добавлен в контакты как `{first_name}` с обменом номера.**")
+    except Exception as e:
+        await safe_edit_message(event, f"❌ **Ошибка добавления взаимного контакта:**\n`{e}`")
+        await send_error_log(str(e), "mct_handler", event)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}rct.*', x)))
+@error_handler
+async def rct_handler(event):
+    if not await is_owner(event): return
+
+    user = await get_target_user(event)
+
+    if not user:
+        await safe_edit_message(event, "🧐 **Не могу найти, кого удалить.**\nОтветьте на сообщение пользователя или укажите его @username/ID.")
+        return
+
+    try:
+        await client(functions.contacts.DeleteContactsRequest(id=[user.id]))
+        await safe_edit_message(event, f"🗑️ **Пользователь `{get_universal_display_name(user, event.chat_id)}` удалён из ваших контактов.**")
+    except Exception as e:
+        await safe_edit_message(event, f"❌ **Ошибка удаления контакта:**\n`{e}`")
+        await send_error_log(str(e), "rct_handler", event)
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}ай$', x)))
+@error_handler
+async def id_handler(event):
+    if not await is_owner(event): return
+
+    target_user = None
+    title_text = "Твой" 
+
+    reply = await event.get_reply_message()
+    if reply:
+        target_user = await reply.get_sender()
+        title_text = "Пользователя"
+    else:
+        target_user = await client.get_me()
+
+    if not target_user:
+        await safe_edit_message(event, "❌ **Не удалось определить пользователя.**")
+        return
+
+    # Получаем кастомные эмодзи
+    id_emoji = await get_emoji('id')
+    username_emoji = await get_emoji('username')
+
+    # Собираем текст сообщения
+    text = f"{id_emoji} **{title_text} айди:** `{target_user.id}`\n"
+    
+    if target_user.username:
+        text += f"{username_emoji} **{title_text} юзернейм:** `@{target_user.username}`"
+
+    # Отправляем отформатированное сообщение
+    parsed_text, entities = parser.parse(text)
+    await safe_edit_message(event, parsed_text, entities)
+
+# -----------------------------------------
+# БЛОК СОХРАНЕННЫХ ОТВЕТОВ (финальная версия с 'this')
+# -----------------------------------------
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}cmd\s+(add|del|list)(?:\s+([\s\S]+))?$', x)))
+@error_handler
+async def cmd_handler(event):
+    """Обработчик для управления сохраненными ответами с премиум-эмодзи."""
+    if not await is_owner(event): return
+
+    # --- ИЗМЕНЕНИЕ: Получаем эмодзи в начале ---
+    success_emoji = await get_emoji('success')
+    delete_emoji = await get_emoji('delete')
+    list_emoji = await get_emoji('whitelist') # Используем 'whitelist' для списка
+
+    action = event.pattern_match.group(1).lower()
+    args_str = (event.pattern_match.group(2) or "").strip()
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    if action == 'list':
+        text = f"{list_emoji} **Список сохраненных ответов:**\n\n"
+        if not CANNED_RESPONSES:
+            text += "_пусто_"
+        else:
+            for trigger, data in sorted(CANNED_RESPONSES.items()):
+                access = "для всех" if data.get('access_type') == 'all' else "для владельца"
+                scope = " (локальный)" if data.get('scope_chat_id') != 0 else ""
+                text += f"• `{CONFIG['prefix']}{trigger}` ({access}{scope})\n"
+    
+    elif action == 'del':
+        if not args_str:
+            text = f"❌ **Ошибка:** Укажите название. `{CONFIG['prefix']}cmd del <название>`"
+        else:
+            trigger = args_str.lower()
+            if trigger in CANNED_RESPONSES:
+                cursor.execute("DELETE FROM canned_responses WHERE trigger_word = ?", (trigger,))
+                conn.commit()
+                load_canned_responses()
+                text = f"{delete_emoji} **Ответ для `{CONFIG['prefix']}{trigger}` удален.**"
+            else:
+                text = f"❌ **Ошибка:** Триггер `{trigger}` не найден."
+
+    elif action == 'add':
+        reply = await event.get_reply_message()
+        if not reply:
+            text = f"❌ **Ошибка:** Ответьте на сообщение командой `{CONFIG['prefix']}cmd add <название> [all] [this]`."
+        else:
+            parts = [p.lower() for p in args_str.split()]
+            access_type = 'owner'
+            scope_chat_id = 0
+            
+            if 'all' in parts:
+                access_type = 'all'
+                parts.remove('all')
+            
+            if 'this' in parts:
+                scope_chat_id = event.chat_id
+                parts.remove('this')
+            
+            trigger = " ".join(parts).lower()
+
+            if not trigger:
+                 text = f"❌ **Ошибка:** Укажите название. `{CONFIG['prefix']}cmd add <название> [all] [this]`."
+            else:
+                cursor.execute("INSERT OR REPLACE INTO canned_responses (trigger_word, response_chat_id, response_message_id, creator_id, access_type, scope_chat_id) VALUES (?, ?, ?, ?, ?, ?)",
+                               (trigger, reply.chat_id, reply.id, event.sender_id, access_type, scope_chat_id))
+                conn.commit()
+                load_canned_responses()
+                
+                access_text = 'для всех' if access_type == 'all' else 'только для владельца'
+                scope_text = ", **область:** только этот чат" if scope_chat_id != 0 else ""
+                text = f"{success_emoji} **Ответ для `{CONFIG['prefix']}{trigger}` сохранен!**\n**Доступ:** {access_text}{scope_text}."
+
+    conn.close()
+    await safe_edit_message(event, text)
+
+@client.on(events.NewMessage(func=lambda e: e.raw_text and not e.fwd_from))
+async def canned_response_watcher(event):
+    """Смотрит за сообщениями и отправляет сохраненный ответ с точной диагностикой ошибок."""
+    if not BOT_ENABLED: return
+    
+    if not event.raw_text.startswith(('.', '!', '/')):
+        return
+
+    if len(event.raw_text.split()) > 1: return
+
+    potential_trigger = event.raw_text[1:].lower()
+
+    if potential_trigger in CANNED_RESPONSES:
+        response_data = CANNED_RESPONSES[potential_trigger]
+        
+        scope_chat_id = response_data.get('scope_chat_id', 0)
+        if scope_chat_id != 0 and scope_chat_id != event.chat_id:
+            return
+
+        sender_is_owner = event.sender_id == owner_id
+        is_public = response_data.get('access_type') == 'all'
+
+        if not (sender_is_owner or is_public):
+            return
+
+        sender_id = event.sender_id
+        current_time = time.time()
+
+        if not sender_is_owner:
+            last_usage = USER_COOLDOWNS.get(sender_id)
+            if last_usage and (current_time - last_usage) < COOLDOWN_SECONDS:
+                return
+
+        try:
+            await client.forward_messages(
+                entity=event.chat_id,
+                messages=response_data['msg_id'],
+                from_peer=response_data['chat_id']
+            )
+            
+            USER_COOLDOWNS[sender_id] = time.time()
+
+            if sender_is_owner:
+                await event.delete()
+
+        # --- ИЗМЕНЕНИЕ: Улучшенная обработка ошибок ---
+        except errors.RPCError as e:
+            if sender_is_owner:
+                error_text = f"❌ **Произошла неизвестная ошибка RPC:**\n`{e}`" # Сообщение по умолчанию
+                
+                # Проверяем конкретные типы ошибок
+                if isinstance(e, (errors.MsgIdInvalidError, errors.MessageIdInvalidError)):
+                    error_text = f"❌ **Ошибка!** Исходное сообщение для `{potential_trigger}` было удалено."
+                elif isinstance(e, (errors.ChannelPrivateError, errors.ChatAdminRequiredError, errors.PeerIdInvalidError)):
+                    error_text = f"❌ **Ошибка!** Я потерял доступ к чату, где было сохранено сообщение для `{potential_trigger}`."
+                
+                await event.reply(error_text)
+            await send_error_log(f"{e}", "canned_response_watcher", event)
+        except Exception as e:
+            if sender_is_owner:
+                await event.reply(f"❌ **Произошла непредвиденная ошибка:**\n`{e}`")
+            await send_error_log(str(e), "canned_response_watcher", event)
+
+# -----------------------------------------
+# КОНЕЦ БЛОКА
+# -----------------------------------------
+# -----------------------------------------
+# БЛОК ИСТОРИИ НИКОВ (НАЧАЛО)
+# -----------------------------------------
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}sname$', x)))
+@error_handler
+async def sname_handler(event):
+    if not await is_owner(event): return
+
+    success_emoji = await get_emoji('success')
+    me = await client.get_me()
+    current_name = me.first_name
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT name FROM name_history ORDER BY timestamp DESC LIMIT 1")
+    last_name_row = cursor.fetchone()
+    if last_name_row and last_name_row[0] == current_name:
+        await safe_edit_message(event, f"ℹ️ **Имя `{current_name}` уже является последним в истории.**")
+        conn.close()
+        return
+
+    timestamp = datetime.datetime.now().isoformat()
+    cursor.execute("INSERT INTO name_history (name, timestamp) VALUES (?, ?)", (current_name, timestamp))
+    conn.commit()
+    conn.close()
+    
+    await safe_edit_message(event, f"{success_emoji} **Имя `{current_name}` сохранено в историю.**")
+
+@client.on(events.NewMessage(pattern=lambda x: re.match(rf'^{re.escape(CONFIG["prefix"])}lname$', x)))
+@error_handler
+async def lname_handler(event):
+    if not await is_owner(event): return
+
+    list_emoji = await get_emoji('whitelist')
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, timestamp FROM name_history ORDER BY timestamp ASC")
+    history = cursor.fetchall()
+    conn.close()
+
+    if not history:
+        await safe_edit_message(event, f"{list_emoji} **История ников пуста.**")
+        return
+        
+    text = f"{list_emoji} **История ваших ников:**\n\n"
+    for i, (name, ts) in enumerate(history, 1):
+        date_obj = datetime.datetime.fromisoformat(ts)
+        date_str = date_obj.strftime('%d.%m.%Y')
+        text += f"{i}. `{name}` (сохр. {date_str})\n"
+        
+    await safe_edit_message(event, text)
+
+# -----------------------------------------
+# БЛОК ИСТОРИИ НИКОВ (КОНЕЦ)
+# -----------------------------------------
+
 def debug_db():
     print("[Debug] Отладка базы данных")
     try:
@@ -4866,7 +5565,6 @@ async def main():
     async with client:
         print("[Debug] Запуск основной функции внутри контекста клиента")
         try:
-            # Все ваши функции загрузки остаются здесь
             init_db()
             load_config()
             load_gemini_config()
@@ -4882,13 +5580,12 @@ async def main():
             load_bot_blocklist()
             load_auto_read_config() 
             load_auto_approve_config()
-            # debug_db() # Рекомендуется закомментировать для обычного использования
+            load_canned_responses()
 
             me = await client.get_me()
             owner_id = me.id
             print(f"[Debug] Owner ID: {owner_id}")
 
-            # ПРОВЕРКА И ОТПРАВКА СООБЩЕНИЯ О ПЕРЕЗАПУСКЕ
             if os.path.exists("restart_info.json"):
                 with open("restart_info.json", "r") as f:
                     restart_info = json.load(f)
@@ -4896,15 +5593,12 @@ async def main():
                 chat_id = restart_info["chat_id"]
                 start_time_restart = restart_info["restart_time"]
                 
-                # Замеряем пинг
                 ping_start = time.time()
                 await client(functions.users.GetUsersRequest(id=[me]))
                 ping_ms = (time.time() - ping_start) * 1000
                 
-                # Считаем время перезапуска
                 restart_duration = time.time() - start_time_restart
                 
-                # Собираем красивое сообщение
                 rocket_emoji = await get_emoji('rocket')
                 ping_emoji = await get_emoji('ping')
                 success_emoji = await get_emoji('success')
@@ -4916,15 +5610,9 @@ async def main():
                 )
                 
                 parsed_text, entities = parser.parse(text)
-                
-                # Отправляем сообщение в тот же чат, откуда был вызван рестарт
                 await client.send_message(chat_id, parsed_text, formatting_entities=entities)
-                
-                # Удаляем временный файл
                 os.remove("restart_info.json")
-
             else:
-                # Если это был не перезапуск, а обычный старт
                 await send_error_log("KoteUserBot запущен!", "main", is_test=True)
 
             print("[Debug] KoteUserBot успешно запущен и ожидает событий...")
