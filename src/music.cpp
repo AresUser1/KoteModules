@@ -1,9 +1,13 @@
 // music.cpp
-// Поиск и скачивание музыки с YouTube напрямую на C++ (Kotogram ABI 3).
+// Музыкальный модуль для Kotogram (C++ ABI 3).
+// Поддерживает поиск и мгновенную отправку через Telegram-ботов (@lybot, @vkmusic_bot)
+// и прямое скачивание оригинального аудиопотока M4A/AAC с YouTube без ограничений.
+//
 // Команды:
-// .mus <запрос или ссылка> - Поиск на YouTube, скачивание лучшего аудиопотока (M4A/AAC) и отправка в чат
-// .musconfig              - Статус модуля, список инстансов и справка
-// .musclean               - Очистка кэша скачанных аудиотреков
+// .mus <запрос> [--yt]  - Поиск через Telegram-ботов (по умолчанию) или YouTube (с флагом --yt)
+// .musyt <запрос/ссылка>- Прямой поиск и скачивание лучшего M4A-аудио с YouTube
+// .musconfig            - Статус модуля, зеркала YouTube и список ботов
+// .musclean             - Очистка кэша скачанных аудиотреков на устройстве
 
 #include "module_abi.h"
 #include <string>
@@ -16,7 +20,7 @@
 
 namespace {
 
-// Доступные зеркала Invidious API для поиска и стриминга без ограничений
+// Доступные зеркала Invidious API для поиска и прямого стриминга аудио с YouTube
 const char* const INSTANCES[] = {
     "https://invidious.f5.si",
     "https://inv.tux.pizza",
@@ -24,6 +28,13 @@ const char* const INSTANCES[] = {
     "https://invidious.nerdvpn.de"
 };
 constexpr size_t NUM_INSTANCES = sizeof(INSTANCES) / sizeof(INSTANCES[0]);
+
+// Музыкальные inline-боты Telegram в порядке приоритета
+const char* const MUSIC_BOTS[] = {
+    "lybot",
+    "vkmusic_bot"
+};
+constexpr size_t NUM_BOTS = sizeof(MUSIC_BOTS) / sizeof(MUSIC_BOTS[0]);
 
 // URL-encoding для поискового запроса
 std::string url_encode(const std::string& val) {
@@ -160,25 +171,12 @@ std::string format_duration(int seconds) {
     return buf;
 }
 
-// ── 1. Команда .mus <запрос или ссылка> ──────────────────────────────────────
-void cmd_mus(koto_ctx* ctx, const koto_api* api) {
-    const char* raw_args = api->cmd_args(ctx);
-    while (raw_args && (*raw_args == ' ' || *raw_args == '\t')) raw_args++;
-    if (!raw_args || !*raw_args) {
-        api->c_reset(ctx);
-        api->c_markdown(ctx,
-            "⚠️ **Использование:** `.mus <название песни / артист / ссылка YouTube>`\n"
-            "> Например: `.mus Linkin Park Numb` или `.mus Queen Bohemian Rhapsody`");
-        api->c_edit(ctx, 0);
-        return;
-    }
-
-    std::string query = raw_args;
+// Поиск и скачивание с YouTube
+void do_youtube_download(koto_ctx* ctx, const koto_api* api, const std::string& query) {
     long long cid = api->chat_id(ctx);
 
-    // 1. Уведомляем пользователя о начале поиска
     api->c_reset(ctx);
-    api->c_markdown(ctx, "🔍 **Ищу музыку на YouTube:** `");
+    api->c_markdown(ctx, "🔍 **Поиск аудио на YouTube:** `");
     api->c_text(ctx, query.c_str());
     api->c_markdown(ctx, "`...");
     api->c_edit(ctx, 0);
@@ -187,7 +185,7 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
     std::string title;
     std::string author;
 
-    // 2. Если это не прямая ссылка — ищем через Invidious Search API
+    // 1. Если не прямая ссылка — ищем через Invidious Search API
     if (video_id.empty()) {
         std::string encoded_q = url_encode(query);
         for (size_t i = 0; i < NUM_INSTANCES; ++i) {
@@ -210,7 +208,7 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    // 3. Получаем аудиопотоки видео
+    // 2. Получаем аудиопотоки видео
     std::string audio_stream_url;
     int duration_sec = 0;
 
@@ -253,7 +251,7 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
     if (title.empty()) title = "YouTube Audio";
     if (author.empty()) author = "YouTube";
 
-    // 4. Оповещаем о начале загрузки
+    // 3. Оповещаем о начале загрузки
     api->c_reset(ctx);
     api->c_markdown(ctx, "⬇️ **Скачиваю аудио с YouTube...**\n🎵 **Трек:** ");
     api->c_text(ctx, title.c_str());
@@ -266,7 +264,7 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
     }
     api->c_edit(ctx, 0);
 
-    // 5. Скачиваем аудиофайл в кэш приложения
+    // 4. Скачиваем аудиофайл в кэш приложения
     char cache_buf[512] = {0};
     api->cache_dir(ctx, cache_buf, sizeof(cache_buf));
     std::string cache_dir = (*cache_buf) ? cache_buf : "/data/local/tmp";
@@ -283,7 +281,7 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    // 6. Формируем подпись к медиа и отправляем файл
+    // 5. Формируем подпись к медиа и отправляем файл в плеер Telegram
     api->c_reset(ctx);
     api->c_markdown(ctx, "🎵 **");
     api->c_text(ctx, title.c_str());
@@ -298,24 +296,101 @@ void cmd_mus(koto_ctx* ctx, const koto_api* api) {
 
     api->c_send_file(ctx, cid, local_path.c_str(), 0);
 
-    // 7. Обновляем статусное сообщение
+    // 6. Обновляем статусное сообщение
     api->c_reset(ctx);
     api->c_markdown(ctx, "✅ **Трек успешно отправлен!**\n> 🎵 ");
     api->c_text(ctx, title.c_str());
     api->c_edit(ctx, 0);
 }
 
-// ── 2. Команда .musconfig ───────────────────────────────────────────────────
+// ── 1. Команда .mus <запрос> [--yt] ──────────────────────────────────────────
+void cmd_mus(koto_ctx* ctx, const koto_api* api) {
+    const char* raw_args = api->cmd_args(ctx);
+    while (raw_args && (*raw_args == ' ' || *raw_args == '\t')) raw_args++;
+    if (!raw_args || !*raw_args) {
+        api->c_reset(ctx);
+        api->c_markdown(ctx,
+            "⚠️ **Использование:** `.mus <название песни / артист> [--yt]`\n"
+            "> • По умолчанию ищет через быстрых Telegram-ботов (@lybot, @vkmusic_bot)\n"
+            "> • С флагом `--yt` или командой `.musyt` скачивает напрямую с YouTube\n"
+            "> _Например:_ `.mus Linkin Park Numb` или `.mus Queen Bohemian Rhapsody --yt`");
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    std::string query = raw_args;
+    bool use_youtube = false;
+
+    // Проверяем флаги YouTube
+    if (query.size() >= 4 && query.rfind("--yt") == query.size() - 4) {
+        use_youtube = true;
+        query.resize(query.size() - 4);
+    } else if (query.size() >= 3 && query.rfind("-yt") == query.size() - 3) {
+        use_youtube = true;
+        query.resize(query.size() - 3);
+    } else if (query.size() >= 2 && query.rfind("-y") == query.size() - 2) {
+        use_youtube = true;
+        query.resize(query.size() - 2);
+    }
+    while (!query.empty() && (query.back() == ' ' || query.back() == '\t')) query.pop_back();
+
+    // Если передана ссылка на YouTube — сразу YouTube
+    if (!extract_video_id_from_url(query).empty()) {
+        use_youtube = true;
+    }
+
+    long long cid = api->chat_id(ctx);
+    long long mid = api->msg_id(ctx);
+
+    if (!use_youtube) {
+        // Проверяем, поддерживает ли текущая версия приложения отправку через inline-бота
+        if (api->host_version(ctx) >= 13 && api->c_send_inline_bot != nullptr) {
+            api->c_reset(ctx);
+            api->c_markdown(ctx, "🔍 **Ищу музыку через Telegram-ботов...**\n> 🎵 `");
+            api->c_text(ctx, query.c_str());
+            api->c_markdown(ctx, "`\n> 💡 _Для поиска напрямую в YouTube укажите `--yt`_");
+            api->c_edit(ctx, 0);
+
+            // Отправляем через основного бота (@lybot с фоллбэком на @vkmusic_bot)
+            api->c_send_inline_bot(ctx, "lybot", query.c_str(), cid, mid);
+            return;
+        }
+        // Если хост версии < 13 или боты недоступны — бесшовно переключаемся на YouTube
+    }
+
+    do_youtube_download(ctx, api, query);
+}
+
+// ── 2. Команда .musyt <запрос или ссылка> ─────────────────────────────────────
+void cmd_mus_yt(koto_ctx* ctx, const koto_api* api) {
+    const char* raw_args = api->cmd_args(ctx);
+    while (raw_args && (*raw_args == ' ' || *raw_args == '\t')) raw_args++;
+    if (!raw_args || !*raw_args) {
+        api->c_reset(ctx);
+        api->c_markdown(ctx,
+            "⚠️ **Использование:** `.musyt <название песни / артист / ссылка YouTube>`\n"
+            "> Например: `.musyt Queen The Show Must Go On`");
+        api->c_edit(ctx, 0);
+        return;
+    }
+    do_youtube_download(ctx, api, raw_args);
+}
+
+// ── 3. Команда .musconfig ───────────────────────────────────────────────────
 void cmd_mus_config(koto_ctx* ctx, const koto_api* api) {
     api->c_reset(ctx);
     api->c_markdown(ctx,
-        "🎵 **Kotogram YouTube Music Module (C++ ABI 3)**\n\n"
-        "✨ **Возможности:**\n"
-        "• Мгновенный поиск любого трека на YouTube без сторонних ботов\n"
-        "• Прямое скачивание оригинального потока M4A/AAC\n"
-        "• Поддержка отправки в плеер Telegram с артистом и названием\n"
-        "• Поддержка как текста, так и ссылок `youtu.be` / `youtube.com`\n\n"
-        "🌐 **Зеркала Invidious API:**\n");
+        "🎵 **Kotogram Music Player (C++ ABI 3)**\n\n"
+        "✨ **Двойной режим поиска:**\n"
+        "• **Боты Telegram (быстро):** `.mus <песня>` — передача трека напрямую через сервера Telegram без загрузки на телефон.\n"
+        "• **YouTube Direct:** `.mus <песня> --yt` или `.musyt <песня>` — скачивание чистого аудиопотока M4A/AAC с YouTube.\n\n"
+        "🤖 **Telegram-боты:**\n");
+    for (size_t i = 0; i < NUM_BOTS; ++i) {
+        api->c_markdown(ctx, "• `@");
+        api->c_text(ctx, MUSIC_BOTS[i]);
+        api->c_markdown(ctx, "`\n");
+    }
+    api->c_markdown(ctx, "\n🌐 **Зеркала YouTube (Invidious):**\n");
     for (size_t i = 0; i < NUM_INSTANCES; ++i) {
         api->c_markdown(ctx, "• `");
         api->c_text(ctx, INSTANCES[i]);
@@ -325,7 +400,7 @@ void cmd_mus_config(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
-// ── 3. Команда .musclean ────────────────────────────────────────────────────
+// ── 4. Команда .musclean ────────────────────────────────────────────────────
 void cmd_mus_clean(koto_ctx* ctx, const koto_api* api) {
     char cache_buf[512] = {0};
     api->cache_dir(ctx, cache_buf, sizeof(cache_buf));
@@ -360,7 +435,14 @@ const koto_command COMMANDS[] = {
         "mus",
         &cmd_mus,
         KOTO_LEVEL_ALL,
-        "Поиск и отправка музыки с YouTube.",
+        "Поиск музыки через Telegram-ботов или YouTube (--yt).",
+        "<запрос> [--yt]"
+    },
+    {
+        "musyt",
+        &cmd_mus_yt,
+        KOTO_LEVEL_ALL,
+        "Прямой поиск и скачивание аудио с YouTube.",
         "<запрос или ссылка>"
     },
     {
@@ -383,7 +465,7 @@ const koto_command COMMANDS[] = {
 const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "music",
-    "Поиск и скачивание музыки с YouTube (C++ ABI 3)",
+    "Музыкальный плеер: Telegram-боты + прямой YouTube (C++ ABI 3)",
     "2.2.0",
     12, // KoteLoader v0.2.1+
     0,

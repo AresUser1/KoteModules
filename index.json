@@ -1,6 +1,6 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "updated": "2026-10-09",
   "modules": [
     {
@@ -13,9 +13,21 @@
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
-        { "name": "checkers", "doc": "Начать игру в русские шашки (инлайн)", "usage": "[white|black]" },
-        { "name": "шашки", "doc": "Начать игру в русские шашки (псевдоним)", "usage": "[white|black]" },
-        { "name": "checkersend", "doc": "Список активных партий или завершение игры по ID", "usage": "[id]" }
+        {
+          "name": "checkers",
+          "doc": "Начать игру в русские шашки (инлайн)",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "шашки",
+          "doc": "Начать игру в русские шашки (псевдоним)",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "checkersend",
+          "doc": "Список активных партий или завершение игры по ID",
+          "usage": "[id]"
+        }
       ],
       "size": 27464,
       "sha256": "0b8c4c20ce52fde42bb8e06bfcba93509b4110da5f64021701425f22d62a5fc2",
@@ -27,15 +39,23 @@
     {
       "id": "copymessage",
       "name": "copymessage",
-      "display_name": "CopyMessage",
+      "display_name": "CopyMessage (Native)",
       "author": "Kote",
       "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
       "version": "1.3.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
-        { "name": "copy", "doc": "Копирование сообщения в Избранное с отчетом", "usage": "[в ответ на сообщение]" },
-        { "name": "hcopy", "doc": "Тихое копирование сообщения в Избранное", "usage": "[в ответ на сообщение]" }
+        {
+          "name": "copy",
+          "doc": "Копирование сообщения в Избранное с отчетом",
+          "usage": "[в ответ на сообщение]"
+        },
+        {
+          "name": "hcopy",
+          "doc": "Тихое копирование сообщения в Избранное",
+          "usage": "[в ответ на сообщение]"
+        }
       ],
       "size": 7944,
       "sha256": "90bec6af5594b7180db9ba103c19b22ff9999b507241e89ff379d0da101db2d4",
@@ -45,23 +65,550 @@
       "min_host_version": 1
     },
     {
+      "id": "copym_lua",
+      "name": "copym",
+      "display_name": "CopyMessage (Lua)",
+      "author": "Kote",
+      "description": "Скриптовая версия копирования сообщений и медиа из защищенных каналов без форварда.",
+      "version": "1.2.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "copy",
+          "doc": "Копирование в Избранное",
+          "usage": "[в ответ на сообщение]"
+        },
+        {
+          "name": "hcopy",
+          "doc": "Тихое копирование",
+          "usage": "[в ответ на сообщение]"
+        }
+      ],
+      "size": 2165,
+      "sha256": "b6cfb2591ab8130d6a46357d7a8c54c0ecd5b3df3ce783ac3f461f8c3e5e0f0b",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copym.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/copym.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
       "id": "music",
       "name": "music",
-      "display_name": "YouTube Music",
+      "display_name": "Music Player (Bots + YouTube)",
       "author": "Kote",
-      "description": "Поиск и скачивание музыки с YouTube напрямую на C++ без ботов. Поддержка отправки в Telegram плеер с названием трека и исполнителем.",
+      "description": "Поиск и отправка музыки: быстрый поиск через ботов (@lybot, @vkmusic_bot) по умолчанию либо напрямую с YouTube через флаг --yt или команду .musyt с качеством M4A/AAC.",
       "version": "2.2.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
-        { "name": "mus", "doc": "Поиск и отправка музыки с YouTube", "usage": "<запрос или ссылка>" },
-        { "name": "musconfig", "doc": "Информация и конфигурация музыкального модуля", "usage": "" },
-        { "name": "musclean", "doc": "Очистить кэш скачанных треков на устройстве", "usage": "" }
+        {
+          "name": "mus",
+          "doc": "Поиск музыки через ботов или YouTube (--yt)",
+          "usage": "<запрос> [--yt]"
+        },
+        {
+          "name": "musyt",
+          "doc": "Прямой поиск и скачивание с YouTube",
+          "usage": "<запрос или ссылка>"
+        },
+        {
+          "name": "musconfig",
+          "doc": "Конфигурация музыкального модуля",
+          "usage": ""
+        },
+        {
+          "name": "musclean",
+          "doc": "Очистить кэш скачанных треков",
+          "usage": ""
+        }
       ],
-      "size": 56952,
-      "sha256": "14cb341939fc3ce31edd47e6ec96990fbfbbc0b7bea6a5f853e97ed8e5221b58",
+      "size": 59120,
+      "sha256": "595610a19dadb7b75329baa817647851bbd1f6cb1e41dd2b92ccf869179b7c98",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "license": "MIT",
+      "min_host_version": 12
+    },
+    {
+      "id": "tagger",
+      "name": "tagger",
+      "display_name": "Tagger (Native .so)",
+      "author": "SynForge",
+      "description": "Высокоскоростной нативный теггер участников чата с вайтлистами, кастомными никами и невидимыми тегами.",
+      "version": "3.6.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "tag",
+          "doc": "Тегнуть участников чата",
+          "usage": "<текст>"
+        },
+        {
+          "name": "itag",
+          "doc": "Инлайн-теггер",
+          "usage": "<текст>"
+        },
+        {
+          "name": "etag",
+          "doc": "Тегнуть с эмодзи",
+          "usage": "<текст>"
+        },
+        {
+          "name": "stoptag",
+          "doc": "Остановить текущий теггинг",
+          "usage": ""
+        },
+        {
+          "name": "cleartag",
+          "doc": "Очистить историю тегов",
+          "usage": ""
+        },
+        {
+          "name": "tagdelay",
+          "doc": "Настроить задержку теггера",
+          "usage": "<сек>"
+        }
+      ],
+      "size": 108368,
+      "sha256": "81a78db964ef4978a6edbbc9443b590a65394702c14ea4067c1e5a52d2f14137",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/tagger.so",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "tagger_lua",
+      "name": "tagger",
+      "display_name": "Tagger (Lua)",
+      "author": "SynForge",
+      "description": "Lua-версия продвинутого теггера участников чата с вайтлистами и кастомными никами.",
+      "version": "3.6.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "tag",
+          "doc": "Тегнуть участников чата",
+          "usage": "<текст>"
+        },
+        {
+          "name": "stoptag",
+          "doc": "Остановить теггинг",
+          "usage": ""
+        }
+      ],
+      "size": 15070,
+      "sha256": "de6a368cf3256c6dcf9700b5f385d24f04f0fcc982e80ec471495085bf6a3486",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/tagger.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "tt_dl",
+      "name": "tt_dl",
+      "display_name": "TikTok Downloader (Native .so)",
+      "author": "SynForge",
+      "description": "Скачивание видео и фото из TikTok без водяного знака в высоком качестве через TikWM API с потоковым воспроизведением.",
+      "version": "2.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "tt",
+          "doc": "Скачать видео/фото из TikTok без вотермарки",
+          "usage": "<ссылка / reply>"
+        },
+        {
+          "name": "tt_caption",
+          "doc": "Настройка подписи видео",
+          "usage": "[full|short]"
+        }
+      ],
+      "size": 72424,
+      "sha256": "deca8a421b3d3fcdbad7175ceab1e90de6a40222129e31204d4921a5dbfe47e4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/tt_dl.so",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "tt_dl_lua",
+      "name": "tt_dl",
+      "display_name": "TikTok Downloader (Lua)",
+      "author": "SynForge",
+      "description": "Lua-скрипт скачивания видео и фото из TikTok без водяного знака через TikWM API.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "tt",
+          "doc": "Скачать из TikTok",
+          "usage": "<ссылка / reply>"
+        }
+      ],
+      "size": 9126,
+      "sha256": "e823d7486693d4a85572a8f018550886c4c77c02418cef33b5a9b5e1463fe30e",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/tt_dl.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "spam",
+      "name": "spam",
+      "display_name": "Spammer (Native .so)",
+      "author": "SynForge",
+      "description": "Высокоскоростной нативный спаммер с форматированием, премиум-эмодзи и отменой в 1 клик.",
+      "version": "2.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "spam",
+          "doc": "Отправить серию сообщений",
+          "usage": "<кол-во> <текст>"
+        },
+        {
+          "name": "fastspam",
+          "doc": "Быстрый спам без задержек",
+          "usage": "<текст>"
+        },
+        {
+          "name": "stopspam",
+          "doc": "Мгновенно остановить спам",
+          "usage": ""
+        }
+      ],
+      "size": 50104,
+      "sha256": "b1dbea86b0ce058b8c978f40dda9ffb855f62bfc7565504e9f1832c35590ab0d",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/spam.so",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "spam_lua",
+      "name": "spam",
+      "display_name": "Spammer (Lua)",
+      "author": "SynForge",
+      "description": "Скриптовый спаммер с поддержкой регулируемой задержки и форматирования.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "spam",
+          "doc": "Спам сообщениями",
+          "usage": "<кол-во> <текст>"
+        },
+        {
+          "name": "stopspam",
+          "doc": "Остановить спам",
+          "usage": ""
+        }
+      ],
+      "size": 4391,
+      "sha256": "806136e87dbcbb05547e63edd0cb9d3c9f825ca0e145051531ac1f712b0a9ab6",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/spam.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "shazam",
+      "name": "shazam",
+      "display_name": "Shazam & Music Finder",
+      "author": "SynForge",
+      "description": "Распознавание музыки по аудио и голосовым сообщениям, поиск треков через Apple iTunes и текстов песен через lyrics.ovh.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "music",
+          "doc": "Поиск трека в Apple iTunes",
+          "usage": "<запрос>"
+        },
+        {
+          "name": "lyrics",
+          "doc": "Поиск текста песни",
+          "usage": "<артист - трек>"
+        },
+        {
+          "name": "shazam",
+          "doc": "Распознать музыку по реплаю на войс/аудио",
+          "usage": "[reply | -d]"
+        }
+      ],
+      "size": 10734,
+      "sha256": "6ff02e6f2ba08209f3afb4458bae4ee3fca72bb3d5dc2bb570ca81a94fde20d4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/shazam.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/shazam.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "notes",
+      "name": "notes",
+      "display_name": "Notes & Snippets",
+      "author": "SynForge",
+      "description": "Система хранения заметок и сниппетов в SQLite с динамическими макросами {name}, {time}, {date}, {uptime}, {ping}.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "save",
+          "doc": "Сохранить заметку",
+          "usage": "<имя> [текст/reply]"
+        },
+        {
+          "name": "note",
+          "doc": "Показать заметку",
+          "usage": "<имя>"
+        },
+        {
+          "name": "notes",
+          "doc": "Список всех сохранённых заметок",
+          "usage": ""
+        },
+        {
+          "name": "delnote",
+          "doc": "Удалить заметку",
+          "usage": "<имя>"
+        },
+        {
+          "name": "exportnotes",
+          "doc": "Экспорт заметок в файл",
+          "usage": ""
+        },
+        {
+          "name": "importnotes",
+          "doc": "Импорт заметок из файла",
+          "usage": ""
+        }
+      ],
+      "size": 11108,
+      "sha256": "b88d43e60157b2d6cc8cae40c4a3f4bcd6de51ca2712c1025ddd2d222e800f13",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/notes.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/notes.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "purge",
+      "name": "purge",
+      "display_name": "Purge Messages",
+      "author": "SynForge",
+      "description": "Хирургическая и массовая зачистка сообщений в чатах с фильтрацией по автору, медиа и ботам.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "purge",
+          "doc": "Очистить сообщения до реплая или N штук",
+          "usage": "[кол-во / reply]"
+        },
+        {
+          "name": "purgeme",
+          "doc": "Очистить только свои сообщения",
+          "usage": "[кол-во]"
+        },
+        {
+          "name": "purgeuser",
+          "doc": "Очистить сообщения конкретного пользователя",
+          "usage": "<@user> [кол-во]"
+        },
+        {
+          "name": "purgemedia",
+          "doc": "Очистить только медиасообщения",
+          "usage": "[кол-во]"
+        },
+        {
+          "name": "purgebots",
+          "doc": "Очистить сообщения ботов",
+          "usage": ""
+        }
+      ],
+      "size": 10337,
+      "sha256": "b88817ace2538a05cde01afc43887da064b05c1c88210cbb1413f6204d99fbd4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/purge.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/purge.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "remind",
+      "name": "remind",
+      "display_name": "Remind Scheduler",
+      "author": "SynForge",
+      "description": "Умный планировщик напоминаний и отложенных задач с поддержкой гибких форматов времени (10m, 2h, 1d).",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "remind",
+          "doc": "Создать напоминание",
+          "usage": "<время> <текст>"
+        },
+        {
+          "name": "reminds",
+          "doc": "Список активных напоминаний",
+          "usage": ""
+        },
+        {
+          "name": "delremind",
+          "doc": "Удалить напоминание по ID",
+          "usage": "<id>"
+        }
+      ],
+      "size": 10271,
+      "sha256": "0c30af1a9005d8001ff2d242abb6d57eb2b9c7e168d7d86520d1f82fb7e33110",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/remind.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/remind.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "translator",
+      "name": "translator",
+      "display_name": "Translator & AutoTR",
+      "author": "SynForge",
+      "description": "Мгновенный перевод сообщений через Google Translate с автоопределением языка и автопереводом чатов.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "tr",
+          "doc": "Перевести текст или сообщение по реплаю",
+          "usage": "[lang] [текст/reply]"
+        },
+        {
+          "name": "autotr",
+          "doc": "Автоперевод входящих в чате",
+          "usage": "[lang|off]"
+        },
+        {
+          "name": "detect",
+          "doc": "Определить язык сообщения",
+          "usage": "[reply]"
+        }
+      ],
+      "size": 10781,
+      "sha256": "bbb3627693ea28d53b20d8bb5db2f9130c2a1b65750ed42606bfb45c17b2aaae",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/translator.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/translator.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "antidel",
+      "name": "antidel",
+      "display_name": "Anti-Delete & Edit Tracker",
+      "author": "SynForge",
+      "description": "Мониторинг, кэширование и восстановление удалённых и отредактированных сообщений в группах и ЛС.",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "antidel",
+          "doc": "Включить/выключить логирование удалений",
+          "usage": "[on|off]"
+        },
+        {
+          "name": "deleted",
+          "doc": "Показать последние удалённые сообщения",
+          "usage": ""
+        },
+        {
+          "name": "history",
+          "doc": "История правок сообщения по реплаю",
+          "usage": ""
+        }
+      ],
+      "size": 11123,
+      "sha256": "d4241e10fede479f17b9ec66fa70d963dcb7299f9f5036faece686d171f98300",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/antidel.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/antidel.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "banall",
+      "name": "banall",
+      "display_name": "BanAll Admin Tools",
+      "author": "SynForge",
+      "description": "Массовое администрирование чата с автоудалением сообщений забаненных участников (требуются права администратора).",
+      "version": "2.1.0",
+      "kind": "lua",
+      "abi": "lua-5.4",
+      "commands": [
+        {
+          "name": "banall",
+          "doc": "Забанить всех участников чата",
+          "usage": ""
+        },
+        {
+          "name": "kickall",
+          "doc": "Кикнуть всех участников чата",
+          "usage": ""
+        },
+        {
+          "name": "unbanall",
+          "doc": "Разбанить всех забаненных",
+          "usage": ""
+        }
+      ],
+      "size": 7733,
+      "sha256": "a18df1214fa1dd2e60d4b46c4e184fe008b6fb1822e7b3eef512f3bd6125dde4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/banall.lua",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/modules/banall.lua",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "test_files",
+      "name": "test_files",
+      "display_name": "Test Files Diagnostics",
+      "author": "Kote",
+      "description": "Диагностический модуль проверки отправки файлов из кэша приложения, памяти и относительных путей (C ABI 3).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "tfinfo",
+          "doc": "Информация о путях и кэше",
+          "usage": ""
+        },
+        {
+          "name": "tfcache",
+          "doc": "Тест отправки из кэша приложения",
+          "usage": ""
+        },
+        {
+          "name": "tfmem",
+          "doc": "Тест отправки байтов из памяти",
+          "usage": ""
+        },
+        {
+          "name": "tfrel",
+          "doc": "Тест отправки по относительному пути",
+          "usage": ""
+        }
+      ],
+      "size": 11272,
+      "sha256": "8ccc6236edc016d2bdec917405b915477d9da3ced9c02a45d33b139cf524fa93",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/test_files.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/test_files.c",
       "license": "MIT",
       "min_host_version": 12
     }
