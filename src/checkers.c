@@ -554,18 +554,50 @@ static void render_game(koto_ctx* ctx, const koto_api* api, Game* g) {
 // ── Обработчики команд ────────────────────────────────────────────────────
 
 static void cmd_checkers(koto_ctx* ctx, const koto_api* api) {
-    api->c_reset(ctx);
-    api->c_text(ctx, "♟ ");
-    api->c_fmt(ctx, "Шашки (Инлайн-игра через бота)\n\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, "Для игры в шашки с интерактивной доской на кнопках требуется бот-помощник (via-bot).\n\n");
-    api->c_text(ctx, "1. Укажите токен бота в ");
-    api->c_fmt(ctx, "Настройки → Токен бота", KOTO_ENT_BOLD);
-    api->c_text(ctx, " в приложении KoteLoader.\n");
-    api->c_text(ctx, "2. После настройки запустите игру командой ");
-    api->c_fmt(ctx, ".шашки", KOTO_ENT_CODE);
-    api->c_text(ctx, " или через инлайн-режим ");
-    api->c_fmt(ctx, "@имя_бота checkers", KOTO_ENT_CODE);
-    api->c_text(ctx, " в любом чате!");
+    long long sender = api->sender_id(ctx);
+    long long chat = api->chat_id(ctx);
+
+    char name[64];
+    if (api->user_name(ctx, sender, name, sizeof(name)) <= 0 || !name[0]) {
+        snprintf(name, sizeof(name), "Игрок_%lld", sender % 10000);
+    }
+
+    const char* args = api->cmd_args(ctx);
+    while (args && (*args == ' ' || *args == '\t')) args++;
+
+    Game* g = alloc_game();
+    generate_id(g->id);
+    g->state = STATE_LOBBY;
+    init_board(g->board);
+    g->chat_id = chat;
+    g->current_turn = 'w';
+    g->sel_r = -1;
+    g->sel_c = -1;
+    g->draw_by = 0;
+    g->rematch_by = 0;
+    g->winner = 0;
+    g->finish_reason = 0;
+    g->last_active = time(NULL);
+
+    // Поддержка предвыбора цвета: .checkers white / .checkers black
+    if (args && *args) {
+        char lower_arg[32];
+        int k = 0;
+        for (const char* p = args; *p && k < 31 && *p != ' '; ++p) {
+            lower_arg[k++] = tolower(*p);
+        }
+        lower_arg[k] = '\0';
+
+        if (strstr(lower_arg, "w") || strstr(lower_arg, "бел") || strstr(lower_arg, "white")) {
+            g->white_id = sender;
+            strncpy(g->white_name, name, sizeof(g->white_name) - 1);
+        } else if (strstr(lower_arg, "b") || strstr(lower_arg, "чер") || strstr(lower_arg, "чёр") || strstr(lower_arg, "black")) {
+            g->black_id = sender;
+            strncpy(g->black_name, name, sizeof(g->black_name) - 1);
+        }
+    }
+
+    render_game(ctx, api, g);
 
     if (api->is_outgoing(ctx)) {
         api->c_edit(ctx, KOTO_FMT_PLAIN);
