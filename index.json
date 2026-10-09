@@ -43,6 +43,27 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
       "license": "MIT",
       "min_host_version": 1
+    },
+    {
+      "id": "music",
+      "name": "music",
+      "display_name": "YouTube Music",
+      "author": "Kote",
+      "description": "Поиск и скачивание музыки с YouTube напрямую на C++ без ботов. Поддержка отправки в Telegram плеер с названием трека и исполнителем.",
+      "version": "2.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        { "name": "mus", "doc": "Поиск и отправка музыки с YouTube", "usage": "<запрос или ссылка>" },
+        { "name": "musconfig", "doc": "Информация и конфигурация музыкального модуля", "usage": "" },
+        { "name": "musclean", "doc": "Очистить кэш скачанных треков на устройстве", "usage": "" }
+      ],
+      "size": 56952,
+      "sha256": "14cb341939fc3ce31edd47e6ec96990fbfbbc0b7bea6a5f853e97ed8e5221b58",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "license": "MIT",
+      "min_host_version": 12
     }
   ]
 }
