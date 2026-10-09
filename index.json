@@ -70,7 +70,7 @@
       "display_name": "YouTube Music Player",
       "author": "Kote",
       "description": "Поиск и отправка музыки: быстрый поиск через ботов (@lybot, @vkmusic_bot) по умолчанию либо напрямую с YouTube через флаг --yt или команду .musyt с качеством M4A/AAC в Telegram плеер.",
-      "version": "2.2.0",
+      "version": "2.3.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -95,10 +95,10 @@
           "usage": ""
         }
       ],
-      "size": 75936,
-      "sha256": "03e52356b436d92f8a1ced8d7becf9ad0a0e579f5ba765828de84d85632e9e14",
+      "size": 76032,
+      "sha256": "89466eb9dc473a2d37b9dbb487c712d442644f5f7014a8987d3a3e7e474fd44b",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "git_url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
       "license": "MIT",
       "min_host_version": 12
     },
@@ -107,8 +107,8 @@
       "name": "rp",
       "display_name": "Role-Play (РП команды)",
       "author": "Kote",
-      "description": "Полнофункциональный ролевой модуль: гибкая система действий (.обнять, .кусь, .поцеловать и т.д.), кастомные РП-ники (.setrpnick), создание собственных РП-команд (.addrp), права доступа и кастомные эмодзи.",
-      "version": "2.8.0",
+      "description": "Полнофункциональный ролевой модуль: добавление своих действий (.addrp), управление доступом в чатах (.rp), кастомные РП-ники (.setrpnick) и создатели команд.",
+      "version": "2.9.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -120,12 +120,12 @@
         {
           "name": "addrp",
           "doc": "Добавить новую RP-команду",
-          "usage": "<алиасы>|<действие>|<эмодзи>"
+          "usage": "<алиасы>|<действие>"
         },
         {
           "name": "delrp",
           "doc": "Удалить RP-команду",
-          "usage": "<алиас|all|prem|simple>"
+          "usage": "<алиас|all>"
         },
         {
           "name": "rplist",
@@ -161,27 +161,12 @@
           "name": "listrpcreators",
           "doc": "Список создателей RP-команд",
           "usage": ""
-        },
-        {
-          "name": "setrpemoji",
-          "doc": "Настроить кастомный эмодзи для ключа",
-          "usage": "<KEY> <ID/эмодзи> [fallback]"
-        },
-        {
-          "name": "delrpemoji",
-          "doc": "Сбросить эмодзи ключа к дефолту",
-          "usage": "<KEY>"
-        },
-        {
-          "name": "rpemojis",
-          "doc": "Список статических RP-эмодзи",
-          "usage": ""
         }
       ],
-      "size": 147280,
-      "sha256": "e91758e0108a32165332cb312cc488b44e29b511f2d8eca3c4fd0456163adbfe",
+      "size": 129480,
+      "sha256": "de93ee928c4d45e37ea4a7721046aea0af9432bb023f57db2b7e679d47f1b7d7",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
+      "git_url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
       "license": "MIT",
       "min_host_version": 12
     }

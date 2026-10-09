@@ -463,7 +463,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "music",
     "Музыкальный плеер: Telegram-боты + прямой YouTube (C++ ABI 3)",
-    "2.2.0",
+    "2.3.0",
     12, // KoteLoader v0.2.1+
     0,
     COMMANDS,
@@ -471,7 +471,7 @@ const koto_module MODULE = {
     nullptr, 0,
     nullptr,
     nullptr, 0,
-    nullptr
+    "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so"
 };
 
 } // namespace

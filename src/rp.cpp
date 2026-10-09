@@ -1,6 +1,5 @@
 // rp.cpp
 // Полнофункциональный Role-Play модуль для Kotogram (C/C++ ABI 3).
-// Перенесено из rpmod.py (Kote).
 // Автор: Kote
 
 #include <string>
@@ -64,117 +63,42 @@ static inline bool db_has(koto_ctx* ctx, const koto_api* api, const std::string&
     return api->db_get(ctx, key.c_str(), buf, sizeof(buf) - 1) > 0;
 }
 
-// ── Статические эмодзи ────────────────────────────────────────────────────────
+// ── Очистка старых предустановленных дефолтов при обновлении ───────────────────
 
-struct StaticEmojiDef {
-    const char* key;
-    long long   doc_id;
-    const char* fallback;
-};
+static void cleanup_old_defaults_if_needed(koto_ctx* ctx, const koto_api* api) {
+    std::string v = db_get_str(ctx, api, "v_cleaned");
+    if (v == "2.9.0") return;
 
-static const StaticEmojiDef DEFAULT_STATIC_EMOJIS[] = {
-    {"ERROR",    5195105446679039811LL, "❌"},
-    {"SUCCESS",  5195127277997806826LL, "✅"},
-    {"INFO",     6028435952299413210LL, "ℹ️"},
-    {"TRASH",    6039522349517115015LL, "🗑️"},
-    {"LOCK",     5778570255555105942LL, "🔒"},
-    {"CROWN",    5807868868886009920LL, "👑"},
-    {"NICK",     6008104758236156926LL, "📛"},
-    {"COMMENT",  6034831751308644168LL, "💬"},
-    {"LOAD",     5891211339170326418LL, "⏳"},
-    {"IN_OUT",   5877307202888273539LL, "📥"},
-    {"UPDATE",   5877410604225924969LL, "🔄"},
-    {"SKIP",     5253868738251335638LL, "⏭️"},
-    {"LIST",     5956561916573782596LL, "📋"},
-    {"SETTINGS", 6032742198179532882LL, "⚙️"},
-};
+    static const char* OLD_DEFAULTS[] = {
+        "обнять", "hug", "поцеловать", "kiss", "кусь", "bite", "ударить", "slap",
+        "погладить", "pat", "убить", "kill", "чай", "tea", "кофе", "coffee",
+        "спать", "sleep", "прижать", "cuddle", "ущипнуть", "pinch", "покормить", "feed",
+        "лизнуть", "lick", "пнуть", "kick", "выпить", "drink", "расстрелять", "shoot",
+        "связать", "tie", "укрыть", "blanket", "подарить", "gift", "похвалить", "praise",
+        "испугать", "scare", "утешить", "comfort"
+    };
 
-static void put_static_emoji(koto_ctx* ctx, const koto_api* api, const std::string& key) {
-    std::string key_upper = key;
-    for (char& c : key_upper) c = (char)std::toupper((unsigned char)c);
-
-    std::string custom = db_get_str(ctx, api, "se:" + key_upper);
-    if (!custom.empty()) {
-        size_t pipe = custom.find('|');
-        if (pipe != std::string::npos) {
-            long long doc_id = 0;
-            try { doc_id = std::stoll(custom.substr(0, pipe)); } catch (...) {}
-            std::string fb = custom.substr(pipe + 1);
-            if (fb.empty()) fb = "✨";
-            if (doc_id != 0) {
-                api->c_emoji(ctx, fb.c_str(), doc_id);
-            } else {
-                api->c_text(ctx, fb.c_str());
-            }
-            return;
+    std::string cur_list = db_get_str(ctx, api, "cmd_list");
+    auto cmds = split(cur_list, ',');
+    std::vector<std::string> remaining;
+    for (const auto& c : cmds) {
+        bool is_old = false;
+        for (const char* old_cmd : OLD_DEFAULTS) {
+            if (c == old_cmd) { is_old = true; break; }
+        }
+        if (is_old) {
+            db_del(ctx, api, "cmd:" + c);
+        } else {
+            remaining.push_back(c);
         }
     }
-
-    for (const auto& item : DEFAULT_STATIC_EMOJIS) {
-        if (key_upper == item.key) {
-            if (item.doc_id != 0) {
-                api->c_emoji(ctx, item.fallback, item.doc_id);
-            } else {
-                api->c_text(ctx, item.fallback);
-            }
-            return;
-        }
+    std::string new_list;
+    for (const auto& c : remaining) {
+        if (!new_list.empty()) new_list += ",";
+        new_list += c;
     }
-
-    api->c_text(ctx, "❔");
-}
-
-// ── Встроенный набор RP-действий по умолчанию ─────────────────────────────────
-
-struct DefaultRPAction {
-    const char* aliases;
-    const char* action;
-    long long   doc_id;
-    const char* fallback;
-};
-
-static const DefaultRPAction DEFAULT_ACTIONS[] = {
-    {"обнять/hug", "обнял(а)", 0, "🤗"},
-    {"поцеловать/kiss", "поцеловал(а)", 0, "💋"},
-    {"кусь/bite", "сделал(а) кусь", 0, "😼"},
-    {"ударить/slap", "дал(а) пощечину", 0, "👋"},
-    {"погладить/pat", "погладил(а)", 0, "🖐"},
-    {"убить/kill", "убил(а)", 0, "🔪"},
-    {"чай/tea", "налил(а) ароматного чаю для", 0, "☕️"},
-    {"кофе/coffee", "сварил(а) горячий кофе для", 0, "☕️"},
-    {"спать/sleep", "лег(ла) спать вместе с", 0, "💤"},
-    {"прижать/cuddle", "крепко прижал(а) к себе", 0, "🫂"},
-    {"ущипнуть/pinch", "ущипнул(а)", 0, "🤏"},
-    {"покормить/feed", "покормил(а)", 0, "🍕"},
-    {"лизнуть/lick", "лизнул(а)", 0, "👅"},
-    {"пнуть/kick", "пнул(а)", 0, "🦵"},
-    {"выпить/drink", "выпил(а) за здоровье", 0, "🍻"},
-    {"расстрелять/shoot", "расстрелял(а)", 0, "🔫"},
-    {"связать/tie", "связал(а)", 0, "🪢"},
-    {"укрыть/blanket", "укрыл(а) теплым пледом", 0, "🛌"},
-    {"подарить/gift", "подарил(а) подарок для", 0, "🎁"},
-    {"похвалить/praise", "похвалил(а)", 0, "✨"},
-    {"испугать/scare", "напугал(а)", 0, "👻"},
-    {"утешить/comfort", "утешил(а)", 0, "🥺"},
-};
-
-static void ensure_default_commands(koto_ctx* ctx, const koto_api* api) {
-    std::string inited = db_get_str(ctx, api, "inited");
-    if (!inited.empty()) return;
-
-    std::string cmd_list;
-    for (const auto& a : DEFAULT_ACTIONS) {
-        auto alist = split(a.aliases, '/');
-        for (const auto& alias : alist) {
-            std::string al_low = to_lower(alias);
-            std::string val = std::string(a.action) + "|" + std::to_string(a.doc_id) + "|" + a.fallback;
-            db_set_str(ctx, api, "cmd:" + al_low, val);
-            if (!cmd_list.empty()) cmd_list += ",";
-            cmd_list += al_low;
-        }
-    }
-    db_set_str(ctx, api, "cmd_list", cmd_list);
-    db_set_str(ctx, api, "inited", "1");
+    db_set_str(ctx, api, "cmd_list", new_list);
+    db_set_str(ctx, api, "v_cleaned", "2.9.0");
 }
 
 static bool is_rp_creator(koto_ctx* ctx, const koto_api* api, long long uid) {
@@ -188,6 +112,8 @@ static bool check_rp_enabled_in_chat(koto_ctx* ctx, const koto_api* api, long lo
 
 // Получение RP-ника: Чат -> Глобал -> Имя Telegram
 static std::string get_rp_display_name(koto_ctx* ctx, const koto_api* api, long long uid, long long cid) {
+    if (uid == 0) return "Пользователь";
+
     // 1. Ник для данного чата
     std::string cn = db_get_str(ctx, api, "nick:" + std::to_string(cid) + ":" + std::to_string(uid));
     if (!cn.empty() && cn != "none") return cn;
@@ -196,295 +122,234 @@ static std::string get_rp_display_name(koto_ctx* ctx, const koto_api* api, long 
     std::string gn = db_get_str(ctx, api, "nick:0:" + std::to_string(uid));
     if (!gn.empty() && gn != "none") return gn;
 
-    // 3. Стандартное имя пользователя Telegram
+    // 3. Если это наш собственный аккаунт - берем имя аккаунта из хоста:
+    if (uid == api->get_me(ctx)) {
+        char mbuf[128] = {0};
+        if (api->get_me_name(ctx, mbuf, sizeof(mbuf)) > 0 && *mbuf) {
+            return std::string(mbuf);
+        }
+    }
+
+    // 4. Имя Telegram из хоста (если известно)
     char buf[128] = {0};
     if (api->user_name(ctx, uid, buf, sizeof(buf)) > 0 && *buf) {
         return std::string(buf);
     }
-    return "User " + std::to_string(uid);
+
+    return (uid == api->get_me(ctx)) ? "Я" : "Пользователь";
 }
 
 // ── 1. Команда .rp [on/off/access] ───────────────────────────────────────────
 static void cmd_rp(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
 
-    ensure_default_commands(ctx, api);
+    cleanup_old_defaults_if_needed(ctx, api);
     long long cid = api->chat_id(ctx);
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
 
     if (args.empty()) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "INFO");
-        api->c_fmt(ctx, " Управление RP-модулем:\n\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "ℹ️ Управление RP-модулем:\n\n", KOTO_ENT_BOLD);
         api->c_fmt(ctx, "• .rp on", KOTO_ENT_CODE);
-        api->c_text(ctx, " — Включить RP-команды в текущем чате.\n");
+        api->c_text(ctx, " — включить RP в этом чате\n");
         api->c_fmt(ctx, "• .rp off", KOTO_ENT_CODE);
-        api->c_text(ctx, " — Выключить RP-команды в текущем чате.\n");
+        api->c_text(ctx, " — выключить RP в этом чате\n");
+        api->c_fmt(ctx, "• .rp access [all|trusted|creators]", KOTO_ENT_CODE);
+        api->c_text(ctx, " — уровень доступа к командам в чате\n");
+        api->c_fmt(ctx, "• .rp access add/del [@user]", KOTO_ENT_CODE);
+        api->c_text(ctx, " — персональный доступ пользователю\n");
         api->c_fmt(ctx, "• .rp access list", KOTO_ENT_CODE);
-        api->c_text(ctx, " — Показать список пользователей с доступом.\n");
-        api->c_fmt(ctx, "• .rp access add <@user/all>", KOTO_ENT_CODE);
-        api->c_text(ctx, " — Дать доступ пользователю или всем (all).\n");
-        api->c_fmt(ctx, "• .rp access remove <@user/all>", KOTO_ENT_CODE);
-        api->c_text(ctx, " — Забрать доступ у пользователя или всех.\n\n");
-
-        bool enabled = check_rp_enabled_in_chat(ctx, api, cid);
-        api->c_fmt(ctx, "Статус в этом чате: ", KOTO_ENT_BOLD);
-        if (enabled) {
-            api->c_fmt(ctx, "ВКЛЮЧЕН ✅", KOTO_ENT_CODE);
-        } else {
-            api->c_fmt(ctx, "ВЫКЛЮЧЕН ❌", KOTO_ENT_CODE);
-        }
+        api->c_text(ctx, " — список пользователей с доступом");
         api->c_edit(ctx, 0);
         return;
     }
 
-    auto parts = split(args, ' ');
-    std::string sub = to_lower(parts[0]);
+    auto sub = split(args, ' ');
+    std::string subcmd = to_lower(sub[0]);
 
-    if (sub == "on") {
+    if (subcmd == "on") {
         db_set_str(ctx, api, "enabled:" + std::to_string(cid), "1");
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "SUCCESS");
-        api->c_fmt(ctx, " RP-команды теперь ВКЛЮЧЕНЫ в этом чате!", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "✅ RP-модуль успешно ВКЛЮЧЕН в этом чате!", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
-        return;
-    }
-
-    if (sub == "off") {
+    } else if (subcmd == "off") {
         db_del(ctx, api, "enabled:" + std::to_string(cid));
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "TRASH");
-        api->c_fmt(ctx, " RP-команды теперь ВЫКЛЮЧЕНЫ в этом чате.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "🔒 RP-модуль ВЫКЛЮЧЕН в этом чате.", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
-        return;
-    }
-
-    if (sub == "access") {
-        if (parts.size() < 2) {
+    } else if (subcmd == "access") {
+        if (sub.size() < 2) {
+            bool pub = db_has(ctx, api, "public:" + std::to_string(cid));
             api->c_reset(ctx);
-            put_static_emoji(ctx, api, "ERROR");
-            api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
-            api->c_fmt(ctx, ".rp access <add/remove/list> [@user/all]", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "ℹ️ Текущий режим доступа в чате: ", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, pub ? "all (все участники)" : "restricted (только с доступом)", KOTO_ENT_CODE);
             api->c_edit(ctx, 0);
             return;
         }
 
-        std::string act = to_lower(parts[1]);
-
-        if (act == "list") {
+        std::string mode = to_lower(sub[1]);
+        if (mode == "all") {
+            db_set_str(ctx, api, "public:" + std::to_string(cid), "1");
             api->c_reset(ctx);
-            if (db_has(ctx, api, "public:" + std::to_string(cid))) {
-                put_static_emoji(ctx, api, "SUCCESS");
-                api->c_fmt(ctx, " Доступ к RP-командам в этом чате открыт для ВСЕХ (public)!", KOTO_ENT_BOLD);
-            } else {
-                put_static_emoji(ctx, api, "LOCK");
-                api->c_fmt(ctx, " Доступ к RP-командам в этом чате:\n\n", KOTO_ENT_BOLD);
-                char kbuf[4096] = {0};
-                int kn = api->db_keys(ctx, kbuf, sizeof(kbuf) - 1);
-                std::string prefix = "access:" + std::to_string(cid) + ":";
-                bool found = false;
-                if (kn > 0) {
-                    auto keys = split(kbuf, '\n');
-                    for (const auto& k : keys) {
-                        if (k.rfind(prefix, 0) == 0) {
-                            found = true;
-                            std::string uid_str = k.substr(prefix.size());
-                            long long uid = 0;
-                            try { uid = std::stoll(uid_str); } catch (...) {}
-                            char name_buf[128] = {0};
-                            api->user_name(ctx, uid, name_buf, sizeof(name_buf));
-                            std::string dname = *name_buf ? name_buf : ("ID: " + uid_str);
-                            api->c_text(ctx, "• ");
-                            api->c_url(ctx, dname.c_str(), ("tg://user?id=" + uid_str).c_str());
-                            api->c_text(ctx, "\n");
-                        }
-                    }
-                }
-                if (!found) {
-                    api->c_fmt(ctx, "Никому не выдан индивидуальный доступ.\n", KOTO_ENT_ITALIC);
-                }
-                api->c_fmt(ctx, "\nВладелец и доверенные (TRUSTED) всегда имеют доступ.", KOTO_ENT_ITALIC);
-            }
+            api->c_fmt(ctx, "✅ Доступ к RP-командам открыт для ВСЕХ участников чата.", KOTO_ENT_BOLD);
             api->c_edit(ctx, 0);
-            return;
-        }
-
-        if (act == "add" || act == "remove") {
-            std::string target_str = (parts.size() > 2) ? parts[2] : "";
-            long long target_uid = 0;
-
-            if (target_str.empty()) {
-                long long reply_uid = api->reply_sender_id(ctx);
-                if (reply_uid != 0) {
-                    target_uid = reply_uid;
-                } else {
-                    api->c_reset(ctx);
-                    put_static_emoji(ctx, api, "ERROR");
-                    api->c_fmt(ctx, " Укажите @user, ID или ответьте на сообщение.", KOTO_ENT_BOLD);
-                    api->c_edit(ctx, 0);
-                    return;
-                }
-            } else if (to_lower(target_str) == "all") {
-                if (act == "add") {
-                    db_set_str(ctx, api, "public:" + std::to_string(cid), "1");
-                    api->c_reset(ctx);
-                    put_static_emoji(ctx, api, "SUCCESS");
-                    api->c_fmt(ctx, " Публичный доступ к RP-командам в этом чате ОТКРЫТ ДЛЯ ВСЕХ!", KOTO_ENT_BOLD);
-                } else {
-                    db_del(ctx, api, "public:" + std::to_string(cid));
-                    api->c_reset(ctx);
-                    put_static_emoji(ctx, api, "TRASH");
-                    api->c_fmt(ctx, " Публичный доступ к RP-командам в этом чате ЗАКРЫТ.", KOTO_ENT_BOLD);
-                }
-                api->c_edit(ctx, 0);
-                return;
-            } else {
-                if (target_str.front() == '@') {
-                    target_uid = api->resolve(ctx, target_str.substr(1).c_str());
-                } else {
-                    try { target_uid = std::stoll(target_str); } catch (...) {}
+        } else if (mode == "trusted" || mode == "creators" || mode == "restricted") {
+            db_del(ctx, api, "public:" + std::to_string(cid));
+            api->c_reset(ctx);
+            api->c_fmt(ctx, "🔒 Доступ к RP-командам ограничен (только доверенные и создатели).", KOTO_ENT_BOLD);
+            api->c_edit(ctx, 0);
+        } else if (mode == "add" || mode == "del") {
+            long long target_uid = api->reply_sender_id(ctx);
+            if (sub.size() >= 3) {
+                std::string uarg = sub[2];
+                if (uarg.front() == '@') {
+                    target_uid = api->resolve(ctx, uarg.substr(1).c_str());
+                } else if (isdigit(uarg.front())) {
+                    try { target_uid = std::stoll(uarg); } catch (...) {}
                 }
             }
-
             if (target_uid == 0) {
                 api->c_reset(ctx);
-                put_static_emoji(ctx, api, "ERROR");
-                api->c_fmt(ctx, " Не удалось найти указанного пользователя.", KOTO_ENT_BOLD);
+                api->c_fmt(ctx, "❌ Укажите пользователя (@username, ID или реплай).", KOTO_ENT_BOLD);
                 api->c_edit(ctx, 0);
                 return;
             }
 
-            char name_buf[128] = {0};
-            api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-            std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
-
-            if (act == "add") {
+            if (mode == "add") {
                 db_set_str(ctx, api, "access:" + std::to_string(cid) + ":" + std::to_string(target_uid), "1");
                 api->c_reset(ctx);
-                put_static_emoji(ctx, api, "SUCCESS");
-                api->c_fmt(ctx, " Пользователь ", KOTO_ENT_BOLD);
-                api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-                api->c_fmt(ctx, " получил доступ к RP-командам в этом чате.", KOTO_ENT_BOLD);
+                api->c_fmt(ctx, "✅ Пользователю предоставлен доступ к RP в этом чате.", KOTO_ENT_BOLD);
+                api->c_edit(ctx, 0);
             } else {
                 db_del(ctx, api, "access:" + std::to_string(cid) + ":" + std::to_string(target_uid));
                 api->c_reset(ctx);
-                put_static_emoji(ctx, api, "TRASH");
-                api->c_fmt(ctx, " Пользователь ", KOTO_ENT_BOLD);
-                api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-                api->c_fmt(ctx, " лишен доступа к RP-командам в этом чате.", KOTO_ENT_BOLD);
+                api->c_fmt(ctx, "🗑️ Пользователь лишен доступа к RP в этом чате.", KOTO_ENT_BOLD);
+                api->c_edit(ctx, 0);
+            }
+        } else if (mode == "list") {
+            api->c_reset(ctx);
+            api->c_fmt(ctx, "📋 Пользователи с доступом к RP в этом чате:\n", KOTO_ENT_BOLD);
+            char keys_buf[4096] = {0};
+            int n = api->db_keys(ctx, keys_buf, sizeof(keys_buf) - 1);
+            int count = 0;
+            if (n > 0) {
+                std::string pfx = "access:" + std::to_string(cid) + ":";
+                std::stringstream ss(keys_buf);
+                std::string k;
+                while (std::getline(ss, k, '\n')) {
+                    if (k.rfind(pfx, 0) == 0) {
+                        std::string uid_str = k.substr(pfx.size());
+                        api->c_text(ctx, "• ID ");
+                        api->c_fmt(ctx, uid_str.c_str(), KOTO_ENT_CODE);
+                        api->c_text(ctx, "\n");
+                        count++;
+                    }
+                }
+            }
+            if (count == 0) {
+                api->c_text(ctx, "(список пуст)");
             }
             api->c_edit(ctx, 0);
-            return;
         }
     }
-
-    api->c_reset(ctx);
-    put_static_emoji(ctx, api, "ERROR");
-    api->c_fmt(ctx, " Неизвестная подкоманда. Используйте on, off или access.", KOTO_ENT_BOLD);
-    api->c_edit(ctx, 0);
 }
 
-// ── 2. Команда .addrp <алиасы>|<действие>|<эмодзи/ID> ─────────────────────────
+// ── 2. Команда .addrp <алиасы>|<действие> ─────────────────────────────────────
 static void cmd_addrp(koto_ctx* ctx, const koto_api* api) {
     long long sender = api->sender_id(ctx);
-    if (!is_rp_creator(ctx, api, sender)) return;
+    if (!is_rp_creator(ctx, api, sender)) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ У вас нет прав создателя RP-команд.", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+        return;
+    }
 
-    ensure_default_commands(ctx, api);
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
+    if (args.empty()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "ℹ️ Использование:\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, ".addrp <алиасы>|<действие>", KOTO_ENT_CODE);
+        api->c_text(ctx, "\n\nПримеры:\n");
+        api->c_fmt(ctx, ".addrp обнять|обнял(а)", KOTO_ENT_CODE);
+        api->c_text(ctx, "\n");
+        api->c_fmt(ctx, ".addrp кусь/кусить/сделать кусь|сделал(а) кусь", KOTO_ENT_CODE);
+        api->c_edit(ctx, 0);
+        return;
+    }
 
     auto parts = split(args, '|');
-    if (parts.size() < 3) {
+    if (parts.size() < 2) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Неверный формат!\n", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, ".addrp команда/алиас|действие|эмодзи", KOTO_ENT_CODE);
-        api->c_text(ctx, "\nПример: ");
-        api->c_fmt(ctx, ".addrp обнять/hug|обнял(а)|🤗", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "❌ Неверный формат! Разделите алиасы и действие символом '|'.\nПример: .addrp обнять|обнял(а)", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
 
-    std::string aliases_str = parts[0];
-    std::string action = parts[1];
-    std::string emoji_str = parts[2];
-
-    auto aliases = split(aliases_str, '/');
-    if (aliases.empty()) {
-        api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Укажите хотя бы одно имя команды.", KOTO_ENT_BOLD);
-        api->c_edit(ctx, 0);
-        return;
-    }
-
-    long long doc_id = 0;
-    std::string fallback = emoji_str;
-
-    // Проверяем entity премиум-эмодзи во входящем сообщении
-    int ent_cnt = api->msg_entity_count(ctx);
-    for (int i = 0; i < ent_cnt; ++i) {
-        int type = 0, off = 0, len = 0;
-        long long did = 0;
-        api->msg_entity(ctx, i, &type, &off, &len, &did, nullptr, 0);
-        if (type == KOTO_ENT_CUSTOM_EMOJI && did != 0) {
-            doc_id = did;
-            break;
+    std::string action = parts.back();
+    std::vector<std::string> aliases;
+    for (size_t i = 0; i < parts.size() - 1; ++i) {
+        auto sub = split(parts[i], '/');
+        for (const auto& a : sub) {
+            std::string t = to_lower(trim(a));
+            if (!t.empty()) {
+                if (t.front() == '.') t = t.substr(1);
+                aliases.push_back(t);
+            }
         }
     }
 
-    if (doc_id == 0 && !emoji_str.empty()) {
-        try {
-            if (isdigit(emoji_str[0])) doc_id = std::stoll(emoji_str);
-        } catch (...) {}
+    if (aliases.empty() || action.empty()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Алиасы или действие не могут быть пустыми.", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+        return;
     }
 
-    std::string val = action + "|" + std::to_string(doc_id) + "|" + fallback;
-    std::string cmd_list = db_get_str(ctx, api, "cmd_list");
-    std::set<std::string> cur_cmds;
-    if (!cmd_list.empty()) {
-        auto citems = split(cmd_list, ',');
-        cur_cmds.insert(citems.begin(), citems.end());
-    }
+    std::string cur_list = db_get_str(ctx, api, "cmd_list");
+    auto cur_cmds = split(cur_list, ',');
+    std::set<std::string> cmd_set(cur_cmds.begin(), cur_cmds.end());
 
-    std::string added_names;
     for (const auto& a : aliases) {
-        std::string al_low = to_lower(a);
-        db_set_str(ctx, api, "cmd:" + al_low, val);
-        cur_cmds.insert(al_low);
-        if (!added_names.empty()) added_names += ", ";
-        added_names += al_low;
+        db_set_str(ctx, api, "cmd:" + a, action);
+        cmd_set.insert(a);
     }
 
     std::string new_list;
-    for (const auto& c : cur_cmds) {
+    for (const auto& c : cmd_set) {
         if (!new_list.empty()) new_list += ",";
         new_list += c;
     }
     db_set_str(ctx, api, "cmd_list", new_list);
 
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "SUCCESS");
-    api->c_fmt(ctx, " RP-команда(ы) ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, added_names.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " успешно добавлены!", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "✅ RP-команда(ы) ", KOTO_ENT_BOLD);
+    std::string al_str;
+    for (size_t i = 0; i < aliases.size(); ++i) {
+        if (i > 0) al_str += ", ";
+        al_str += "." + aliases[i];
+    }
+    api->c_fmt(ctx, al_str.c_str(), KOTO_ENT_CODE);
+    api->c_fmt(ctx, " успешно добавлена(ы)!", KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
-// ── 3. Команда .delrp <алиас/all/prem/simple> ──────────────────────────────────
+// ── 3. Команда .delrp <алиас|all> ─────────────────────────────────────────────
 static void cmd_delrp(koto_ctx* ctx, const koto_api* api) {
     long long sender = api->sender_id(ctx);
-    if (!is_rp_creator(ctx, api, sender)) return;
-
-    ensure_default_commands(ctx, api);
-    const char* raw_args = api->cmd_args(ctx);
-    std::string target = raw_args ? to_lower(trim(raw_args)) : "";
-
-    if (target.empty()) {
+    if (!is_rp_creator(ctx, api, sender)) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Укажите команду для удаления (или all / prem / simple).", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "❌ У вас нет прав создателя RP-команд.", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    const char* raw_args = api->cmd_args(ctx);
+    std::string arg = raw_args ? to_lower(trim(raw_args)) : "";
+    if (arg.empty()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "ℹ️ Укажите алиас для удаления (или 'all'):\n.delrp <алиас|all>", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
@@ -492,36 +357,25 @@ static void cmd_delrp(koto_ctx* ctx, const koto_api* api) {
     std::string cmd_list = db_get_str(ctx, api, "cmd_list");
     auto cur_cmds = split(cmd_list, ',');
 
-    if (target == "all") {
-        for (const auto& c : cur_cmds) db_del(ctx, api, "cmd:" + c);
+    if (arg == "all") {
+        for (const auto& c : cur_cmds) {
+            db_del(ctx, api, "cmd:" + c);
+        }
         db_del(ctx, api, "cmd_list");
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "TRASH");
-        api->c_fmt(ctx, " Все RP-команды удалены!", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "🗑️ Все RP-команды успешно удалены!", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
 
+    if (arg.front() == '.') arg = arg.substr(1);
+
+    bool found = false;
     std::vector<std::string> remaining;
-    int deleted = 0;
-
     for (const auto& c : cur_cmds) {
-        bool del_this = false;
-        if (target == "prem") {
-            std::string val = db_get_str(ctx, api, "cmd:" + c);
-            auto p = split(val, '|');
-            if (p.size() >= 2 && p[1] != "0") del_this = true;
-        } else if (target == "simple") {
-            std::string val = db_get_str(ctx, api, "cmd:" + c);
-            auto p = split(val, '|');
-            if (p.size() < 2 || p[1] == "0") del_this = true;
-        } else if (target == c) {
-            del_this = true;
-        }
-
-        if (del_this) {
+        if (c == arg) {
             db_del(ctx, api, "cmd:" + c);
-            deleted++;
+            found = true;
         } else {
             remaining.push_back(c);
         }
@@ -535,415 +389,251 @@ static void cmd_delrp(koto_ctx* ctx, const koto_api* api) {
     db_set_str(ctx, api, "cmd_list", new_list);
 
     api->c_reset(ctx);
-    if (deleted > 0) {
-        put_static_emoji(ctx, api, "TRASH");
-        api->c_fmt(ctx, " Удалено команд: ", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, std::to_string(deleted).c_str(), KOTO_ENT_CODE);
+    if (found) {
+        api->c_fmt(ctx, "🗑️ Команда .", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, arg.c_str(), KOTO_ENT_CODE);
+        api->c_fmt(ctx, " успешно удалена!", KOTO_ENT_BOLD);
     } else {
-        put_static_emoji(ctx, api, "INFO");
-        api->c_fmt(ctx, " Команда не найдена.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "❌ Команда не найдена.", KOTO_ENT_BOLD);
     }
     api->c_edit(ctx, 0);
 }
 
 // ── 4. Команда .rplist ────────────────────────────────────────────────────────
 static void cmd_rplist(koto_ctx* ctx, const koto_api* api) {
-    ensure_default_commands(ctx, api);
+    cleanup_old_defaults_if_needed(ctx, api);
     std::string cmd_list = db_get_str(ctx, api, "cmd_list");
     auto cur_cmds = split(cmd_list, ',');
 
     if (cur_cmds.empty()) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "INFO");
-        api->c_fmt(ctx, " Список RP-команд пуст!", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "ℹ️ Список RP-команд пуст!\n", KOTO_ENT_BOLD);
+        api->c_text(ctx, "Добавьте команду через: ");
+        api->c_fmt(ctx, ".addrp <алиасы>|<действие>", KOTO_ENT_CODE);
         api->c_edit(ctx, 0);
         return;
     }
 
-    // Группировка по действию
-    struct ActionGroup {
-        std::vector<std::string> aliases;
-        long long doc_id = 0;
-        std::string fallback = "✨";
-    };
-    std::map<std::string, ActionGroup> groups;
-
+    std::map<std::string, std::vector<std::string>> groups;
     for (const auto& c : cur_cmds) {
-        std::string val = db_get_str(ctx, api, "cmd:" + c);
-        auto p = split(val, '|');
-        if (p.size() >= 3) {
-            std::string action = p[0];
-            long long did = 0;
-            try { did = std::stoll(p[1]); } catch (...) {}
-            std::string fb = p[2];
-            groups[action].aliases.push_back(c);
-            groups[action].doc_id = did;
-            groups[action].fallback = fb;
+        std::string act = db_get_str(ctx, api, "cmd:" + c);
+        size_t pipe = act.find('|');
+        if (pipe != std::string::npos) act = act.substr(0, pipe);
+        if (!act.empty()) {
+            groups[act].push_back(c);
         }
     }
 
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "LIST");
-    api->c_fmt(ctx, " Доступные RP-команды:\n\n", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "📋 Доступные RP-команды:\n\n", KOTO_ENT_BOLD);
 
-    for (const auto& [action, grp] : groups) {
+    for (const auto& [act, aliases] : groups) {
         api->c_text(ctx, "• ");
         std::string al_str;
-        for (size_t i = 0; i < grp.aliases.size(); ++i) {
+        for (size_t i = 0; i < aliases.size(); ++i) {
             if (i > 0) al_str += ", ";
-            al_str += grp.aliases[i];
+            al_str += "." + aliases[i];
         }
         api->c_fmt(ctx, al_str.c_str(), KOTO_ENT_CODE);
         api->c_text(ctx, " — ");
-        api->c_text(ctx, action.c_str());
-        api->c_text(ctx, " ");
-        if (grp.doc_id != 0) {
-            api->c_emoji(ctx, grp.fallback.c_str(), grp.doc_id);
-        } else {
-            api->c_text(ctx, grp.fallback.c_str());
-        }
+        api->c_fmt(ctx, act.c_str(), KOTO_ENT_BOLD);
         api->c_text(ctx, "\n");
     }
 
-    api->c_fmt(ctx, "\nВсего действий: ", KOTO_ENT_ITALIC);
-    api->c_fmt(ctx, std::to_string(groups.size()).c_str(), KOTO_ENT_CODE);
     api->c_edit(ctx, 0);
 }
 
 // ── 5. Команда .setrpnick [-g] [@user] <ник> ──────────────────────────────────
 static void cmd_setrpnick(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
-    long long cid = api->chat_id(ctx);
 
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
     if (args.empty()) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "ℹ️ Использование:\n", KOTO_ENT_BOLD);
         api->c_fmt(ctx, ".setrpnick [-g] [@user] <ник>", KOTO_ENT_CODE);
+        api->c_text(ctx, "\n• -g — установить ник глобально (для всех чатов)");
         api->c_edit(ctx, 0);
         return;
     }
 
+    auto tokens = split(args, ' ');
     bool is_global = false;
-    if (args.rfind("-g ", 0) == 0 || args.rfind("--g ", 0) == 0) {
-        is_global = true;
-        args = trim(args.substr(args.find(' ')));
-    }
-
     long long target_uid = api->reply_sender_id(ctx);
-    std::string nick = args;
+    std::vector<std::string> rest_tokens;
 
-    if (!args.empty() && args.front() == '@') {
-        size_t sp = args.find(' ');
-        if (sp != std::string::npos) {
-            std::string ustr = args.substr(1, sp - 1);
-            target_uid = api->resolve(ctx, ustr.c_str());
-            nick = trim(args.substr(sp));
+    for (const auto& t : tokens) {
+        if (t == "-g" || t == "-global") {
+            is_global = true;
+        } else if (!t.empty() && t.front() == '@') {
+            long long r = api->resolve(ctx, t.substr(1).c_str());
+            if (r != 0) target_uid = r;
+        } else if (!t.empty() && isdigit(t.front()) && target_uid == 0 && t.size() > 4) {
+            try { target_uid = std::stoll(t); } catch (...) { rest_tokens.push_back(t); }
+        } else {
+            rest_tokens.push_back(t);
         }
     }
 
-    if (target_uid == 0) target_uid = api->get_me(ctx);
+    if (target_uid == 0) {
+        target_uid = api->sender_id(ctx);
+    }
 
-    if (nick.empty()) {
+    std::string new_nick;
+    for (size_t i = 0; i < rest_tokens.size(); ++i) {
+        if (i > 0) new_nick += " ";
+        new_nick += rest_tokens[i];
+    }
+    new_nick = trim(new_nick);
+
+    if (new_nick.empty()) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Вы не указали никнейм.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "❌ Укажите желаемый RP-ник.", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
 
-    std::string key = is_global ? ("nick:0:" + std::to_string(target_uid))
-                                : ("nick:" + std::to_string(cid) + ":" + std::to_string(target_uid));
-    db_set_str(ctx, api, key, nick);
-
-    char name_buf[128] = {0};
-    api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-    std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
+    long long cid = is_global ? 0 : api->chat_id(ctx);
+    db_set_str(ctx, api, "nick:" + std::to_string(cid) + ":" + std::to_string(target_uid), new_nick);
 
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "SUCCESS");
-    api->c_fmt(ctx, is_global ? " Глобальный RP-ник для " : " RP-ник в этом чате для ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " установлен на: ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, nick.c_str(), KOTO_ENT_CODE);
+    api->c_fmt(ctx, "✅ RP-ник успешно установлен:\n", KOTO_ENT_BOLD);
+    api->c_text(ctx, "• Ник: ");
+    api->c_fmt(ctx, new_nick.c_str(), KOTO_ENT_CODE);
+    api->c_text(ctx, "\n• Область: ");
+    api->c_fmt(ctx, is_global ? "Глобально" : "Текущий чат", KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
 // ── 6. Команда .delrpnick [-g] [@user] ────────────────────────────────────────
 static void cmd_delrpnick(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
-    long long cid = api->chat_id(ctx);
 
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
-
+    auto tokens = split(args, ' ');
     bool is_global = false;
-    if (args.find("-g") != std::string::npos) {
-        is_global = true;
-    }
-
     long long target_uid = api->reply_sender_id(ctx);
-    if (target_uid == 0 && !args.empty() && args.front() == '@') {
-        target_uid = api->resolve(ctx, args.substr(1).c_str());
-    }
-    if (target_uid == 0) target_uid = api->get_me(ctx);
 
-    char name_buf[128] = {0};
-    api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-    std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
+    for (const auto& t : tokens) {
+        if (t == "-g" || t == "-global") is_global = true;
+        else if (!t.empty() && t.front() == '@') {
+            long long r = api->resolve(ctx, t.substr(1).c_str());
+            if (r != 0) target_uid = r;
+        }
+    }
+
+    if (target_uid == 0) target_uid = api->sender_id(ctx);
+
+    long long cid = is_global ? 0 : api->chat_id(ctx);
+    db_del(ctx, api, "nick:" + std::to_string(cid) + ":" + std::to_string(target_uid));
 
     api->c_reset(ctx);
-    if (is_global) {
-        db_del(ctx, api, "nick:0:" + std::to_string(target_uid));
-        put_static_emoji(ctx, api, "TRASH");
-        api->c_fmt(ctx, " Глобальный RP-ник для ", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-        api->c_fmt(ctx, " удален.", KOTO_ENT_BOLD);
-    } else {
-        db_set_str(ctx, api, "nick:" + std::to_string(cid) + ":" + std::to_string(target_uid), "none");
-        put_static_emoji(ctx, api, "SUCCESS");
-        api->c_fmt(ctx, " Отображение RP-ника для ", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-        api->c_fmt(ctx, " в этом чате отключено.", KOTO_ENT_BOLD);
-    }
+    api->c_fmt(ctx, "🗑️ RP-ник успешно удален.", KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
 // ── 7. Команда .rpnick [@user] ────────────────────────────────────────────────
 static void cmd_rpnick(koto_ctx* ctx, const koto_api* api) {
-    long long cid = api->chat_id(ctx);
+    long long target_uid = api->reply_sender_id(ctx);
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
 
-    long long target_uid = api->reply_sender_id(ctx);
-    if (target_uid == 0 && !args.empty() && args.front() == '@') {
-        target_uid = api->resolve(ctx, args.substr(1).c_str());
+    if (!args.empty() && args.front() == '@') {
+        long long r = api->resolve(ctx, args.substr(1).c_str());
+        if (r != 0) target_uid = r;
     }
-    if (target_uid == 0) target_uid = api->get_me(ctx);
+    if (target_uid == 0) target_uid = api->sender_id(ctx);
 
+    long long cid = api->chat_id(ctx);
     std::string chat_nick = db_get_str(ctx, api, "nick:" + std::to_string(cid) + ":" + std::to_string(target_uid));
     std::string global_nick = db_get_str(ctx, api, "nick:0:" + std::to_string(target_uid));
 
-    char name_buf[128] = {0};
-    api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-    std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
-
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "NICK");
-    api->c_fmt(ctx, " RP-ники для ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, ":\n", KOTO_ENT_BOLD);
-
+    api->c_fmt(ctx, "📛 Информация об RP-никах:\n\n", KOTO_ENT_BOLD);
     api->c_text(ctx, "• В этом чате: ");
-    if (!chat_nick.empty() && chat_nick != "none") {
-        api->c_fmt(ctx, chat_nick.c_str(), KOTO_ENT_CODE);
-    } else {
-        api->c_fmt(ctx, "не установлен", KOTO_ENT_ITALIC);
-    }
+    api->c_fmt(ctx, !chat_nick.empty() ? chat_nick.c_str() : "(не установлен)", KOTO_ENT_CODE);
     api->c_text(ctx, "\n• Глобальный: ");
-    if (!global_nick.empty() && global_nick != "none") {
-        api->c_fmt(ctx, global_nick.c_str(), KOTO_ENT_CODE);
-    } else {
-        api->c_fmt(ctx, "не установлен", KOTO_ENT_ITALIC);
-    }
-
+    api->c_fmt(ctx, !global_nick.empty() ? global_nick.c_str() : "(не установлен)", KOTO_ENT_CODE);
     api->c_edit(ctx, 0);
 }
 
-// ── 8. Команда .addrpcreator [@user] ──────────────────────────────────────────
+// ── 8. Команды создателей RP: .addrpcreator / .delrpcreator / .listrpcreators ───
 static void cmd_addrpcreator(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
 
+    long long target_uid = api->reply_sender_id(ctx);
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
-    long long target_uid = api->reply_sender_id(ctx);
-    if (target_uid == 0 && !args.empty() && args.front() == '@') {
-        target_uid = api->resolve(ctx, args.substr(1).c_str());
-    } else if (target_uid == 0 && !args.empty()) {
-        try { target_uid = std::stoll(args); } catch (...) {}
+    if (!args.empty() && args.front() == '@') {
+        long long r = api->resolve(ctx, args.substr(1).c_str());
+        if (r != 0) target_uid = r;
     }
 
     if (target_uid == 0) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Укажите @user, ID или ответьте на сообщение.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "❌ Укажите пользователя (@username или реплай).", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
 
     db_set_str(ctx, api, "creator:" + std::to_string(target_uid), "1");
-    char name_buf[128] = {0};
-    api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-    std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
-
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "SUCCESS");
-    api->c_fmt(ctx, " Пользователь ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " теперь является создателем RP-команд!", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "👑 Пользователю выданы права создателя RP-команд!", KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
-// ── 9. Команда .delrpcreator [@user] ──────────────────────────────────────────
 static void cmd_delrpcreator(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
 
+    long long target_uid = api->reply_sender_id(ctx);
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
-    long long target_uid = api->reply_sender_id(ctx);
-    if (target_uid == 0 && !args.empty() && args.front() == '@') {
-        target_uid = api->resolve(ctx, args.substr(1).c_str());
-    } else if (target_uid == 0 && !args.empty()) {
-        try { target_uid = std::stoll(args); } catch (...) {}
+    if (!args.empty() && args.front() == '@') {
+        long long r = api->resolve(ctx, args.substr(1).c_str());
+        if (r != 0) target_uid = r;
     }
 
     if (target_uid == 0) {
         api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Укажите @user, ID или ответьте на сообщение.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "❌ Укажите пользователя (@username или реплай).", KOTO_ENT_BOLD);
         api->c_edit(ctx, 0);
         return;
     }
 
     db_del(ctx, api, "creator:" + std::to_string(target_uid));
-    char name_buf[128] = {0};
-    api->user_name(ctx, target_uid, name_buf, sizeof(name_buf));
-    std::string dname = *name_buf ? name_buf : ("ID: " + std::to_string(target_uid));
-
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "TRASH");
-    api->c_fmt(ctx, " Пользователь ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, dname.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " лишен прав создателя RP-команд.", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "🗑️ Права создателя RP-команд сняты.", KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
-// ── 10. Команда .listrpcreators ──────────────────────────────────────────────
 static void cmd_listrpcreators(koto_ctx* ctx, const koto_api* api) {
     if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
 
+    char keys_buf[4096] = {0};
+    int n = api->db_keys(ctx, keys_buf, sizeof(keys_buf) - 1);
+
     api->c_reset(ctx);
-    put_static_emoji(ctx, api, "CROWN");
-    api->c_fmt(ctx, " Список создателей RP-команд:\n\n", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "👑 Создатели RP-команд:\n\n", KOTO_ENT_BOLD);
 
-    char kbuf[4096] = {0};
-    int kn = api->db_keys(ctx, kbuf, sizeof(kbuf) - 1);
-    bool found = false;
-
-    if (kn > 0) {
-        auto keys = split(kbuf, '\n');
-        for (const auto& k : keys) {
+    int count = 0;
+    if (n > 0) {
+        std::stringstream ss(keys_buf);
+        std::string k;
+        while (std::getline(ss, k, '\n')) {
             if (k.rfind("creator:", 0) == 0) {
-                found = true;
-                std::string uid_str = k.substr(8);
-                long long uid = 0;
-                try { uid = std::stoll(uid_str); } catch (...) {}
-                char name_buf[128] = {0};
-                api->user_name(ctx, uid, name_buf, sizeof(name_buf));
-                std::string dname = *name_buf ? name_buf : ("ID: " + uid_str);
-                api->c_text(ctx, "• ");
-                api->c_url(ctx, dname.c_str(), ("tg://user?id=" + uid_str).c_str());
+                std::string uid = k.substr(8);
+                api->c_text(ctx, "• ID ");
+                api->c_fmt(ctx, uid.c_str(), KOTO_ENT_CODE);
                 api->c_text(ctx, "\n");
+                count++;
             }
         }
     }
 
-    if (!found) {
-        api->c_fmt(ctx, "Список пуст. Только владелец и доверенные (TRUSTED) могут создавать команды.\n", KOTO_ENT_ITALIC);
-    }
-    api->c_edit(ctx, 0);
-}
-
-// ── 11. Команда .setrpemoji <KEY> <ID/эмодзи> [fallback] ─────────────────────
-static void cmd_setrpemoji(koto_ctx* ctx, const koto_api* api) {
-    if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
-
-    const char* raw_args = api->cmd_args(ctx);
-    std::string args = raw_args ? trim(raw_args) : "";
-    auto parts = split(args, ' ');
-
-    if (parts.size() < 2) {
-        api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, ".setrpemoji <КЛЮЧ> <ID или эмодзи> [fallback]", KOTO_ENT_CODE);
-        api->c_edit(ctx, 0);
-        return;
-    }
-
-    std::string key_upper = parts[0];
-    for (char& c : key_upper) c = (char)std::toupper((unsigned char)c);
-
-    long long doc_id = 0;
-    std::string fallback = (parts.size() > 2) ? parts[2] : "✨";
-
-    // Проверяем entity премиум эмодзи
-    int ent_cnt = api->msg_entity_count(ctx);
-    for (int i = 0; i < ent_cnt; ++i) {
-        int type = 0, off = 0, len = 0;
-        long long did = 0;
-        api->msg_entity(ctx, i, &type, &off, &len, &did, nullptr, 0);
-        if (type == KOTO_ENT_CUSTOM_EMOJI && did != 0) {
-            doc_id = did;
-            break;
-        }
-    }
-
-    if (doc_id == 0) {
-        try { doc_id = std::stoll(parts[1]); } catch (...) { fallback = parts[1]; }
-    }
-
-    db_set_str(ctx, api, "se:" + key_upper, std::to_string(doc_id) + "|" + fallback);
-
-    api->c_reset(ctx);
-    put_static_emoji(ctx, api, "SUCCESS");
-    api->c_fmt(ctx, " Эмодзи для ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, key_upper.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " успешно обновлен!", KOTO_ENT_BOLD);
-    api->c_edit(ctx, 0);
-}
-
-// ── 12. Команда .delrpemoji <KEY> ─────────────────────────────────────────────
-static void cmd_delrpemoji(koto_ctx* ctx, const koto_api* api) {
-    if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) return;
-
-    const char* raw_args = api->cmd_args(ctx);
-    std::string key_upper = raw_args ? trim(raw_args) : "";
-    for (char& c : key_upper) c = (char)std::toupper((unsigned char)c);
-
-    if (key_upper.empty()) {
-        api->c_reset(ctx);
-        put_static_emoji(ctx, api, "ERROR");
-        api->c_fmt(ctx, " Укажите ключ для сброса (например, ERROR, SUCCESS).", KOTO_ENT_BOLD);
-        api->c_edit(ctx, 0);
-        return;
-    }
-
-    db_del(ctx, api, "se:" + key_upper);
-
-    api->c_reset(ctx);
-    put_static_emoji(ctx, api, "TRASH");
-    api->c_fmt(ctx, " Эмодзи для ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, key_upper.c_str(), KOTO_ENT_CODE);
-    api->c_fmt(ctx, " сброшен к дефолтному.", KOTO_ENT_BOLD);
-    api->c_edit(ctx, 0);
-}
-
-// ── 13. Команда .rpemojis ─────────────────────────────────────────────────────
-static void cmd_rpemojis(koto_ctx* ctx, const koto_api* api) {
-    api->c_reset(ctx);
-    put_static_emoji(ctx, api, "SETTINGS");
-    api->c_fmt(ctx, " Статические RP-эмодзи:\n\n", KOTO_ENT_BOLD);
-
-    for (const auto& item : DEFAULT_STATIC_EMOJIS) {
-        api->c_text(ctx, "• ");
-        put_static_emoji(ctx, api, item.key);
-        api->c_fmt(ctx, (" " + std::string(item.key)).c_str(), KOTO_ENT_BOLD);
-        api->c_text(ctx, " (дефолт: ");
-        api->c_text(ctx, item.fallback);
-        api->c_text(ctx, ")\n");
+    if (count == 0) {
+        api->c_text(ctx, "(только владельцы и доверенные лица)");
     }
 
     api->c_edit(ctx, 0);
@@ -965,7 +655,7 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
         return 0;
     }
 
-    ensure_default_commands(ctx, api);
+    cleanup_old_defaults_if_needed(ctx, api);
 
     // Извлекаем первое слово
     size_t space_pos = text.find_first_of(" \t\n");
@@ -980,13 +670,19 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
     cmd = to_lower(cmd);
 
     // 2. Ищем команду в базе
-    std::string val = db_get_str(ctx, api, "cmd:" + cmd);
-    if (val.empty()) {
+    std::string action = db_get_str(ctx, api, "cmd:" + cmd);
+    if (action.empty()) {
         return 0; // Не RP-команда
     }
 
+    // Если в базе был старый формат action|doc_id|fallback
+    size_t pipe = action.find('|');
+    if (pipe != std::string::npos) {
+        action = action.substr(0, pipe);
+    }
+
     // 3. Проверка прав доступа в группе
-    if (cid < 0) { // Группа или супергруппа
+    if (cid < 0) {
         if (api->user_level(ctx) < KOTO_LEVEL_TRUSTED) {
             bool is_public = db_has(ctx, api, "public:" + std::to_string(cid));
             bool has_access = db_has(ctx, api, "access:" + std::to_string(cid) + ":" + std::to_string(sender));
@@ -996,20 +692,12 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    // 4. Парсим данные действия: action|doc_id|fallback
-    auto p = split(val, '|');
-    if (p.size() < 3) return 0;
-    std::string action = p[0];
-    long long doc_id = 0;
-    try { doc_id = std::stoll(p[1]); } catch (...) {}
-    std::string fallback = p[2];
-
-    // 5. Определение цели (target_uid) и комментария
+    // 4. Определение цели (target_uid) и комментария
     long long target_uid = api->reply_sender_id(ctx);
     std::string comment = rest;
+    std::string explicit_username_target;
 
     if (target_uid == 0 && !rest.empty()) {
-        // Проверяем, начинается ли rest с @username или ID
         size_t r_space = rest.find_first_of(" \t\n");
         std::string first_arg = (r_space != std::string::npos) ? rest.substr(0, r_space) : rest;
         std::string potential_comment = (r_space != std::string::npos) ? trim(rest.substr(r_space)) : "";
@@ -1019,6 +707,7 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
             if (res_uid != 0) {
                 target_uid = res_uid;
                 comment = potential_comment;
+                explicit_username_target = first_arg;
             }
         } else if (!first_arg.empty() && isdigit(first_arg.front())) {
             try {
@@ -1043,68 +732,59 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
     // Имена участников
     std::string sender_name = get_rp_display_name(ctx, api, sender, cid);
 
-    // 6. Формирование сообщения действия
+    // 5. Формирование сообщения действия БЕЗ значков и лишних разделителей
     api->c_reset(ctx);
 
-    if (doc_id != 0) {
-        api->c_emoji(ctx, fallback.c_str(), doc_id);
-    } else {
-        api->c_text(ctx, fallback.c_str());
-    }
-    api->c_text(ctx, " | ");
-
-    // Имя отправителя как ссылка
+    // Имя отправителя как кликабельная ссылка
     api->c_url(ctx, sender_name.c_str(), ("tg://user?id=" + std::to_string(sender)).c_str());
     api->c_text(ctx, " ");
 
-    // Действие (жирным)
+    // Действие (жирным шрифтом)
     api->c_fmt(ctx, action.c_str(), KOTO_ENT_BOLD);
 
+    // Цель
     if (target_uid == 0 || target_uid == sender) {
         api->c_fmt(ctx, " самого/саму себя", KOTO_ENT_BOLD);
     } else {
         std::string target_name = get_rp_display_name(ctx, api, target_uid, cid);
+        if (target_name == "Пользователь" && !explicit_username_target.empty()) {
+            target_name = explicit_username_target;
+        }
         api->c_text(ctx, " ");
         api->c_url(ctx, target_name.c_str(), ("tg://user?id=" + std::to_string(target_uid)).c_str());
     }
 
     // Комментарий (если есть)
     if (!comment.empty()) {
-        api->c_text(ctx, "\n\n");
-        put_static_emoji(ctx, api, "COMMENT");
-        api->c_text(ctx, " ");
+        api->c_text(ctx, "\n\n💬 ");
         api->c_fmt(ctx, comment.c_str(), KOTO_ENT_ITALIC);
     }
 
-    // 7. Отправка
+    // 6. Отправка
     if (api->is_outgoing(ctx)) {
         api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
     } else {
         api->c_send(ctx, cid, KOTO_NO_LINK_PREVIEW);
-        // Если входящее сообщение было от нашего же твинка:
         if (sender == api->get_me(ctx)) {
             api->delete_msg(ctx);
         }
     }
 
-    return 1; // Команда успешно обработана watcher'ом
+    return 1;
 }
 
 // ── Таблица команд ────────────────────────────────────────────────────────────
 static const koto_command COMMANDS[] = {
     { "rp",             &cmd_rp,             KOTO_LEVEL_TRUSTED, "Управление RP-модулем в чате (on/off/access)", "[on|off|access]" },
-    { "addrp",          &cmd_addrp,          KOTO_LEVEL_ALL,     "Добавить новую RP-команду", "<алиасы>|<действие>|<эмодзи>" },
-    { "delrp",          &cmd_delrp,          KOTO_LEVEL_ALL,     "Удалить RP-команду", "<алиас|all|prem|simple>" },
+    { "addrp",          &cmd_addrp,          KOTO_LEVEL_ALL,     "Добавить новую RP-команду", "<алиасы>|<действие>" },
+    { "delrp",          &cmd_delrp,          KOTO_LEVEL_ALL,     "Удалить RP-команду", "<алиас|all>" },
     { "rplist",         &cmd_rplist,         KOTO_LEVEL_ALL,     "Список всех доступных RP-команд", NULL },
     { "setrpnick",      &cmd_setrpnick,      KOTO_LEVEL_TRUSTED, "Установить RP-ник пользователю", "[-g] [@user] <ник>" },
     { "delrpnick",      &cmd_delrpnick,      KOTO_LEVEL_TRUSTED, "Удалить или скрыть RP-ник", "[-g] [@user]" },
     { "rpnick",         &cmd_rpnick,         KOTO_LEVEL_ALL,     "Посмотреть текущие RP-ники", "[@user]" },
     { "addrpcreator",   &cmd_addrpcreator,   KOTO_LEVEL_TRUSTED, "Назначить создателя RP-команд", "[@user]" },
     { "delrpcreator",   &cmd_delrpcreator,   KOTO_LEVEL_TRUSTED, "Снять права создателя RP-команд", "[@user]" },
-    { "listrpcreators", &cmd_listrpcreators, KOTO_LEVEL_TRUSTED, "Список создателей RP-команд", NULL },
-    { "setrpemoji",     &cmd_setrpemoji,     KOTO_LEVEL_TRUSTED, "Настроить кастомный эмодзи для ключа", "<KEY> <ID/эмодзи> [fallback]" },
-    { "delrpemoji",     &cmd_delrpemoji,     KOTO_LEVEL_TRUSTED, "Сбросить эмодзи ключа к дефолту", "<KEY>" },
-    { "rpemojis",       &cmd_rpemojis,       KOTO_LEVEL_ALL,     "Список статических RP-эмодзи", NULL }
+    { "listrpcreators", &cmd_listrpcreators, KOTO_LEVEL_TRUSTED, "Список создателей RP-команд", NULL }
 };
 
 // ── Экспорт модуля ────────────────────────────────────────────────────────────
@@ -1112,7 +792,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "rp",
     "Ролевые команды (Role-Play), РП-ники и кастомные действия (@Kote)",
-    "2.8.0",
+    "2.9.0",
     12, // KoteLoader v0.2.1+
     0,
     COMMANDS,
@@ -1122,7 +802,7 @@ static const koto_module MODULE = {
     NULL, // on_callback
     NULL, // settings
     0,
-    "https://github.com/AresUser1/KoteModules"
+    "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so"
 };
 
 extern "C" const koto_module* koto_module_register(void) {
