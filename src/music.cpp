@@ -296,11 +296,8 @@ void do_youtube_download(koto_ctx* ctx, const koto_api* api, const std::string& 
 
     api->c_send_file(ctx, cid, local_path.c_str(), 0);
 
-    // 6. Обновляем статусное сообщение
-    api->c_reset(ctx);
-    api->c_markdown(ctx, "✅ **Трек успешно отправлен!**\n> 🎵 ");
-    api->c_text(ctx, title.c_str());
-    api->c_edit(ctx, 0);
+    // 6. Удаляем статусное сообщение поиска
+    api->delete_msg(ctx);
 }
 
 // ── 1. Команда .mus <запрос> [--yt] ──────────────────────────────────────────

@@ -95,10 +95,93 @@
           "usage": ""
         }
       ],
-      "size": 59120,
-      "sha256": "595610a19dadb7b75329baa817647851bbd1f6cb1e41dd2b92ccf869179b7c98",
+      "size": 75936,
+      "sha256": "03e52356b436d92f8a1ced8d7becf9ad0a0e579f5ba765828de84d85632e9e14",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "license": "MIT",
+      "min_host_version": 12
+    },
+    {
+      "id": "rp",
+      "name": "rp",
+      "display_name": "Role-Play (РП команды)",
+      "author": "Kote",
+      "description": "Полнофункциональный ролевой модуль: гибкая система действий (.обнять, .кусь, .поцеловать и т.д.), кастомные РП-ники (.setrpnick), создание собственных РП-команд (.addrp), права доступа и кастомные эмодзи.",
+      "version": "2.8.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "rp",
+          "doc": "Управление RP-модулем в чате (on/off/access)",
+          "usage": "[on|off|access]"
+        },
+        {
+          "name": "addrp",
+          "doc": "Добавить новую RP-команду",
+          "usage": "<алиасы>|<действие>|<эмодзи>"
+        },
+        {
+          "name": "delrp",
+          "doc": "Удалить RP-команду",
+          "usage": "<алиас|all|prem|simple>"
+        },
+        {
+          "name": "rplist",
+          "doc": "Список всех доступных RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpnick",
+          "doc": "Установить RP-ник пользователю",
+          "usage": "[-g] [@user] <ник>"
+        },
+        {
+          "name": "delrpnick",
+          "doc": "Удалить или скрыть RP-ник",
+          "usage": "[-g] [@user]"
+        },
+        {
+          "name": "rpnick",
+          "doc": "Посмотреть текущие RP-ники",
+          "usage": "[@user]"
+        },
+        {
+          "name": "addrpcreator",
+          "doc": "Назначить создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "delrpcreator",
+          "doc": "Снять права создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "listrpcreators",
+          "doc": "Список создателей RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpemoji",
+          "doc": "Настроить кастомный эмодзи для ключа",
+          "usage": "<KEY> <ID/эмодзи> [fallback]"
+        },
+        {
+          "name": "delrpemoji",
+          "doc": "Сбросить эмодзи ключа к дефолту",
+          "usage": "<KEY>"
+        },
+        {
+          "name": "rpemojis",
+          "doc": "Список статических RP-эмодзи",
+          "usage": ""
+        }
+      ],
+      "size": 147280,
+      "sha256": "e91758e0108a32165332cb312cc488b44e29b511f2d8eca3c4fd0456163adbfe",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
       "min_host_version": 12
     }
