@@ -1,0 +1,48 @@
+{
+  "name": "KoteModules Official Repository",
+  "version": "1.0.0",
+  "updated": "2026-10-09",
+  "modules": [
+    {
+      "id": "checkers",
+      "name": "checkers",
+      "display_name": "Шашки (Checkers PvP)",
+      "author": "Kote",
+      "description": "Русские шашки: полноценный PvP между любыми игроками в чате, свободный выбор белых/чёрных, серии ударов в 1 клик, дамки, пат, ничья и реванш.",
+      "version": "2.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        { "name": "checkers", "doc": "Начать игру в русские шашки (инлайн)", "usage": "[white|black]" },
+        { "name": "шашки", "doc": "Начать игру в русские шашки (псевдоним)", "usage": "[white|black]" },
+        { "name": "checkersend", "doc": "Список активных партий или завершение игры по ID", "usage": "[id]" }
+      ],
+      "size": 27464,
+      "sha256": "0b8c4c20ce52fde42bb8e06bfcba93509b4110da5f64021701425f22d62a5fc2",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "copymessage",
+      "name": "copymessage",
+      "display_name": "CopyMessage",
+      "author": "Kote",
+      "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
+      "version": "1.3.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        { "name": "copy", "doc": "Копирование сообщения в Избранное с отчетом", "usage": "[в ответ на сообщение]" },
+        { "name": "hcopy", "doc": "Тихое копирование сообщения в Избранное", "usage": "[в ответ на сообщение]" }
+      ],
+      "size": 7944,
+      "sha256": "90bec6af5594b7180db9ba103c19b22ff9999b507241e89ff379d0da101db2d4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
+      "license": "MIT",
+      "min_host_version": 1
+    }
+  ]
+}
