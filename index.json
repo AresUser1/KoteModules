@@ -17,8 +17,8 @@
         { "name": "шашки", "doc": "Начать игру в русские шашки (псевдоним)", "usage": "[white|black]" },
         { "name": "checkersend", "doc": "Список активных партий или завершение игры по ID", "usage": "[id]" }
       ],
-      "size": 27464,
-      "sha256": "0b8c4c20ce52fde42bb8e06bfcba93509b4110da5f64021701425f22d62a5fc2",
+      "size": 26904,
+      "sha256": "8971ca23681b0c6b9482914b78eab698d085b623fb320675acfdaa206c2065a0",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
