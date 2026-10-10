@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
   "version": "1.0.0",
-  "updated": "2026-10-09",
+  "updated": "2026-10-10",
   "modules": [
     {
       "id": "checkers",
@@ -107,8 +107,8 @@
       "name": "rp",
       "display_name": "Role-Play (РП команды)",
       "author": "Kote",
-      "description": "Полнофункциональный ролевой модуль: добавление своих действий (.addrp), управление доступом в чатах (.rp), кастомные РП-ники (.setrpnick) и создатели команд.",
-      "version": "2.9.0",
+      "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
+      "version": "3.0.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -119,13 +119,13 @@
         },
         {
           "name": "addrp",
-          "doc": "Добавить новую RP-команду",
-          "usage": "<алиасы>|<действие>"
+          "doc": "Добавить новую RP-команду (с премиум-эмодзи)",
+          "usage": "<алиасы>|<действие>|<эмодзи/ID>"
         },
         {
           "name": "delrp",
           "doc": "Удалить RP-команду",
-          "usage": "<алиас|all>"
+          "usage": "<алиас|all|prem|simple>"
         },
         {
           "name": "rplist",
@@ -161,12 +161,27 @@
           "name": "listrpcreators",
           "doc": "Список создателей RP-команд",
           "usage": ""
+        },
+        {
+          "name": "setrpemoji",
+          "doc": "Кастомный статичный эмодзи интерфейса RP",
+          "usage": "<ключ> <эмодзи/ID> [| fallback]"
+        },
+        {
+          "name": "delrpemoji",
+          "doc": "Сбросить статичный эмодзи до дефолтного",
+          "usage": "<ключ>"
+        },
+        {
+          "name": "rpemojis",
+          "doc": "Список статичных эмодзи интерфейса RP",
+          "usage": ""
         }
       ],
-      "size": 129480,
-      "sha256": "de93ee928c4d45e37ea4a7721046aea0af9432bb023f57db2b7e679d47f1b7d7",
+      "size": 168720,
+      "sha256": "79d0fff868790c9914a33b17c0f880f7ee19fb267e622407cb520de919609df2",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
-      "git_url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
       "min_host_version": 12
     }
