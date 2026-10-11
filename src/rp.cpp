@@ -25,9 +25,39 @@ static inline std::string trim(const std::string& s) {
     return s.substr(start, end - start + 1);
 }
 
-static inline std::string to_lower(std::string s) {
-    for (char& c : s) c = (char)std::tolower((unsigned char)c);
-    return s;
+// Нижний регистр для ASCII + кириллицы (UTF-8). std::tolower побайтово не
+// трогает кириллицу, поэтому «Хуй» не совпадал бы с сохранённым «хуй».
+static inline std::string to_lower(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    size_t i = 0, n = s.size();
+    while (i < n) {
+        unsigned char c = (unsigned char)s[i];
+        if (c < 0x80) {
+            out.push_back((char)std::tolower(c));
+            ++i;
+        } else if (c == 0xD0 && i + 1 < n) {
+            unsigned char d = (unsigned char)s[i + 1];
+            if (d >= 0x90 && d <= 0x9F) {            // А–П -> а–п
+                out.push_back((char)0xD0);
+                out.push_back((char)(d + 0x20));
+            } else if (d >= 0xA0 && d <= 0xAF) {     // Р–Я -> р–я
+                out.push_back((char)0xD1);
+                out.push_back((char)(d - 0x20));
+            } else if (d == 0x81) {                  // Ё -> ё
+                out.push_back((char)0xD1);
+                out.push_back((char)0x91);
+            } else {
+                out.push_back((char)c);
+                out.push_back((char)d);
+            }
+            i += 2;
+        } else {
+            out.push_back((char)c);                  // прочие байты как есть
+            ++i;
+        }
+    }
+    return out;
 }
 
 static inline std::vector<std::string> split(const std::string& s, char delim) {
@@ -1082,8 +1112,8 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "rp",
     "Role-Play: \xD0\xBA\xD0\xB0\xD1\x81\xD1\x82\xD0\xBE\xD0\xBC\xD0\xBD\xD1\x8B\xD0\xB5 RP-\xD0\xBA\xD0\xBE\xD0\xBC\xD0\xB0\xD0\xBD\xD0\xB4\xD1\x8B \xD1\x81 \xD0\xBF\xD1\x80\xD0\xB5\xD0\xBC\xD0\xB8\xD1\x83\xD0\xBC-\xD1\x8D\xD0\xBC\xD0\xBE\xD0\xB4\xD0\xB7\xD0\xB8, RP-\xD0\xBD\xD0\xB8\xD0\xBA\xD0\xB8, \xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF \xD0\xB8 \xD1\x81\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xB0\xD1\x82\xD0\xB5\xD0\xBB\xD0\xB8 (C++ ABI 3).",
-    "3.0.0",
-    12,
+    "3.0.1",
+    13,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
