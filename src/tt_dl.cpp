@@ -198,11 +198,21 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     size_t sp = link.find_first_of(" \t\n");
     if (sp != std::string::npos) link = link.substr(0, sp);
 
+    // 1. Моментальный статус "Получаю информацию..."
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "\xF0\x9F\x94\x8D \xD0\x9F\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB0\xD1\x8E \xD0\xB8\xD0\xBD\xD1\x84\xD0\xBE\xD1\x80\xD0\xBC\xD0\xB0\xD1\x86\xD0\xB8\xD1\x8E...", KOTO_ENT_ITALIC); // 🔍 Получаю информацию...
+    api->c_edit(ctx, 0);
+
     std::string body = http_get_str(ctx, api, std::string(API_PREFIX) + url_encode(link));
     if (body.empty() || body.find("\"code\":0") == std::string::npos) {
         edit_err(ctx, api, "\xE2\x9D\x8C \xD0\x9E\xD1\x88\xD0\xB8\xD0\xB1\xD0\xBA\xD0\xB0 API: \xD0\xBD\xD0\xB5 \xD1\x83\xD0\xB4\xD0\xB0\xD0\xBB\xD0\xBE\xD1\x81\xD1\x8C \xD0\xBF\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB8\xD1\x82\xD1\x8C \xD0\xB4\xD0\xB0\xD0\xBD\xD0\xBD\xD1\x8B\xD0\xB5."); // ❌ Ошибка API: не удалось получить данные.
         return;
     }
+
+    // 2. Статус "Скачиваю..."
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "\xF0\x9F\x93\xA5 \xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD1\x8E...", KOTO_ENT_ITALIC); // 📥 Скачиваю...
+    api->c_edit(ctx, 0);
 
     long long cid = api->chat_id(ctx);
     bool full = caption_full(ctx, api);
@@ -218,11 +228,8 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     // ── Фото-альбом ───────────────────────────────────────────────────────────
     std::vector<std::string> images = json_str_array(body, "images");
     if (!images.empty()) {
-        api->delete_msg(ctx);
-        // Хост 0.3.4+ умеет слать все фото ОДНИМ альбомом (media group).
-        // На старом хосте c_send_album == nullptr → старый путь (по одному).
+        compose_caption(ctx, api, title, full);   // подпись = композер (на 1-м фото)
         if (api->c_send_album) {
-            compose_caption(ctx, api, title, full);   // подпись = композер (на 1-м фото)
             std::vector<const char*> ptrs;
             ptrs.reserve(images.size());
             for (const auto& img : images) ptrs.push_back(img.c_str());
@@ -235,6 +242,7 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
                 api->c_send_file(ctx, cid, img.c_str(), 0);
             }
         }
+        api->delete_msg(ctx);
         return;
     }
 
@@ -246,9 +254,10 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
         edit_err(ctx, api, "\xE2\x9D\x8C \xD0\x9D\xD0\xB5 \xD0\xBD\xD0\xB0\xD0\xB9\xD0\xB4\xD0\xB5\xD0\xBD \xD0\xBF\xD1\x80\xD1\x8F\xD0\xBC\xD0\xBE\xD0\xB9 URL \xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE."); // ❌ Не найден прямой URL видео.
         return;
     }
-    api->delete_msg(ctx);
+
     compose_caption(ctx, api, title, full);
     api->c_send_file(ctx, cid, play.c_str(), 0);
+    api->delete_msg(ctx);
 }
 
 static const koto_command COMMANDS[] = {
