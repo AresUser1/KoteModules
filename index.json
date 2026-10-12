@@ -220,69 +220,6 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
       "min_host_version": 24
-    },
-    {
-      "id": "music_dl",
-      "name": "music_dl",
-      "display_name": "Music Downloader (SoundCloud)",
-      "author": "@Diezdd",
-      "description": "Полнофункциональный модуль поиска и загрузки музыки из SoundCloud с кэшированием, пагинацией, ID3-тегами и логами разработки.",
-      "version": "1.3.0",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "find",
-          "doc": "Поиск треков в SoundCloud",
-          "usage": "<запрос>"
-        },
-        {
-          "name": "fc",
-          "doc": "Перелистывание страниц результатов",
-          "usage": "[next|prev]"
-        },
-        {
-          "name": "dlf",
-          "doc": "Скачать трек по номеру из результатов",
-          "usage": "<номер>"
-        },
-        {
-          "name": "download",
-          "doc": "Быстрый поиск и скачивание первого трека",
-          "usage": "<запрос>"
-        },
-        {
-          "name": "msc",
-          "doc": "Алиас команды .download",
-          "usage": "<запрос>"
-        },
-        {
-          "name": "musictag",
-          "doc": "Установить или посмотреть юзернейм автора для тегов",
-          "usage": "[@username]"
-        },
-        {
-          "name": "favs",
-          "doc": "Список избранных треков",
-          "usage": ""
-        },
-        {
-          "name": "musiclog",
-          "doc": "Логи разработки и отладки модуля",
-          "usage": "[clear]"
-        },
-        {
-          "name": "mclean",
-          "doc": "Очистить кэш треков",
-          "usage": ""
-        }
-      ],
-      "size": 591944,
-      "sha256": "1bd6163ff98e14d089bca3d03faa1eb2e77b74dc54139aeb4e9df6e3daee2aac",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music_dl.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music_dl.cpp",
-      "license": "Proprietary",
-      "min_host_version": 12
     }
   ]
 }
