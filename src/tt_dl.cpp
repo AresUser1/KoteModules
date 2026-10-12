@@ -219,11 +219,21 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     std::vector<std::string> images = json_str_array(body, "images");
     if (!images.empty()) {
         api->delete_msg(ctx);
-        bool first = true;
-        for (const auto& img : images) {
-            if (first) { compose_caption(ctx, api, title, full); first = false; }
-            else api->c_reset(ctx);
-            api->c_send_file(ctx, cid, img.c_str(), 0);
+        // Хост 0.3.4+ умеет слать все фото ОДНИМ альбомом (media group).
+        // На старом хосте c_send_album == nullptr → старый путь (по одному).
+        if (api->c_send_album) {
+            compose_caption(ctx, api, title, full);   // подпись = композер (на 1-м фото)
+            std::vector<const char*> ptrs;
+            ptrs.reserve(images.size());
+            for (const auto& img : images) ptrs.push_back(img.c_str());
+            api->c_send_album(ctx, cid, ptrs.data(), (int)ptrs.size(), 0);
+        } else {
+            bool first = true;
+            for (const auto& img : images) {
+                if (first) { compose_caption(ctx, api, title, full); first = false; }
+                else api->c_reset(ctx);
+                api->c_send_file(ctx, cid, img.c_str(), 0);
+            }
         }
         return;
     }
@@ -255,8 +265,8 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tt_dl",
     "\xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5 \xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE \xD0\xB8\xD0\xB7 TikTok (\xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE, \xD0\xB3\xD0\xB8\xD1\x84\xD0\xBA\xD0\xB8, \xD1\x84\xD0\xBE\xD1\x82\xD0\xBE-\xD0\xB0\xD0\xBB\xD1\x8C\xD0\xB1\xD0\xBE\xD0\xBC\xD1\x8B). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
-    "1.3.0",
-    17,
+    "1.4.0",
+    24,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

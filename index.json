@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.0.0",
-  "updated": "2026-10-11",
+  "version": "1.1.0",
+  "updated": "2026-10-12",
   "modules": [
     {
       "id": "checkers",
@@ -30,7 +30,7 @@
         }
       ],
       "size": 27464,
-      "sha256": "0b8c4c20ce52fde42bb8e06bfcba93509b4110da5f64021701425f22d62a5fc2",
+      "sha256": "55501c02f1457c43365b5ef81c88eefac383039a360f46ad718d8ceb66335b46",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
@@ -58,7 +58,7 @@
         }
       ],
       "size": 7944,
-      "sha256": "90bec6af5594b7180db9ba103c19b22ff9999b507241e89ff379d0da101db2d4",
+      "sha256": "1fd2ec925ae90f052fed8c58804b719a180afed176ddb41c71da44884c05455d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
       "license": "MIT",
@@ -67,40 +67,30 @@
     {
       "id": "music",
       "name": "music",
-      "display_name": "YouTube Music Player",
+      "display_name": "Music Player (Telegram Bots)",
       "author": "Kote",
-      "description": "Поиск и отправка музыки: быстрый поиск через ботов (@lybot, @vkmusic_bot) по умолчанию либо напрямую с YouTube через флаг --yt или команду .musyt с качеством M4A/AAC в Telegram плеер.",
-      "version": "2.3.0",
+      "description": "Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства.",
+      "version": "3.0.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "mus",
-          "doc": "Поиск музыки через ботов или YouTube (--yt)",
-          "usage": "<запрос> [--yt]"
-        },
-        {
-          "name": "musyt",
-          "doc": "Прямой поиск и скачивание аудио с YouTube",
-          "usage": "<запрос или ссылка>"
+          "doc": "Поиск и отправка музыки через Telegram-ботов",
+          "usage": "<запрос>"
         },
         {
           "name": "musconfig",
           "doc": "Информация и конфигурация музыкального модуля",
           "usage": ""
-        },
-        {
-          "name": "musclean",
-          "doc": "Очистить кэш скачанных треков на устройстве",
-          "usage": ""
         }
       ],
-      "size": 76032,
-      "sha256": "89466eb9dc473a2d37b9dbb487c712d442644f5f7014a8987d3a3e7e474fd44b",
+      "size": 47736,
+      "sha256": "f8bd5553468d2ad1f88880005f4396091eaa6f1411855fb26d9e59617d86c96f",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
-      "git_url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
       "license": "MIT",
-      "min_host_version": 12
+      "min_host_version": 13
     },
     {
       "id": "rp",
@@ -178,8 +168,8 @@
           "usage": ""
         }
       ],
-      "size": 155336,
-      "sha256": "36a1a339dc731548b1af4e87fda24b25010312a3d412aa2eee863dac01ff570a",
+      "size": 166672,
+      "sha256": "9a54a29e8ee8b9ac552ebccb764a64e485a6245b9bdc7b1a352f0549e4baf067",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
@@ -201,8 +191,8 @@
           "usage": "[в ответ на сообщение]"
         }
       ],
-      "size": 50776,
-      "sha256": "5781ea969ba104a127042a798b3e1618b96f252afbf8b45d3a158faac39eabfe",
+      "size": 51032,
+      "sha256": "eb587a3a0cfa5aafc0329ab38bc35db978ce8d7605cc53b3f9620e1cffd748a7",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/idprem.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
       "license": "MIT",
@@ -213,8 +203,8 @@
       "name": "tt_dl",
       "display_name": "TikTok Downloader",
       "author": "Коте",
-      "description": "Скачивание контента из TikTok (видео, GIF, фото-альбомы) через tikwm API. Режим подписи: .tt caption full|short.",
-      "version": "1.3.0",
+      "description": "Скачивание контента из TikTok (видео, GIF, фото-альбомы с отправкой альбомом через c_send_album) через tikwm API. Режим подписи: .tt caption full|short.",
+      "version": "1.4.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -224,8 +214,8 @@
           "usage": "<ссылка> | caption [full|short]"
         }
       ],
-      "size": 60032,
-      "sha256": "560a11ccc00d4e9cc53829d78975a5f8a0e2073049ed864047d131e19d8c1ee3",
+      "size": 61376,
+      "sha256": "727b64fad68fd93fdadcd6246d71c91e5c38b998b50abaff9b28f610e0957161",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
