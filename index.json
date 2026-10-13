@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.1.0",
-  "updated": "2026-10-12",
+  "version": "1.2.0",
+  "updated": "2026-10-13",
   "modules": [
     {
       "id": "checkers",
@@ -291,6 +291,142 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
       "license": "MIT",
       "min_host_version": 26
+    },
+    {
+      "id": "bakusearch",
+      "name": "bakusearch",
+      "display_name": "BakuSearch (Поиск аниме)",
+      "author": "Kote",
+      "description": "Распознавание и поиск аниме по скриншоту, GIF или видео (первый кадр) через сервис trace.moe (Baku) с подробной информацией (название, эпизод, таймкод, рейтинг схожести, превью) и цитированием оригинального медиа.",
+      "version": "1.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "baku",
+          "doc": "Поиск аниме по кадру/видео/GIF через trace.moe",
+          "usage": "[в ответ на фото/видео/гиф/стикер]"
+        }
+      ],
+      "size": 94816,
+      "sha256": "99705280e16835323abbb8a1f7aa811c61345e24b35e77a32c753150644cb4b7",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/bakusearch.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
+      "license": "MIT",
+      "min_host_version": 27
+    },
+    {
+      "id": "moderation",
+      "name": "moderation",
+      "display_name": "Модерация (Moderation)",
+      "author": "Kote",
+      "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
+      "version": "1.1.5",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "ban",
+          "doc": "Забанить пользователя в чате",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "sban",
+          "doc": "Тихо забанить пользователя (без уведомления)",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unban",
+          "doc": "Разбанить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "kick",
+          "doc": "Кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "skick",
+          "doc": "Тихо кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "mute",
+          "doc": "Замутить пользователя в чате",
+          "usage": "[user/id] [время: 10m/1h/2d] [причина]"
+        },
+        {
+          "name": "smute",
+          "doc": "Тихо замутить пользователя",
+          "usage": "[user/id] [время] [причина]"
+        },
+        {
+          "name": "unmute",
+          "doc": "Размутить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warn",
+          "doc": "Выдать предупреждение (варн) с автобаном при лимите",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unwarn",
+          "doc": "Снять последнее предупреждение",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warns",
+          "doc": "Посмотреть варны пользователя",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warnlimit",
+          "doc": "Установить лимит варнов для чата",
+          "usage": "<число>"
+        },
+        {
+          "name": "delusers",
+          "doc": "Удалить последние сообщения пользователя",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "modhistory",
+          "doc": "Посмотреть историю действий модерации",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "gameban",
+          "doc": "Игровой временный бан (серверный бан на 1 час)",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "gset",
+          "doc": "Управление наборами глобальных чатов",
+          "usage": "add/rm/list <cat> [id]"
+        },
+        {
+          "name": "gban",
+          "doc": "Глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id] [причина]"
+        },
+        {
+          "name": "ungban",
+          "doc": "Снять глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id]"
+        },
+        {
+          "name": "gkick",
+          "doc": "Глобальный кик пользователя из категории чатов",
+          "usage": "<категория> [user/id] [причина]"
+        }
+      ],
+      "size": 1453256,
+      "sha256": "6cb5c056de952ad361a7b4ccf4dc9da66325074a96ce83dce393cee900ca1189",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moderation.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
+      "license": "MIT",
+      "min_host_version": 27
     }
   ]
 }
