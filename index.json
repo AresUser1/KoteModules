@@ -1,6 +1,6 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "updated": "2026-10-13",
   "modules": [
     {
@@ -295,21 +295,21 @@
     {
       "id": "bakusearch",
       "name": "bakusearch",
-      "display_name": "BakuSearch (Поиск аниме)",
+      "display_name": "BakuSearch (Помощник Baku Mafia)",
       "author": "Kote",
-      "description": "Распознавание и поиск аниме по скриншоту, GIF или видео (первый кадр) через сервис trace.moe (Baku) с подробной информацией (название, эпизод, таймкод, рейтинг схожести, превью) и цитированием оригинального медиа.",
+      "description": "Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue).",
       "version": "1.0.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "baku",
-          "doc": "Поиск аниме по кадру/видео/GIF через trace.moe",
-          "usage": "[в ответ на фото/видео/гиф/стикер]"
+          "doc": "Поиск не проголосовавших игроков",
+          "usage": "[red/blue]"
         }
       ],
-      "size": 94816,
-      "sha256": "99705280e16835323abbb8a1f7aa811c61345e24b35e77a32c753150644cb4b7",
+      "size": 98816,
+      "sha256": "32ef9ca249b08fccf7153c7e05c382e4b0c1919e124a3c35d8176aeb6170b2f2",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/bakusearch.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
       "license": "MIT",
@@ -427,6 +427,139 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
       "license": "MIT",
       "min_host_version": 27
+    },
+    {
+      "id": "mafia_multitool",
+      "name": "mafia_multitool",
+      "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
+      "author": "Kote",
+      "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
+      "version": "1.2.6",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "mset",
+          "doc": "Установить лог-чат или арену",
+          "usage": "<tourney|arena> [id]"
+        },
+        {
+          "name": "mdelay",
+          "doc": "Задержка голосования (мс)",
+          "usage": "[мс]"
+        },
+        {
+          "name": "mhuman",
+          "doc": "Режим живых игроков",
+          "usage": "[on|off|status|set...]"
+        },
+        {
+          "name": "msettings",
+          "doc": "Текущие настройки и статус твинков",
+          "usage": ""
+        },
+        {
+          "name": "mfreeze",
+          "doc": "Заморозить/разморозить твинка",
+          "usage": "[имя]"
+        },
+        {
+          "name": "mcombat",
+          "doc": "Вкл/выкл Combat авто-голосование",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "mlast",
+          "doc": "Combat: голос в последнего врага",
+          "usage": ""
+        },
+        {
+          "name": "mprelast",
+          "doc": "Combat: голос в предпоследнего врага",
+          "usage": ""
+        },
+        {
+          "name": "mvesh",
+          "doc": "Combat: голос в конкретного игрока",
+          "usage": "<имя>"
+        },
+        {
+          "name": "mreg",
+          "doc": "Регистрация всех аккаунтов в игре",
+          "usage": "<ссылка/старт-параметр>"
+        },
+        {
+          "name": "mbvesh",
+          "doc": "Baku: голос за игрока через ЛС",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mblike",
+          "doc": "Baku: подтвердить линч (лайк)",
+          "usage": ""
+        },
+        {
+          "name": "mbdis",
+          "doc": "Baku: оправдать (дизлайк)",
+          "usage": ""
+        },
+        {
+          "name": "mrole",
+          "doc": "Скан ролей из ЛС в лог-чат",
+          "usage": "<combat|true|baku|koto|oso>"
+        },
+        {
+          "name": "mlike",
+          "doc": "Combat/Oso/True/Koto: подтвердить линч",
+          "usage": "[oso|true|koto]"
+        },
+        {
+          "name": "mdis",
+          "doc": "Combat/Oso/True/Koto: оправдать",
+          "usage": "[oso|true|koto]"
+        },
+        {
+          "name": "mprofile",
+          "doc": "Отправить /profile в Combat со всех акк.",
+          "usage": ""
+        },
+        {
+          "name": "mtrue",
+          "doc": "Вкл/выкл TrueMafia режим",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "mtvesh",
+          "doc": "TrueMafia: голос за игрока",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mkvesh",
+          "doc": "KotoMafia: голос за игрока через ЛС",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mkgraf",
+          "doc": "KotoMafia: поиск не проголосовавших",
+          "usage": ""
+        },
+        {
+          "name": "mbaku",
+          "doc": "Baku: поиск не проголосовавших",
+          "usage": "[red/blue]"
+        },
+        {
+          "name": "movesh",
+          "doc": "Mafioso: голос за игрока через ЛС",
+          "usage": "<ник>"
+        }
+      ],
+      "size": 233744,
+      "sha256": "df43fe10c53332c56490f27aed41ed806a7dc05a76d4574fb9358cc83995bebe",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
+      "license": "MIT",
+      "min_host_version": 28
     }
   ]
 }
