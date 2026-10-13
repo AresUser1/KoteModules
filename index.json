@@ -226,14 +226,14 @@
       "name": "spammer",
       "display_name": "Спамер (Spammer)",
       "author": "SynForge / Коте",
-      "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений и настройкой количества сообщений по умолчанию в приложении.",
-      "version": "1.2.0",
+      "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении.",
+      "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "spam",
-          "doc": "Начать спам сообщениями (с поддержкой цитат и форматирования)",
+          "doc": "Начать спам сообщениями (с поддержкой цитат, форматирования и премиум-эмодзи)",
           "usage": "[количество] <текст>"
         },
         {
@@ -242,8 +242,8 @@
           "usage": ""
         }
       ],
-      "size": 51528,
-      "sha256": "750ea58bcc48e7a0375222a1f295839d2500ed86f121d059765ea1008141c26f",
+      "size": 63208,
+      "sha256": "861b3262a9eb6c71f95f886b1d00fb3201577f051a0ef9e152d077da0931e038",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spammer.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
       "license": "MIT",
