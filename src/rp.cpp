@@ -260,6 +260,13 @@ static std::string get_rp_display_name(koto_ctx* ctx, const koto_api* api, long 
     char buf[128] = {0};
     if (api->user_name(ctx, uid, buf, sizeof(buf)) > 0 && *buf) return std::string(buf);
 
+    if (api->user_first_name && api->user_first_name(ctx, uid, buf, sizeof(buf)) > 0 && *buf) {
+        return std::string(buf);
+    }
+    if (api->user_username && api->user_username(ctx, uid, buf, sizeof(buf)) > 0 && *buf) {
+        return "@" + std::string(buf);
+    }
+
     return (uid == api->get_me(ctx)) ? "\xD0\xAF" : "\xD0\x9F\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xB7\xD0\xBE\xD0\xB2\xD0\xB0\xD1\x82\xD0\xB5\xD0\xBB\xD1\x8C";
 }
 
@@ -1021,7 +1028,17 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
     long long sender = api->sender_id(ctx);
     long long me = api->get_me(ctx);
     bool out = api->is_outgoing(ctx) != 0;
-    bool is_private = (cid > 0);
+
+    // Определение типа чата (ЛС vs группа/канал).
+    // Если id отрицательный или chat_full_json подтверждает группу/канал — это не ЛС.
+    bool is_group_or_chan = (cid < 0);
+    char cbuf[512] = {0};
+    if (!is_group_or_chan && api->chat_full_json && api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1) > 0) {
+        if (strstr(cbuf, "\"is_channel\":true") || strstr(cbuf, "\"is_group\":true")) {
+            is_group_or_chan = true;
+        }
+    }
+    bool is_private = (cid > 0) && !is_group_or_chan;
 
     // RP должно быть включено в этом чате.
     if (!check_rp_enabled_in_chat(ctx, api, cid)) return 0;
@@ -1035,6 +1052,7 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
 
     // Определение цели и комментария.
     long long target_uid = 0;
+    std::string target_explicit_name;
     std::string comment;
     long long reply_uid = api->reply_sender_id(ctx);
     if (reply_uid != 0) {
@@ -1045,18 +1063,36 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
         size_t sp = rest.find_first_of(" \t\n");
         if (sp != std::string::npos) { first = rest.substr(0, sp); remainder = trim(rest.substr(sp + 1)); }
         if (!first.empty() && first.front() == '@') {
-            long long r = api->resolve(ctx, first.substr(1).c_str());
-            if (r != 0) { target_uid = r; comment = remainder; }
-            else comment = rest;
+            std::string uname = first.substr(1);
+            long long r = api->resolve(ctx, uname.c_str());
+            if (r != 0) {
+                target_uid = r;
+            }
+            target_explicit_name = first;
+            comment = remainder;
         } else {
             bool all_digit = !first.empty();
             for (char c : first) if (!isdigit((unsigned char)c)) { all_digit = false; break; }
-            if (all_digit && first.size() > 4) { try { target_uid = std::stoll(first); } catch (...) {} comment = remainder; }
-            else comment = rest;
+            if (all_digit && first.size() > 4) {
+                try { target_uid = std::stoll(first); } catch (...) {}
+                comment = remainder;
+            } else {
+                long long r = api->resolve(ctx, first.c_str());
+                if (r != 0) {
+                    target_uid = r;
+                    target_explicit_name = "@" + first;
+                    comment = remainder;
+                } else {
+                    comment = rest;
+                }
+            }
         }
     }
     // В ЛС без явной цели: исходящее → собеседник (cid), входящее → я.
-    if (target_uid == 0 && is_private) target_uid = out ? cid : me;
+    // Если указана явная цель (например @user), в fallback на chat_id не падаем!
+    if (target_uid == 0 && target_explicit_name.empty() && is_private) {
+        target_uid = out ? cid : me;
+    }
 
     // Сборка сообщения.
     api->c_reset(ctx);
@@ -1067,12 +1103,22 @@ static int rp_watch(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, " ");
     api->c_fmt(ctx, rc.action.c_str(), KOTO_ENT_BOLD);
 
-    if (target_uid == 0) {
+    if (target_uid == 0 && target_explicit_name.empty()) {
         api->c_fmt(ctx, " \xD1\x81\xD0\xB0\xD0\xBC\xD0\xBE\xD0\xB3\xD0\xBE/\xD1\x81\xD0\xB0\xD0\xBC\xD1\x83 \xD1\x81\xD0\xB5\xD0\xB1\xD1\x8F", KOTO_ENT_BOLD); // самого/саму себя
     } else {
         api->c_text(ctx, " ");
-        std::string target_name = get_rp_display_name(ctx, api, target_uid, cid);
-        api->c_url(ctx, target_name.c_str(), ("tg://user?id=" + std::to_string(target_uid)).c_str());
+        std::string target_name = target_explicit_name;
+        if (target_uid != 0) {
+            std::string disp = get_rp_display_name(ctx, api, target_uid, cid);
+            if (!disp.empty() && disp != "\xD0\x9F\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xB7\xD0\xBE\xD0\xB2\xD0\xB0\xD1\x82\xD0\xB5\xD0\xBB\xD1\x8C") {
+                target_name = disp;
+            } else if (target_name.empty()) {
+                target_name = disp;
+            }
+            api->c_url(ctx, target_name.c_str(), ("tg://user?id=" + std::to_string(target_uid)).c_str());
+        } else {
+            api->c_fmt(ctx, target_name.c_str(), KOTO_ENT_BOLD);
+        }
     }
 
     if (!comment.empty()) {
@@ -1112,7 +1158,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "rp",
     "Role-Play: \xD0\xBA\xD0\xB0\xD1\x81\xD1\x82\xD0\xBE\xD0\xBC\xD0\xBD\xD1\x8B\xD0\xB5 RP-\xD0\xBA\xD0\xBE\xD0\xBC\xD0\xB0\xD0\xBD\xD0\xB4\xD1\x8B \xD1\x81 \xD0\xBF\xD1\x80\xD0\xB5\xD0\xBC\xD0\xB8\xD1\x83\xD0\xBC-\xD1\x8D\xD0\xBC\xD0\xBE\xD0\xB4\xD0\xB7\xD0\xB8, RP-\xD0\xBD\xD0\xB8\xD0\xBA\xD0\xB8, \xD0\xB4\xD0\xBE\xD1\x81\xD1\x82\xD1\x83\xD0\xBF \xD0\xB8 \xD1\x81\xD0\xBE\xD0\xB7\xD0\xB4\xD0\xB0\xD1\x82\xD0\xB5\xD0\xBB\xD0\xB8 (C++ ABI 3).",
-    "3.0.1",
+    "3.0.2",
     12,
     0,
     COMMANDS,

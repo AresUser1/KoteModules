@@ -98,7 +98,7 @@
       "display_name": "Role-Play (РП команды)",
       "author": "Kote",
       "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -168,8 +168,8 @@
           "usage": ""
         }
       ],
-      "size": 166672,
-      "sha256": "9a54a29e8ee8b9ac552ebccb764a64e485a6245b9bdc7b1a352f0549e4baf067",
+      "size": 168304,
+      "sha256": "284606025c3ed7a406c418cbb75ddb8fff85d83aeb0ae44b271a09f2f922c7c4",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
