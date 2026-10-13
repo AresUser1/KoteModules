@@ -137,7 +137,27 @@ static std::string http_get_str(koto_ctx* ctx, const koto_api* api, const std::s
     return std::string((const char*)buf.data(), (size_t)n);
 }
 
+// Декларация настроек модуля для отображения в панели приложения и .cfg
+static const koto_setting_field SETTINGS[] = {
+    {
+        "caption_full",
+        "Скачивать с описанием (полная подпись)",
+        KOTO_FIELD_BOOL,
+        "1",
+        nullptr
+    }
+};
+
 static bool caption_full(koto_ctx* ctx, const koto_api* api) {
+    if (api && api->cfg_get) {
+        char buf[32] = {0};
+        int n = api->cfg_get(ctx, "caption_full", buf, sizeof(buf) - 1);
+        if (n > 0) {
+            buf[n] = '\0';
+            std::string s = to_lower(trim(buf));
+            return (s == "1" || s == "true" || s == "yes");
+        }
+    }
     return api->db_get_int(ctx, "caption_full", 1) != 0;
 }
 
@@ -166,6 +186,7 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
         std::string rest = trim(args.substr(7));
         std::string mode = to_lower(rest);
         if (mode == "full") {
+            if (api->cfg_set) api->cfg_set(ctx, "caption_full", "1");
             api->db_set_int(ctx, "caption_full", 1);
             api->c_reset(ctx);
             api->c_fmt(ctx, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: ", KOTO_ENT_BOLD); // ✅ Режим подписи:
@@ -173,6 +194,7 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
             api->c_edit(ctx, 0);
             return;
         } else if (mode == "short") {
+            if (api->cfg_set) api->cfg_set(ctx, "caption_full", "0");
             api->db_set_int(ctx, "caption_full", 0);
             api->c_reset(ctx);
             api->c_fmt(ctx, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: ", KOTO_ENT_BOLD); // ✅ Режим подписи:
@@ -274,14 +296,15 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tt_dl",
     "\xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5 \xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE \xD0\xB8\xD0\xB7 TikTok (\xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE, \xD0\xB3\xD0\xB8\xD1\x84\xD0\xBA\xD0\xB8, \xD1\x84\xD0\xBE\xD1\x82\xD0\xBE-\xD0\xB0\xD0\xBB\xD1\x8C\xD0\xB1\xD0\xBE\xD0\xBC\xD1\x8B). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
-    "1.4.0",
+    "1.5.0",
     24,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     nullptr, 0,
     nullptr,
-    nullptr, 0,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so"
 };
 
