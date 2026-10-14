@@ -277,6 +277,43 @@ static void save_global_sets(koto_ctx* ctx, const koto_api* api,
 }
 
 // ── Проверка доступа и типа чата ──────────────────────────────────────────────
+static bool is_group_chat(koto_ctx* ctx, const koto_api* api, long long cid) {
+    if (cid < 0) return true; // Отрицательные ID (-100... или -...) всегда группы/супергруппы/каналы
+    if (cid == 0) return false;
+
+    long long me = api->get_me ? api->get_me(ctx) : 0;
+    if (me != 0 && cid == me) {
+        return false; // Избранное (личные сообщения с самим собой)
+    }
+
+    long long sid = api->sender_id ? api->sender_id(ctx) : 0;
+    if (sid != 0 && cid == sid) {
+        return false; // Входящее личное сообщение от собеседника (в ЛС sender_id == chat_id)
+    }
+
+    if (api->chat_full_json) {
+        char cbuf[512] = {0};
+        int len = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
+        if (len > 0) {
+            if (strstr(cbuf, "\"is_group\":true") || strstr(cbuf, "\"is_channel\":true")) {
+                return true;
+            }
+            if (strstr(cbuf, "\"is_group\":false") && strstr(cbuf, "\"is_channel\":false")) {
+                return false;
+            }
+        }
+    }
+
+    if (api->user_first_name) {
+        char ubuf[128] = {0};
+        if (api->user_first_name(ctx, cid, ubuf, sizeof(ubuf) - 1) > 0 && ubuf[0] != '\0') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool ensure_group_and_permission(koto_ctx* ctx, const koto_api* api, int min_level) {
     if (api->check_permission && !api->check_permission(ctx, min_level)) {
         api->c_reset(ctx);
@@ -286,7 +323,7 @@ static bool ensure_group_and_permission(koto_ctx* ctx, const koto_api* api, int 
         return false;
     }
     long long cid = api->chat_id(ctx);
-    if (cid > 0) {
+    if (!is_group_chat(ctx, api, cid)) {
         api->c_reset(ctx);
         api->c_text(ctx, "❌ Эта команда предназначена только для групп.");
         api->c_edit(ctx, 0);
@@ -735,7 +772,7 @@ static void cmd_gset(koto_ctx* ctx, const koto_api* api) {
             api->c_edit(ctx, 0);
             return;
         }
-    } else if (target_chat_id > 0) {
+    } else if (!is_group_chat(ctx, api, target_chat_id)) {
         api->c_reset(ctx);
         api->c_text(ctx, "❌ В ЛС нужно указать <chat_id>.");
         api->c_edit(ctx, 0);
