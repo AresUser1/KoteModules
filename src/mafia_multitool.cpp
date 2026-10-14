@@ -692,6 +692,39 @@ static void cmd_msettings(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
+static void render_mfreeze(koto_ctx* ctx, const koto_api* api, const Settings& s) {
+    auto accounts = get_all_accounts(ctx, api, s);
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "❄️ Управление заморозкой твинков\n\n", KOTO_ENT_BOLD);
+    api->c_text(ctx, "Использование: ");
+    api->c_fmt(ctx, ".mfreeze <имя/ник>", KOTO_ENT_CODE);
+    api->c_text(ctx, "\n\nТекущий статус:\n");
+    for (const auto& a : accounts) {
+        std::string icon = a.frozen ? "❄️" : "🟢";
+        std::string st = a.frozen ? "заморожен" : "активен";
+        api->c_text(ctx, ("• " + icon + " " + a.name + " — " + st + "\n").c_str());
+    }
+
+    // Инлайн-кнопки управления заморозкой для каждого аккаунта
+    for (const auto& a : accounts) {
+        std::string btn_label = (a.frozen ? "🟢 Разморозить: " : "❄️ Заморозить: ") + a.name;
+        std::string cb = "mfz:toggle:" + a.name;
+        int color = a.frozen ? KOTO_BTN_SUCCESS : KOTO_BTN_PRIMARY;
+        if (api->c_button_ex) {
+            api->c_button_ex(ctx, btn_label.c_str(), cb.c_str(), 1, color, 0);
+        } else {
+            api->c_button(ctx, btn_label.c_str(), cb.c_str(), 1);
+        }
+    }
+
+    // Кнопка закрытия
+    if (api->c_button_ex) {
+        api->c_button_ex(ctx, "❌ Закрыть", "mfz:close", 1, KOTO_BTN_DANGER, 0);
+    } else {
+        api->c_button(ctx, "❌ Закрыть", "mfz:close", 1);
+    }
+}
+
 // ── .mfreeze [имя/ник] ───────────────────────────────────────────────────────
 static void cmd_mfreeze(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -700,17 +733,7 @@ static void cmd_mfreeze(koto_ctx* ctx, const koto_api* api) {
     std::string target = args_ptr ? trim(args_ptr) : "";
 
     if (target.empty()) {
-        auto accounts = get_all_accounts(ctx, api, s);
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "❄️ Управление заморозкой твинков\n\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Использование: ");
-        api->c_fmt(ctx, ".mfreeze <имя/ник>", KOTO_ENT_CODE);
-        api->c_text(ctx, "\n\nТекущий статус:\n");
-        for (const auto& a : accounts) {
-            std::string icon = a.frozen ? "❄️" : "🟢";
-            std::string st = a.frozen ? "заморожен" : "активен";
-            api->c_text(ctx, ("• " + icon + " " + a.name + " — " + st + "\n").c_str());
-        }
+        render_mfreeze(ctx, api, s);
         api->c_edit(ctx, 0);
         return;
     }
@@ -1609,18 +1632,56 @@ static const koto_command MAFIA_COMMANDS[] = {
     {"movesh",    cmd_movesh,    KOTO_LEVEL_TRUSTED, "Mafioso: голос за игрока через ЛС", "<ник>"}
 };
 
+// ── Обработчик нажатий inline-кнопок (on_callback) ───────────────────────────
+static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    if (api->check_permission && !api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
+        api->cb_answer(ctx, "⛔ Доступ запрещён", 1);
+        return;
+    }
+    const char* data_ptr = api->cb_data(ctx);
+    if (!data_ptr) return;
+    std::string data = data_ptr;
+
+    if (data == "mfz:close") {
+        api->cb_answer(ctx, "Закрыто", 0);
+        api->delete_msg(ctx);
+        return;
+    }
+
+    if (data.rfind("mfz:toggle:", 0) == 0) {
+        std::string target = data.substr(11);
+        Settings s = load_settings(ctx, api);
+        bool now_frozen = false;
+        if (s.frozen_twins.count(target) > 0) {
+            s.frozen_twins.erase(target);
+            now_frozen = false;
+        } else {
+            s.frozen_twins.insert(target);
+            now_frozen = true;
+        }
+        save_settings(ctx, api, s);
+
+        std::string toast = target + (now_frozen ? " заморожен ❄️" : " разморожен 🟢");
+        api->cb_answer(ctx, toast.c_str(), 0);
+
+        render_mfreeze(ctx, api, s);
+        api->c_edit(ctx, 0);
+        return;
+    }
+}
+
 static const koto_module MAFIA_MODULE = {
     KOTO_MODULE_ABI,
     MODULE_NAME,
     "Мафия Мульти-Тул — боевой комбайн для мафиозных ботов (Combat, TrueMafia, Baku, Koto, Mafioso).",
-    "1.2.6",
+    "1.2.7",
     28, // min_host_version 28 (0.3.8+)
     0,
     MAFIA_COMMANDS,
     sizeof(MAFIA_COMMANDS) / sizeof(MAFIA_COMMANDS[0]),
     on_watch,
     KOTO_WATCH_ALL,
-    nullptr, // on_callback
+    on_callback, // on_callback
     nullptr, // settings
     0,
     "https://t.me/KoteModulesMint"

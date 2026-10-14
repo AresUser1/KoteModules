@@ -434,7 +434,7 @@
       "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
       "author": "Kote",
       "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
-      "version": "1.2.6",
+      "version": "1.2.7",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -554,8 +554,8 @@
           "usage": "<ник>"
         }
       ],
-      "size": 233744,
-      "sha256": "df43fe10c53332c56490f27aed41ed806a7dc05a76d4574fb9358cc83995bebe",
+      "size": 195336,
+      "sha256": "0987a2b22feb0c4791f8597c7a127ea20260c655f8429472558d79d5f29e2d29",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
