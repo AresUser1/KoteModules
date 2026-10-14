@@ -154,7 +154,7 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
     // 2. Проверяем наличие reply
     long long reply_id = api->reply_msg_id ? api->reply_msg_id(ctx) : 0;
     const char* reply_text_ptr = api->reply_text(ctx);
-    if (reply_id == 0 || !reply_text_ptr || !*reply_text_ptr) {
+    if (!reply_text_ptr || !*reply_text_ptr) {
         api->c_reset(ctx);
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, "BakuSearch Ошибка:\n", KOTO_ENT_BOLD);
@@ -231,9 +231,13 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
     std::vector<char> hist_buf(131072, 0); // 128 KB под 200 сообщений
     int hist_len = 0;
     if (api->get_history_json) {
-        hist_len = api->get_history_json(ctx, chat_id, (int)reply_id, 200, -200, hist_buf.data(), (int)hist_buf.size() - 1);
+        if (reply_id > 0) {
+            hist_len = api->get_history_json(ctx, chat_id, (int)reply_id, 200, -200, hist_buf.data(), (int)hist_buf.size() - 1);
+        } else {
+            hist_len = api->get_history_json(ctx, chat_id, (int)trigger_id, 200, 0, hist_buf.data(), (int)hist_buf.size() - 1);
+        }
     }
-    if (hist_len <= 0) {
+    if (hist_len <= 2) {
         api->c_reset(ctx);
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, "BakuSearch Ошибка:\n", KOTO_ENT_BOLD);
@@ -258,8 +262,13 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
         if (id_p != std::string::npos) {
             mid = std::atoll(obj_str.c_str() + id_p + 5);
         }
-        if (mid == trigger_id) {
-            break;
+        if (trigger_id != 0 && mid == trigger_id) {
+            obj_pos = end_obj + 1;
+            continue;
+        }
+        if (reply_id != 0 && mid < reply_id) {
+            obj_pos = end_obj + 1;
+            continue;
         }
 
         // text
