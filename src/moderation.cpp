@@ -952,7 +952,7 @@ static const koto_module MODERATION_MODULE = {
     KOTO_MODULE_ABI,
     "moderation",
     "Мощный модуль для администрирования чатов (бан, мут, варны, gameban, gban/gkick).",
-    "1.1.5",
+    "1.1.6",
     27, // min_host_version 27 (0.3.7+)
     0,  // flags
     MODERATION_COMMANDS,
