@@ -224,77 +224,88 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
         else mode.clear();
     }
 
-    // 6. Запрашиваем историю чата от reply_id вверх (новее reply_id)
+    // 6. Запрашиваем историю чата вниз от reply_id до текущего момента (новее reply_id)
     long long chat_id = api->chat_id(ctx);
     long long trigger_id = api->msg_id(ctx);
 
-    std::vector<char> hist_buf(131072, 0); // 128 KB под 200 сообщений
-    int hist_len = 0;
-    if (api->get_history_json) {
-        if (reply_id > 0) {
-            hist_len = api->get_history_json(ctx, chat_id, (int)reply_id, 200, -200, hist_buf.data(), (int)hist_buf.size() - 1);
-        } else {
-            hist_len = api->get_history_json(ctx, chat_id, (int)trigger_id, 200, 0, hist_buf.data(), (int)hist_buf.size() - 1);
-        }
-    }
-    if (hist_len <= 2) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "⚠️ ");
-        api->c_fmt(ctx, "BakuSearch Ошибка:\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Голоса не найдены в истории чата (проверено 200 сообщ. вверх).");
-        api->c_send(ctx, me_id, 0);
-        return;
-    }
-
-    std::string hist_json(hist_buf.data(), hist_len);
-
-    // 7. Извлекаем сообщения и записи голосов
     std::vector<std::string> votes_log;
-    size_t obj_pos = 0;
-    while ((obj_pos = hist_json.find("{\"id\":", obj_pos)) != std::string::npos) {
-        size_t end_obj = hist_json.find('}', obj_pos);
-        if (end_obj == std::string::npos) break;
-        std::string obj_str = hist_json.substr(obj_pos, end_obj - obj_pos + 1);
+    int total_scanned = 0;
 
-        // id
-        long long mid = 0;
-        size_t id_p = obj_str.find("\"id\":");
-        if (id_p != std::string::npos) {
-            mid = std::atoll(obj_str.c_str() + id_p + 5);
-        }
-        if (trigger_id != 0 && mid == trigger_id) {
-            obj_pos = end_obj + 1;
-            continue;
-        }
-        if (reply_id != 0 && mid < reply_id) {
-            obj_pos = end_obj + 1;
-            continue;
-        }
+    if (api->get_history_json) {
+        int current_offset_id = 0;
+        int total_fetched = 0;
+        const int max_to_fetch = 300;
+        bool reached_reply = false;
+        std::vector<char> hbuf(131072, 0);
 
-        // text
-        size_t txt_p = obj_str.find("\"text\":\"");
-        if (txt_p != std::string::npos) {
-            size_t val_start = txt_p + 8;
-            size_t val_end = val_start;
-            while (val_end < obj_str.size()) {
-                if (obj_str[val_end] == '"' && obj_str[val_end - 1] != '\\') break;
-                val_end++;
-            }
-            if (val_end < obj_str.size()) {
-                std::string msg_text = json_unescape(obj_str.substr(val_start, val_end - val_start));
-                if (msg_text.find("голосовал") != std::string::npos) {
-                    votes_log.push_back(msg_text);
+        while (total_fetched < max_to_fetch && !reached_reply) {
+            int hlen = api->get_history_json(ctx, chat_id, current_offset_id, 100, 0, hbuf.data(), (int)hbuf.size() - 1);
+            if (hlen <= 2) break; // "[]" или ошибка
+
+            std::string json(hbuf.data(), hlen);
+            size_t obj_pos = 0;
+            long long oldest_id_in_chunk = 0;
+            int count_in_chunk = 0;
+
+            while ((obj_pos = json.find("{\"id\":", obj_pos)) != std::string::npos) {
+                size_t end_obj = json.find('}', obj_pos);
+                if (end_obj == std::string::npos) break;
+                std::string obj_str = json.substr(obj_pos, end_obj - obj_pos + 1);
+
+                long long mid = 0;
+                size_t id_p = obj_str.find("\"id\":");
+                if (id_p != std::string::npos) {
+                    mid = std::atoll(obj_str.c_str() + id_p + 5);
                 }
+
+                if (mid > 0) {
+                    if (oldest_id_in_chunk == 0 || mid < oldest_id_in_chunk) {
+                        oldest_id_in_chunk = mid;
+                    }
+                    count_in_chunk++;
+
+                    if (reply_id > 0 && mid <= reply_id) {
+                        reached_reply = true;
+                        break;
+                    }
+
+                    if (mid != trigger_id) {
+                        total_scanned++;
+                        // Извлекаем текст
+                        size_t txt_p = obj_str.find("\"text\":\"");
+                        if (txt_p != std::string::npos) {
+                            size_t val_start = txt_p + 8;
+                            size_t val_end = val_start;
+                            while (val_end < obj_str.size()) {
+                                if (obj_str[val_end] == '"' && obj_str[val_end - 1] != '\\') break;
+                                val_end++;
+                            }
+                            if (val_end < obj_str.size()) {
+                                std::string msg_text = json_unescape(obj_str.substr(val_start, val_end - val_start));
+                                if (msg_text.find("голосовал") != std::string::npos) {
+                                    votes_log.push_back(msg_text);
+                                }
+                            }
+                        }
+                    }
+                }
+                obj_pos = end_obj + 1;
             }
+
+            if (count_in_chunk == 0 || oldest_id_in_chunk == 0 || oldest_id_in_chunk == current_offset_id) {
+                break;
+            }
+            total_fetched += count_in_chunk;
+            current_offset_id = (int)oldest_id_in_chunk;
         }
-        obj_pos = end_obj + 1;
     }
 
     if (votes_log.empty()) {
         api->c_reset(ctx);
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, "BakuSearch Ошибка:\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Голоса не найдены в истории чата (проверено 200 сообщ. вверх).");
+        std::string err = "Голоса не найдены в истории чата (проверено " + std::to_string(total_scanned) + " сообщ. от списка игроков вниз).";
+        api->c_text(ctx, err.c_str());
         api->c_send(ctx, me_id, 0);
         return;
     }
@@ -302,22 +313,34 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
     // 8. Собираем уникальные ники проголосовавших
     std::set<std::string> voted_players_nicks;
     for (const auto& vote_text : votes_log) {
-        if (vote_text.find("Мэр голосовал") != std::string::npos) {
-            voted_players_nicks.insert(clean_nick("🎖 Мэр"));
-            continue;
-        }
-
-        // Ищем строку с "голосовал"
         std::stringstream vss(vote_text);
         std::string vline;
         while (std::getline(vss, vline)) {
-            size_t g_pos = vline.find("голосовал");
-            if (g_pos != std::string::npos) {
-                std::string voted_nick = vline.substr(0, g_pos);
-                std::string cleaned = clean_nick(voted_nick);
-                if (!cleaned.empty()) {
-                    voted_players_nicks.insert(cleaned);
-                }
+            if (vline.empty()) continue;
+            if (vline.find("голосовал") == std::string::npos) continue;
+
+            if (vline.find("Мэр голосовал") != std::string::npos || vline.find("Мэр проголосовал") != std::string::npos) {
+                voted_players_nicks.insert(clean_nick("🎖 Мэр"));
+                voted_players_nicks.insert("Мэр");
+                voted_players_nicks.insert("🎖 Мэр");
+                continue;
+            }
+
+            size_t prog_pos = vline.find("проголосовал");
+            size_t gol_pos = vline.find("голосовал");
+            size_t gpos = (prog_pos != std::string::npos) ? prog_pos : gol_pos;
+
+            std::string voted_nick = vline.substr(0, gpos);
+            size_t s = voted_nick.find_first_not_of(" \t\r\n");
+            if (s != std::string::npos) voted_nick.erase(0, s);
+            const std::string ballot_box = "\xF0\x9F\x97\xB3"; // 🗳
+            if (voted_nick.rfind(ballot_box, 0) == 0) {
+                voted_nick.erase(0, ballot_box.size());
+            }
+
+            std::string cleaned = clean_nick(voted_nick);
+            if (!cleaned.empty()) {
+                voted_players_nicks.insert(cleaned);
             }
         }
     }
@@ -326,7 +349,22 @@ static void cmd_baku(koto_ctx* ctx, const koto_api* api) {
     std::vector<std::string> not_voted;
     for (size_t i = 0; i < player_lines.size(); ++i) {
         std::string cleaned_identifier = clean_nick(player_identifiers[i]);
-        if (voted_players_nicks.count(cleaned_identifier) == 0) {
+        bool found = false;
+        if (voted_players_nicks.count(cleaned_identifier) > 0) {
+            found = true;
+        } else {
+            std::string lower_id = cleaned_identifier;
+            for (char& c : lower_id) c = (char)std::tolower((unsigned char)c);
+            for (const auto& vn : voted_players_nicks) {
+                std::string lower_vn = vn;
+                for (char& c : lower_vn) c = (char)std::tolower((unsigned char)c);
+                if (lower_id == lower_vn) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
             not_voted.push_back(player_lines[i]);
         }
     }
@@ -392,7 +430,7 @@ static const koto_module BAKUSEARCH_MODULE = {
     KOTO_MODULE_ABI,
     "bakusearch",
     "Помощник для ведущих мафии (Baku). Поиск не проголосовавших игроков.",
-    "1.0.3",
+    "1.0.4",
     27, // min_host_version 27 (0.3.7+)
     0,  // flags
     BAKUSEARCH_COMMANDS,

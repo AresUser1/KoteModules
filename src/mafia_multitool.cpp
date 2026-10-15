@@ -1311,6 +1311,47 @@ static void cmd_movesh(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
+// Сбор сообщений вниз от reply_id до текущего момента
+static std::vector<HistoryMessage> fetch_history_after(koto_ctx* ctx, const koto_api* api, long long chat_id, long long reply_id, long long trigger_id, int& out_scanned) {
+    std::vector<HistoryMessage> result;
+    out_scanned = 0;
+    if (!api->get_history_json) return result;
+
+    int current_offset_id = 0;
+    int total_fetched = 0;
+    const int max_to_fetch = 300;
+    bool reached_reply = false;
+    std::vector<char> hbuf(131072, 0);
+
+    while (total_fetched < max_to_fetch && !reached_reply) {
+        int hlen = api->get_history_json(ctx, chat_id, current_offset_id, 100, 0, hbuf.data(), (int)hbuf.size() - 1);
+        if (hlen <= 2) break;
+
+        auto chunk = parse_history_json(std::string(hbuf.data(), hlen));
+        if (chunk.empty()) break;
+
+        long long oldest_id = 0;
+        for (const auto& m : chunk) {
+            if (oldest_id == 0 || m.id < oldest_id) {
+                oldest_id = m.id;
+            }
+            if (reply_id > 0 && m.id <= reply_id) {
+                reached_reply = true;
+                break;
+            }
+            if (m.id != trigger_id) {
+                out_scanned++;
+                result.push_back(m);
+            }
+        }
+
+        if (oldest_id == 0 || oldest_id == current_offset_id) break;
+        total_fetched += (int)chunk.size();
+        current_offset_id = (int)oldest_id;
+    }
+    return result;
+}
+
 // ── .mkgraf (KotoMafia аналитика не проголосовавших) ──────────────────────────
 static void cmd_mkgraf(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -1358,18 +1399,19 @@ static void cmd_mkgraf(koto_ctx* ctx, const koto_api* api) {
     }
 
     long long chat_id = api->chat_id(ctx);
-    char hbuf[131072];
-    int hlen = api->get_history_json ? api->get_history_json(ctx, chat_id, (int)reply_id, 200, -200, hbuf, sizeof(hbuf)) : 0;
-    if (hlen <= 0) {
+    long long trigger_id = api->msg_id(ctx);
+    int scanned = 0;
+    auto msgs = fetch_history_after(ctx, api, chat_id, reply_id, trigger_id, scanned);
+    if (msgs.empty()) {
         api->c_reset(ctx);
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, "mkgraf:", KOTO_ENT_BOLD);
-        api->c_text(ctx, " Голоса не найдены в истории чата (200 сообщ.).");
+        std::string err = " Голоса не найдены в истории чата (проверено " + std::to_string(scanned) + " сообщ. от списка игроков вниз).";
+        api->c_text(ctx, err.c_str());
         api->c_send(ctx, me_id, 0);
         return;
     }
 
-    auto msgs = parse_history_json(std::string(hbuf, hlen));
     std::set<std::string> voted;
     for (const auto& m : msgs) {
         if (m.text.find("проголосовал за") != std::string::npos) {
@@ -1451,18 +1493,19 @@ static void cmd_mbaku(koto_ctx* ctx, const koto_api* api) {
     std::string mode = args_ptr ? to_lower(trim(args_ptr)) : "";
 
     long long chat_id = api->chat_id(ctx);
-    char hbuf[131072];
-    int hlen = api->get_history_json ? api->get_history_json(ctx, chat_id, (int)reply_id, 200, -200, hbuf, sizeof(hbuf)) : 0;
-    if (hlen <= 0) {
+    long long trigger_id = api->msg_id(ctx);
+    int scanned = 0;
+    auto msgs = fetch_history_after(ctx, api, chat_id, reply_id, trigger_id, scanned);
+    if (msgs.empty()) {
         api->c_reset(ctx);
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, "BakuSearch Ошибка:\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Голоса не найдены в истории чата (200 сообщ.).");
+        std::string err = "Голоса не найдены в истории чата (проверено " + std::to_string(scanned) + " сообщ. от списка игроков вниз).";
+        api->c_text(ctx, err.c_str());
         api->c_send(ctx, me_id, 0);
         return;
     }
 
-    auto msgs = parse_history_json(std::string(hbuf, hlen));
     std::set<std::string> voted;
     for (const auto& m : msgs) {
         if (m.text.find("голосовал") != std::string::npos) {
@@ -1471,12 +1514,23 @@ static void cmd_mbaku(koto_ctx* ctx, const koto_api* api) {
             while (std::getline(ss, line)) {
                 line = trim(line);
                 if (line.find("голосовал") == std::string::npos) continue;
-                if (line.find("Мэр голосовал") != std::string::npos) {
+                if (line.find("Мэр голосовал") != std::string::npos || line.find("Мэр проголосовал") != std::string::npos) {
                     voted.insert(clean_nick_baku("🎖 Мэр"));
+                    voted.insert("Мэр");
+                    voted.insert("🎖 Мэр");
                     continue;
                 }
-                size_t gpos = line.find("голосовал");
+                size_t prog_pos = line.find("проголосовал");
+                size_t gol_pos = line.find("голосовал");
+                size_t gpos = (prog_pos != std::string::npos) ? prog_pos : gol_pos;
+
                 std::string nick = line.substr(0, gpos);
+                size_t s = nick.find_first_not_of(" \t\r\n");
+                if (s != std::string::npos) nick.erase(0, s);
+                const std::string ballot_box = "\xF0\x9F\x97\xB3"; // 🗳
+                if (nick.rfind(ballot_box, 0) == 0) {
+                    nick.erase(0, ballot_box.size());
+                }
                 std::string cl = clean_nick_baku(nick);
                 if (!cl.empty()) voted.insert(cl);
             }
@@ -1486,7 +1540,19 @@ static void cmd_mbaku(koto_ctx* ctx, const koto_api* api) {
     std::vector<std::string> not_voted;
     for (size_t i = 0; i < player_lines.size(); ++i) {
         std::string cl = clean_nick_baku(player_identifiers[i]);
-        if (voted.count(cl) == 0) not_voted.push_back(player_lines[i]);
+        bool found = false;
+        if (voted.count(cl) > 0) {
+            found = true;
+        } else {
+            std::string lower_id = to_lower(cl);
+            for (const auto& vn : voted) {
+                if (lower_id == to_lower(vn)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) not_voted.push_back(player_lines[i]);
     }
 
     if (mode == "red") {
@@ -1682,7 +1748,7 @@ static const koto_module MAFIA_MODULE = {
     KOTO_MODULE_ABI,
     MODULE_NAME,
     "Мафия Мульти-Тул — боевой комбайн для мафиозных ботов (Combat, TrueMafia, Baku, Koto, Mafioso).",
-    "1.2.7",
+    "1.2.8",
     28, // min_host_version 28 (0.3.8+)
     0,
     MAFIA_COMMANDS,

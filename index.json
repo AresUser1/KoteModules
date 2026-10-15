@@ -1,6 +1,6 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "updated": "2026-10-15",
   "modules": [
     {
@@ -138,7 +138,7 @@
       "display_name": "BakuSearch (Помощник Baku Mafia)",
       "author": "Kote",
       "description": "Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue).",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -148,8 +148,8 @@
           "usage": "[red/blue]"
         }
       ],
-      "size": 69824,
-      "sha256": "a22cf10d1cd2aa69ba5ce24d331e225dd11a2af6d6bb9d7e179649b3092bb774",
+      "size": 101936,
+      "sha256": "29c92ec57a4a1f997bbeca7ee28675ae94597ba701427f2658976e8816312990",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/bakusearch.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
       "license": "MIT",
@@ -273,7 +273,7 @@
       "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
       "author": "Kote",
       "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
-      "version": "1.2.7",
+      "version": "1.2.8",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -393,8 +393,8 @@
           "usage": "<ник>"
         }
       ],
-      "size": 195432,
-      "sha256": "f235c7344172384811ddae8bd83064dfa5c2e7a325e4964b7a17246d5f2dd303",
+      "size": 241320,
+      "sha256": "6194833670d590828fa53cb6fbc7ca2a72240b8821b12357e9231cb63ea56991",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
