@@ -1,254 +1,8 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "updated": "2026-10-15",
   "modules": [
-    {
-      "id": "checkers",
-      "name": "checkers",
-      "display_name": "Шашки (Checkers PvP)",
-      "author": "Kote",
-      "description": "Русские шашки: полноценный PvP между любыми игроками в чате, свободный выбор белых/чёрных, серии ударов в 1 клик, дамки, пат, ничья и реванш.",
-      "version": "2.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "checkers",
-          "doc": "Начать игру в русские шашки (инлайн)",
-          "usage": "[white|black]"
-        },
-        {
-          "name": "шашки",
-          "doc": "Начать игру в русские шашки (псевдоним)",
-          "usage": "[white|black]"
-        },
-        {
-          "name": "checkersend",
-          "doc": "Список активных партий или завершение игры по ID",
-          "usage": "[id]"
-        }
-      ],
-      "size": 27464,
-      "sha256": "55501c02f1457c43365b5ef81c88eefac383039a360f46ad718d8ceb66335b46",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
-      "license": "MIT",
-      "min_host_version": 1
-    },
-    {
-      "id": "copymessage",
-      "name": "copymessage",
-      "display_name": "CopyMessage",
-      "author": "Kote",
-      "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
-      "version": "1.3.0",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "copy",
-          "doc": "Копирование сообщения в Избранное с отчетом",
-          "usage": "[в ответ на сообщение]"
-        },
-        {
-          "name": "hcopy",
-          "doc": "Тихое копирование сообщения в Избранное",
-          "usage": "[в ответ на сообщение]"
-        }
-      ],
-      "size": 7944,
-      "sha256": "1fd2ec925ae90f052fed8c58804b719a180afed176ddb41c71da44884c05455d",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
-      "license": "MIT",
-      "min_host_version": 1
-    },
-    {
-      "id": "music",
-      "name": "music",
-      "display_name": "Music Player (Telegram Bots)",
-      "author": "Kote",
-      "description": "Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства.",
-      "version": "3.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "mus",
-          "doc": "Поиск и отправка музыки через Telegram-ботов",
-          "usage": "<запрос>"
-        },
-        {
-          "name": "musconfig",
-          "doc": "Информация и конфигурация музыкального модуля",
-          "usage": ""
-        }
-      ],
-      "size": 47736,
-      "sha256": "f8bd5553468d2ad1f88880005f4396091eaa6f1411855fb26d9e59617d86c96f",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
-      "license": "MIT",
-      "min_host_version": 13
-    },
-    {
-      "id": "rp",
-      "name": "rp",
-      "display_name": "Role-Play (РП команды)",
-      "author": "Kote",
-      "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
-      "version": "3.0.2",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "rp",
-          "doc": "Управление RP-модулем в чате (on/off/access)",
-          "usage": "[on|off|access]"
-        },
-        {
-          "name": "addrp",
-          "doc": "Добавить новую RP-команду (с премиум-эмодзи)",
-          "usage": "<алиасы>|<действие>|<эмодзи/ID>"
-        },
-        {
-          "name": "delrp",
-          "doc": "Удалить RP-команду",
-          "usage": "<алиас|all|prem|simple>"
-        },
-        {
-          "name": "rplist",
-          "doc": "Список всех доступных RP-команд",
-          "usage": ""
-        },
-        {
-          "name": "setrpnick",
-          "doc": "Установить RP-ник пользователю",
-          "usage": "[-g] [@user] <ник>"
-        },
-        {
-          "name": "delrpnick",
-          "doc": "Удалить или скрыть RP-ник",
-          "usage": "[-g] [@user]"
-        },
-        {
-          "name": "rpnick",
-          "doc": "Посмотреть текущие RP-ники",
-          "usage": "[@user]"
-        },
-        {
-          "name": "addrpcreator",
-          "doc": "Назначить создателя RP-команд",
-          "usage": "[@user]"
-        },
-        {
-          "name": "delrpcreator",
-          "doc": "Снять права создателя RP-команд",
-          "usage": "[@user]"
-        },
-        {
-          "name": "listrpcreators",
-          "doc": "Список создателей RP-команд",
-          "usage": ""
-        },
-        {
-          "name": "setrpemoji",
-          "doc": "Кастомный статичный эмодзи интерфейса RP",
-          "usage": "<ключ> <эмодзи/ID> [| fallback]"
-        },
-        {
-          "name": "delrpemoji",
-          "doc": "Сбросить статичный эмодзи до дефолтного",
-          "usage": "<ключ>"
-        },
-        {
-          "name": "rpemojis",
-          "doc": "Список статичных эмодзи интерфейса RP",
-          "usage": ""
-        }
-      ],
-      "size": 168304,
-      "sha256": "284606025c3ed7a406c418cbb75ddb8fff85d83aeb0ae44b271a09f2f922c7c4",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
-      "license": "MIT",
-      "min_host_version": 12
-    },
-    {
-      "id": "idprem",
-      "name": "idprem",
-      "display_name": "ID премиум-эмодзи",
-      "author": "Kote",
-      "description": "Утилита для получения document_id премиум-эмодзи из сообщения (в ответ или к своему). Удобно для настройки .setrpemoji / .setmodemoji.",
-      "version": "1.0.1",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "idprem",
-          "doc": "Показать ID премиум-эмодзи из сообщения",
-          "usage": "[в ответ на сообщение]"
-        }
-      ],
-      "size": 51032,
-      "sha256": "eb587a3a0cfa5aafc0329ab38bc35db978ce8d7605cc53b3f9620e1cffd748a7",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/idprem.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
-      "license": "MIT",
-      "min_host_version": 17
-    },
-    {
-      "id": "tt_dl",
-      "name": "tt_dl",
-      "display_name": "TikTok Downloader",
-      "author": "Коте",
-      "description": "Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album) через tikwm API с живым статусом и логами. Настройка подписи: полная или краткая (в приложении и через .tt caption).",
-      "version": "1.5.0",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "tt",
-          "doc": "Скачать контент из TikTok (видео/гиф/фото)",
-          "usage": "<ссылка> | caption [full|short]"
-        }
-      ],
-      "size": 62824,
-      "sha256": "a9195691bd4071a5604b844b544392e838822bdbbcc7b9f41dd62b1e19503578",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
-      "license": "MIT",
-      "min_host_version": 24
-    },
-    {
-      "id": "spammer",
-      "name": "spammer",
-      "display_name": "Спамер (Spammer)",
-      "author": "Kote",
-      "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении.",
-      "version": "1.2.1",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "spam",
-          "doc": "Начать спам сообщениями (с поддержкой цитат, форматирования и премиум-эмодзи)",
-          "usage": "[количество] <текст>"
-        },
-        {
-          "name": "stopspam",
-          "doc": "Остановить задачу спама",
-          "usage": ""
-        }
-      ],
-      "size": 63208,
-      "sha256": "861b3262a9eb6c71f95f886b1d00fb3201577f051a0ef9e152d077da0931e038",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spammer.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
-      "license": "MIT",
-      "min_host_version": 24
-    },
     {
       "id": "afk",
       "name": "afk",
@@ -316,117 +70,116 @@
       "min_host_version": 27
     },
     {
-      "id": "moderation",
-      "name": "moderation",
-      "display_name": "Модерация (Moderation)",
+      "id": "checkers",
+      "name": "checkers",
+      "display_name": "Шашки (Checkers PvP)",
       "author": "Kote",
-      "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
-      "version": "1.1.6",
+      "description": "Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья.",
+      "version": "2.2.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
-          "name": "ban",
-          "doc": "Забанить пользователя в чате",
-          "usage": "[user/id] [причина]"
+          "name": "checkers",
+          "doc": "Начать игру в русские шашки (инлайн)",
+          "usage": "[white|black]"
         },
         {
-          "name": "sban",
-          "doc": "Тихо забанить пользователя (без уведомления)",
-          "usage": "[user/id] [причина]"
+          "name": "шашки",
+          "doc": "Начать игру в русские шашки (псевдоним)",
+          "usage": "[white|black]"
         },
         {
-          "name": "unban",
-          "doc": "Разбанить пользователя в чате",
-          "usage": "[user/id]"
-        },
-        {
-          "name": "kick",
-          "doc": "Кикнуть пользователя из чата",
-          "usage": "[user/id] [причина]"
-        },
-        {
-          "name": "skick",
-          "doc": "Тихо кикнуть пользователя из чата",
-          "usage": "[user/id] [причина]"
-        },
-        {
-          "name": "mute",
-          "doc": "Замутить пользователя в чате",
-          "usage": "[user/id] [время: 10m/1h/2d] [причина]"
-        },
-        {
-          "name": "smute",
-          "doc": "Тихо замутить пользователя",
-          "usage": "[user/id] [время] [причина]"
-        },
-        {
-          "name": "unmute",
-          "doc": "Размутить пользователя в чате",
-          "usage": "[user/id]"
-        },
-        {
-          "name": "warn",
-          "doc": "Выдать предупреждение (варн) с автобаном при лимите",
-          "usage": "[user/id] [причина]"
-        },
-        {
-          "name": "unwarn",
-          "doc": "Снять последнее предупреждение",
-          "usage": "[user/id]"
-        },
-        {
-          "name": "warns",
-          "doc": "Посмотреть варны пользователя",
-          "usage": "[user/id]"
-        },
-        {
-          "name": "warnlimit",
-          "doc": "Установить лимит варнов для чата",
-          "usage": "<число>"
-        },
-        {
-          "name": "delusers",
-          "doc": "Удалить последние сообщения пользователя",
-          "usage": "[user/id] [лимит]"
-        },
-        {
-          "name": "modhistory",
-          "doc": "Посмотреть историю действий модерации",
-          "usage": "[user/id] [лимит]"
-        },
-        {
-          "name": "gameban",
-          "doc": "Игровой временный бан (серверный бан на 1 час)",
-          "usage": "[user/id]"
-        },
-        {
-          "name": "gset",
-          "doc": "Управление наборами глобальных чатов",
-          "usage": "add/rm/list <cat> [id]"
-        },
-        {
-          "name": "gban",
-          "doc": "Глобальный бан пользователя в категории чатов",
-          "usage": "<категория> [user/id] [причина]"
-        },
-        {
-          "name": "ungban",
-          "doc": "Снять глобальный бан пользователя в категории чатов",
-          "usage": "<категория> [user/id]"
-        },
-        {
-          "name": "gkick",
-          "doc": "Глобальный кик пользователя из категории чатов",
-          "usage": "<категория> [user/id] [причина]"
+          "name": "checkersend",
+          "doc": "Список активных партий или завершение игры по ID",
+          "usage": "[id]"
         }
       ],
-      "size": 104216,
-      "sha256": "f10695ae02c78b0674877e348626b50bca7030d04d895ca7298589a08812ff9a",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moderation.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
+      "size": 25184,
+      "sha256": "47ec7b12f6b6e059f26fa75c95de28d08d601078567794470382c26f17067ffc",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
-      "min_host_version": 27
+      "min_host_version": 18
+    },
+    {
+      "id": "copymessage",
+      "name": "copymessage",
+      "display_name": "CopyMessage",
+      "author": "Kote",
+      "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
+      "version": "1.3.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "copy",
+          "doc": "Копирование сообщения в Избранное с отчетом",
+          "usage": "[в ответ на сообщение]"
+        },
+        {
+          "name": "hcopy",
+          "doc": "Тихое копирование сообщения в Избранное",
+          "usage": "[в ответ на сообщение]"
+        }
+      ],
+      "size": 7944,
+      "sha256": "1fd2ec925ae90f052fed8c58804b719a180afed176ddb41c71da44884c05455d",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
+      "license": "MIT",
+      "min_host_version": 1
+    },
+    {
+      "id": "id",
+      "name": "id",
+      "display_name": "User ID & Link",
+      "author": "Kote",
+      "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
+      "version": "1.0.5",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "ай",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе.",
+          "usage": "(в ответ или без)"
+        },
+        {
+          "name": "id",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе (псевдоним).",
+          "usage": "(в ответ или без)"
+        }
+      ],
+      "size": 37512,
+      "sha256": "03d621b1d89796e2eb51fe1abd456bf84c5d80d48ded4d6ca169be1a74525cf4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/id.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
+    {
+      "id": "idprem",
+      "name": "idprem",
+      "display_name": "ID премиум-эмодзи",
+      "author": "Kote",
+      "description": "Утилита для получения document_id премиум-эмодзи из сообщения (в ответ или к своему). Удобно для настройки .setrpemoji / .setmodemoji.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "idprem",
+          "doc": "Показать ID премиум-эмодзи из сообщения",
+          "usage": "[в ответ на сообщение]"
+        }
+      ],
+      "size": 51032,
+      "sha256": "eb587a3a0cfa5aafc0329ab38bc35db978ce8d7605cc53b3f9620e1cffd748a7",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/idprem.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
+      "license": "MIT",
+      "min_host_version": 17
     },
     {
       "id": "mafia_multitool",
@@ -562,32 +315,145 @@
       "min_host_version": 28
     },
     {
-      "id": "id",
-      "name": "id",
-      "display_name": "User ID & Link",
+      "id": "moderation",
+      "name": "moderation",
+      "display_name": "Модерация (Moderation)",
       "author": "Kote",
-      "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
-      "version": "1.0.5",
+      "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
+      "version": "1.1.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
-          "name": "ай",
-          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе.",
-          "usage": "(в ответ или без)"
+          "name": "ban",
+          "doc": "Забанить пользователя в чате",
+          "usage": "[user/id] [причина]"
         },
         {
-          "name": "id",
-          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе (псевдоним).",
-          "usage": "(в ответ или без)"
+          "name": "sban",
+          "doc": "Тихо забанить пользователя (без уведомления)",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unban",
+          "doc": "Разбанить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "kick",
+          "doc": "Кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "skick",
+          "doc": "Тихо кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "mute",
+          "doc": "Замутить пользователя в чате",
+          "usage": "[user/id] [время: 10m/1h/2d] [причина]"
+        },
+        {
+          "name": "smute",
+          "doc": "Тихо замутить пользователя",
+          "usage": "[user/id] [время] [причина]"
+        },
+        {
+          "name": "unmute",
+          "doc": "Размутить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warn",
+          "doc": "Выдать предупреждение (варн) с автобаном при лимите",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unwarn",
+          "doc": "Снять последнее предупреждение",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warns",
+          "doc": "Посмотреть варны пользователя",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warnlimit",
+          "doc": "Установить лимит варнов для чата",
+          "usage": "<число>"
+        },
+        {
+          "name": "delusers",
+          "doc": "Удалить последние сообщения пользователя",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "modhistory",
+          "doc": "Посмотреть историю действий модерации",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "gameban",
+          "doc": "Игровой временный бан (серверный бан на 1 час)",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "gset",
+          "doc": "Управление наборами глобальных чатов",
+          "usage": "add/rm/list <cat> [id]"
+        },
+        {
+          "name": "gban",
+          "doc": "Глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id] [причина]"
+        },
+        {
+          "name": "ungban",
+          "doc": "Снять глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id]"
+        },
+        {
+          "name": "gkick",
+          "doc": "Глобальный кик пользователя из категории чатов",
+          "usage": "<категория> [user/id] [причина]"
         }
       ],
-      "size": 37512,
-      "sha256": "03d621b1d89796e2eb51fe1abd456bf84c5d80d48ded4d6ca169be1a74525cf4",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/id.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
+      "size": 104216,
+      "sha256": "f10695ae02c78b0674877e348626b50bca7030d04d895ca7298589a08812ff9a",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moderation.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 27
+    },
+    {
+      "id": "music",
+      "name": "music",
+      "display_name": "Music Player (Telegram Bots)",
+      "author": "Kote",
+      "description": "Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства.",
+      "version": "3.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "mus",
+          "doc": "Поиск и отправка музыки через Telegram-ботов",
+          "usage": "<запрос>"
+        },
+        {
+          "name": "musconfig",
+          "doc": "Информация и конфигурация музыкального модуля",
+          "usage": ""
+        }
+      ],
+      "size": 47736,
+      "sha256": "f8bd5553468d2ad1f88880005f4396091eaa6f1411855fb26d9e59617d86c96f",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "license": "MIT",
+      "min_host_version": 13
     },
     {
       "id": "name_manager",
@@ -643,6 +509,89 @@
       "min_host_version": 26
     },
     {
+      "id": "rp",
+      "name": "rp",
+      "display_name": "Role-Play (РП команды)",
+      "author": "Kote",
+      "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
+      "version": "3.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "rp",
+          "doc": "Управление RP-модулем в чате (on/off/access)",
+          "usage": "[on|off|access]"
+        },
+        {
+          "name": "addrp",
+          "doc": "Добавить новую RP-команду (с премиум-эмодзи)",
+          "usage": "<алиасы>|<действие>|<эмодзи/ID>"
+        },
+        {
+          "name": "delrp",
+          "doc": "Удалить RP-команду",
+          "usage": "<алиас|all|prem|simple>"
+        },
+        {
+          "name": "rplist",
+          "doc": "Список всех доступных RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpnick",
+          "doc": "Установить RP-ник пользователю",
+          "usage": "[-g] [@user] <ник>"
+        },
+        {
+          "name": "delrpnick",
+          "doc": "Удалить или скрыть RP-ник",
+          "usage": "[-g] [@user]"
+        },
+        {
+          "name": "rpnick",
+          "doc": "Посмотреть текущие RP-ники",
+          "usage": "[@user]"
+        },
+        {
+          "name": "addrpcreator",
+          "doc": "Назначить создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "delrpcreator",
+          "doc": "Снять права создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "listrpcreators",
+          "doc": "Список создателей RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpemoji",
+          "doc": "Кастомный статичный эмодзи интерфейса RP",
+          "usage": "<ключ> <эмодзи/ID> [| fallback]"
+        },
+        {
+          "name": "delrpemoji",
+          "doc": "Сбросить статичный эмодзи до дефолтного",
+          "usage": "<ключ>"
+        },
+        {
+          "name": "rpemojis",
+          "doc": "Список статичных эмодзи интерфейса RP",
+          "usage": ""
+        }
+      ],
+      "size": 168304,
+      "sha256": "284606025c3ed7a406c418cbb75ddb8fff85d83aeb0ae44b271a09f2f922c7c4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
+      "license": "MIT",
+      "min_host_version": 12
+    },
+    {
       "id": "spam_ban",
       "name": "spam_ban",
       "display_name": "Spam Ban",
@@ -669,6 +618,57 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
       "license": "MIT",
       "min_host_version": 27
+    },
+    {
+      "id": "spammer",
+      "name": "spammer",
+      "display_name": "Спамер (Spammer)",
+      "author": "Kote",
+      "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении.",
+      "version": "1.2.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "spam",
+          "doc": "Начать спам сообщениями (с поддержкой цитат, форматирования и премиум-эмодзи)",
+          "usage": "[количество] <текст>"
+        },
+        {
+          "name": "stopspam",
+          "doc": "Остановить задачу спама",
+          "usage": ""
+        }
+      ],
+      "size": 63208,
+      "sha256": "861b3262a9eb6c71f95f886b1d00fb3201577f051a0ef9e152d077da0931e038",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spammer.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
+      "license": "MIT",
+      "min_host_version": 24
+    },
+    {
+      "id": "tt_dl",
+      "name": "tt_dl",
+      "display_name": "TikTok Downloader",
+      "author": "Коте",
+      "description": "Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album) через tikwm API с живым статусом и логами. Настройка подписи: полная или краткая (в приложении и через .tt caption).",
+      "version": "1.5.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "tt",
+          "doc": "Скачать контент из TikTok (видео/гиф/фото)",
+          "usage": "<ссылка> | caption [full|short]"
+        }
+      ],
+      "size": 62824,
+      "sha256": "a9195691bd4071a5604b844b544392e838822bdbbcc7b9f41dd62b1e19503578",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
+      "license": "MIT",
+      "min_host_version": 24
     }
   ]
 }

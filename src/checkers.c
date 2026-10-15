@@ -504,14 +504,22 @@ static void render_game(koto_ctx* ctx, const koto_api* api, Game* g) {
             if (is_dest) {
                 char cb[32];
                 snprintf(cb, sizeof(cb), "chkm:%s:%d:%d", g->id, r, c);
-                api->c_button(ctx, "·", cb, new_row);
+                if (api->c_button_ex) {
+                    api->c_button_ex(ctx, "·", cb, new_row, KOTO_BTN_SUCCESS, 0);
+                } else {
+                    api->c_button(ctx, "·", cb, new_row);
+                }
                 continue;
             }
 
             if (r == g->sel_r && c == g->sel_c) {
                 char cb[32];
                 snprintf(cb, sizeof(cb), "chkm:%s:%d:%d", g->id, r, c);
-                api->c_button(ctx, piece_emoji(cell), cb, new_row);
+                if (api->c_button_ex) {
+                    api->c_button_ex(ctx, piece_emoji(cell), cb, new_row, KOTO_BTN_PRIMARY, 0);
+                } else {
+                    api->c_button(ctx, piece_emoji(cell), cb, new_row);
+                }
                 continue;
             }
 
@@ -1140,8 +1148,8 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "checkers",
     "Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, серии ударов и дамки",
-    "2.1.0",
-    0,
+    "2.2.0",
+    18,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
