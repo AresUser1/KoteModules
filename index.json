@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.1",
-  "updated": "2026-10-14",
+  "version": "1.3.2",
+  "updated": "2026-10-15",
   "modules": [
     {
       "id": "checkers",
@@ -560,6 +560,120 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
       "min_host_version": 28
+    },
+    {
+      "id": "id",
+      "name": "id",
+      "display_name": "User ID & Link",
+      "author": "Kote",
+      "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
+      "version": "1.0.5",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "ай",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе.",
+          "usage": "(в ответ или без)"
+        },
+        {
+          "name": "id",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе (псевдоним).",
+          "usage": "(в ответ или без)"
+        }
+      ],
+      "size": 37512,
+      "sha256": "03d621b1d89796e2eb51fe1abd456bf84c5d80d48ded4d6ca169be1a74525cf4",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/id.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
+    {
+      "id": "name_manager",
+      "name": "name_manager",
+      "display_name": "Name Manager",
+      "author": "Kote",
+      "description": "Управление именем профиля, его историей и аватаром: смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
+      "version": "1.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "name",
+          "doc": "Изменить имя профиля.",
+          "usage": "<новое_имя>"
+        },
+        {
+          "name": "sname",
+          "doc": "Сохранить текущее имя в историю.",
+          "usage": ""
+        },
+        {
+          "name": "lname",
+          "doc": "Показать историю сохранённых имён.",
+          "usage": ""
+        },
+        {
+          "name": "dname",
+          "doc": "Очистить историю имён.",
+          "usage": "<номер|all>"
+        },
+        {
+          "name": "namelist",
+          "doc": "Показать инлайн-меню с историей имён.",
+          "usage": ""
+        },
+        {
+          "name": "setava",
+          "doc": "Установить аватар из фото (ответ на фото или документ-изображение).",
+          "usage": ""
+        },
+        {
+          "name": "setpfp",
+          "doc": "Установить аватар из фото (псевдоним).",
+          "usage": ""
+        },
+        {
+          "name": "delava",
+          "doc": "Удалить текущий аватар профиля.",
+          "usage": ""
+        }
+      ],
+      "size": 63272,
+      "sha256": "f0c9a3085a9c34cdc68f6e097beae1098c7b1c349083032334c1663e07ef398b",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/name_manager.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/name_manager.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
+    {
+      "id": "spam_ban",
+      "name": "spam_ban",
+      "display_name": "Spam Ban",
+      "author": "Kote",
+      "description": "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3).",
+      "version": "1.6.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "spamtwins",
+          "doc": "Включить/выключить атаку с твинков.",
+          "usage": ""
+        },
+        {
+          "name": "spamban",
+          "doc": "Мощная жалоба (Спам) + Блок.",
+          "usage": "<@user/ID/ответ>"
+        }
+      ],
+      "size": 40320,
+      "sha256": "58c8646a35eafa23de37bd8eec79e3b698193a81e3d29d11e3d94e66c00b874b",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
+      "license": "MIT",
+      "min_host_version": 27
     }
   ]
 }
