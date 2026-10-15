@@ -1,6 +1,6 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "updated": "2026-10-15",
   "modules": [
     {
@@ -755,6 +755,117 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
       "license": "MIT",
       "min_host_version": 24
+    },
+    {
+      "id": "stags",
+      "name": "stags",
+      "display_name": "Silent Tags",
+      "author": "Kote",
+      "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
+      "version": "2.8.5",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "stags",
+          "doc": "Включить или выключить модуль Silent Tags.",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "stconfig",
+          "doc": "Просмотр и детальная настройка модуля Silent Tags.",
+          "usage": "[help/key] [value]"
+        },
+        {
+          "name": "sttwins",
+          "doc": "Инлайн-панель управления режимами твинков для Silent Tags.",
+          "usage": ""
+        }
+      ],
+      "size": 91800,
+      "sha256": "eb5f7dce9be15acbe29696f1ff36998c6112e724fc670d2e2dcf59d7549d5bab",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
+    {
+      "id": "tagger",
+      "name": "tagger",
+      "display_name": "Tagger",
+      "author": "Kote",
+      "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
+      "version": "3.4.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "tag",
+          "doc": "Тегнуть участников чата (всех или указанное количество).",
+          "usage": "[число] [текст] [-id]"
+        },
+        {
+          "name": "itag",
+          "doc": "Тегнуть только указанных пользователей (include tag).",
+          "usage": "<id1 id2...> [текст]"
+        },
+        {
+          "name": "etag",
+          "doc": "Тегнуть всех за исключением указанных пользователей (exclude tag).",
+          "usage": "<id1 id2...> [текст]"
+        },
+        {
+          "name": "stoptag",
+          "doc": "Остановить текущий процесс тега участников.",
+          "usage": ""
+        },
+        {
+          "name": "cleartag",
+          "doc": "Очистить очередь и остановить процесс тега.",
+          "usage": ""
+        },
+        {
+          "name": "tagdelay",
+          "doc": "Установить диапазон задержки между сообщениями теггера (сек).",
+          "usage": "<min> [max]"
+        },
+        {
+          "name": "tagusers",
+          "doc": "Установить диапазон количества юзеров за раз.",
+          "usage": "<min> [max]"
+        },
+        {
+          "name": "add",
+          "doc": "Добавить пользователя в вайтлист чата (не тегать).",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "remove",
+          "doc": "Убрать пользователя из вайтлиста чата.",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "helps",
+          "doc": "Показать количество участников в вайтлисте чата.",
+          "usage": ""
+        },
+        {
+          "name": "nonick",
+          "doc": "Управление кастомными никами теггера (add/del/list, -g).",
+          "usage": "<add/del/list> [@user] [Name] [-g]"
+        },
+        {
+          "name": "tagsettings",
+          "doc": "Инлайн-панель настроек теггера.",
+          "usage": ""
+        }
+      ],
+      "size": 105224,
+      "sha256": "4a0a62335686f5c7868ff3c457063db3bc34fb15c5cf5b4e23bf181e5419c54f",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
+      "license": "MIT",
+      "min_host_version": 26
     },
     {
       "id": "tt_dl",
