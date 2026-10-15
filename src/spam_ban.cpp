@@ -31,8 +31,11 @@ static std::string trim(const std::string& str) {
 
 static bool get_twins_mode(koto_ctx* ctx, const koto_api* api) {
     char buf[32] = {0};
+    if (api->cfg_get && api->cfg_get(ctx, "spamtwins", buf, sizeof(buf)) > 0) {
+        return (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0 || strcmp(buf, "true") == 0);
+    }
     int len = api->db_get(ctx, TWINS_MODE_KEY, buf, sizeof(buf));
-    if (len > 0 && strcmp(buf, "True") == 0) return true;
+    if (len > 0 && (strcmp(buf, "True") == 0 || strcmp(buf, "1") == 0)) return true;
     return false;
 }
 
@@ -64,6 +67,7 @@ static void cmd_spamtwins(koto_ctx* ctx, const koto_api* api) {
 
     bool current = get_twins_mode(ctx, api);
     bool next = !current;
+    if (api->cfg_set) api->cfg_set(ctx, "spamtwins", next ? "1" : "0");
     api->db_set(ctx, TWINS_MODE_KEY, next ? "True" : "False");
 
     std::string status = next ? "ВКЛ" : "ВЫКЛ";
@@ -185,6 +189,16 @@ static const koto_command COMMANDS[] = {
     }
 };
 
+static const koto_setting_field SETTINGS[] = {
+    {
+        "spamtwins",
+        "Атаковать с твинков при spamban",
+        KOTO_FIELD_BOOL,
+        "0",
+        nullptr
+    }
+};
+
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spam_ban",
@@ -196,7 +210,8 @@ static const koto_module MODULE = {
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     nullptr, 0,
     nullptr,
-    nullptr, 0,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so"
 };
 

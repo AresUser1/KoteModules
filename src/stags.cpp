@@ -56,19 +56,36 @@ static StagsConfig load_stags_config(koto_ctx* ctx, const koto_api* api) {
     c.silent_emoji_fallback = "🤫";
 
     char buf[128];
-    if (api->db_get(ctx, "enabled", buf, sizeof(buf) - 1) > 0) {
+    if (api->cfg_get && api->cfg_get(ctx, "enabled", buf, sizeof(buf) - 1) > 0) {
+        c.enabled = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0 || strcmp(buf, "true") == 0);
+    } else if (api->db_get(ctx, "enabled", buf, sizeof(buf) - 1) > 0) {
         c.enabled = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0);
     }
-    if (api->db_get(ctx, "silent", buf, sizeof(buf) - 1) > 0) {
+
+    if (api->cfg_get && api->cfg_get(ctx, "silent", buf, sizeof(buf) - 1) > 0) {
+        c.silent = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0 || strcmp(buf, "true") == 0);
+    } else if (api->db_get(ctx, "silent", buf, sizeof(buf) - 1) > 0) {
         c.silent = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0);
     }
-    if (api->db_get(ctx, "process_bots", buf, sizeof(buf) - 1) > 0) {
+
+    if (api->cfg_get && api->cfg_get(ctx, "process_bots", buf, sizeof(buf) - 1) > 0) {
+        c.process_bots = (strcmp(buf, "0") != 0 && strcmp(buf, "False") != 0 && strcmp(buf, "false") != 0);
+    } else if (api->db_get(ctx, "process_bots", buf, sizeof(buf) - 1) > 0) {
         c.process_bots = (strcmp(buf, "0") != 0 && strcmp(buf, "False") != 0);
     }
-    if (api->db_get(ctx, "ignore_blocked", buf, sizeof(buf) - 1) > 0) {
+
+    if (api->cfg_get && api->cfg_get(ctx, "ignore_blocked", buf, sizeof(buf) - 1) > 0) {
+        c.ignore_blocked = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0 || strcmp(buf, "true") == 0);
+    } else if (api->db_get(ctx, "ignore_blocked", buf, sizeof(buf) - 1) > 0) {
         c.ignore_blocked = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0);
     }
-    c.log_group_id = api->db_get_int(ctx, "log_group_id", 0);
+
+    if (api->cfg_get && api->cfg_get(ctx, "log_group_id", buf, sizeof(buf) - 1) > 0) {
+        c.log_group_id = strtoll(buf, nullptr, 10);
+    } else {
+        c.log_group_id = api->db_get_int(ctx, "log_group_id", 0);
+    }
+
     c.silent_emoji_id = api->db_get_int(ctx, "silent_emoji_id", SILENT_EMOJI_ID);
 
     char fbuf[32];
@@ -79,6 +96,13 @@ static StagsConfig load_stags_config(koto_ctx* ctx, const koto_api* api) {
 }
 
 static void save_stags_config(koto_ctx* ctx, const koto_api* api, const StagsConfig& c) {
+    if (api->cfg_set) {
+        api->cfg_set(ctx, "enabled", c.enabled ? "1" : "0");
+        api->cfg_set(ctx, "silent", c.silent ? "1" : "0");
+        api->cfg_set(ctx, "process_bots", c.process_bots ? "1" : "0");
+        api->cfg_set(ctx, "ignore_blocked", c.ignore_blocked ? "1" : "0");
+        api->cfg_set(ctx, "log_group_id", std::to_string(c.log_group_id).c_str());
+    }
     api->db_set(ctx, "enabled", c.enabled ? "1" : "0");
     api->db_set(ctx, "silent", c.silent ? "1" : "0");
     api->db_set(ctx, "process_bots", c.process_bots ? "1" : "0");
@@ -739,6 +763,44 @@ static const koto_command COMMANDS[] = {
     }
 };
 
+static const koto_setting_field SETTINGS[] = {
+    {
+        "enabled",
+        "Включить Silent Tags",
+        KOTO_FIELD_BOOL,
+        "0",
+        nullptr
+    },
+    {
+        "silent",
+        "Тихий режим (без временного сообщения в чате)",
+        KOTO_FIELD_BOOL,
+        "0",
+        nullptr
+    },
+    {
+        "process_bots",
+        "Обрабатывать упоминания от ботов",
+        KOTO_FIELD_BOOL,
+        "1",
+        nullptr
+    },
+    {
+        "ignore_blocked",
+        "Игнорировать заблокированных пользователей",
+        KOTO_FIELD_BOOL,
+        "0",
+        nullptr
+    },
+    {
+        "log_group_id",
+        "ID группы для логов упоминаний",
+        KOTO_FIELD_STR,
+        "0",
+        nullptr
+    }
+};
+
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
@@ -751,7 +813,8 @@ static const koto_module MODULE = {
     &on_watch,
     KOTO_WATCH_INCOMING,
     &on_callback,
-    nullptr, 0,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so"
 };
 

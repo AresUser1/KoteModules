@@ -108,22 +108,53 @@ static TaggerConfig get_config(koto_ctx* ctx, const koto_api* api) {
     c.reply_mode = "off";
 
     char buf[128];
-    if (api->db_get(ctx, "cfg_priority", buf, sizeof(buf) - 1) > 0) c.priority = buf;
-    if (api->db_get(ctx, "cfg_position", buf, sizeof(buf) - 1) > 0) c.position = buf;
-    if (api->db_get(ctx, "cfg_reply_mode", buf, sizeof(buf) - 1) > 0) c.reply_mode = buf;
+    // 1. Приоритет тега (id или username)
+    if (api->cfg_get && api->cfg_get(ctx, "priority", buf, sizeof(buf) - 1) > 0) c.priority = buf;
+    else if (api->db_get(ctx, "cfg_priority", buf, sizeof(buf) - 1) > 0) c.priority = buf;
 
-    if (api->db_get(ctx, "cfg_tag_admins", buf, sizeof(buf) - 1) > 0) {
-        c.tag_admins = (strcmp(buf, "0") != 0);
+    // 2. Позиция текста (before или after)
+    if (api->cfg_get && api->cfg_get(ctx, "position", buf, sizeof(buf) - 1) > 0) c.position = buf;
+    else if (api->db_get(ctx, "cfg_position", buf, sizeof(buf) - 1) > 0) c.position = buf;
+
+    // 3. Режим реплая (off, include, exclude)
+    if (api->cfg_get && api->cfg_get(ctx, "reply_mode", buf, sizeof(buf) - 1) > 0) c.reply_mode = buf;
+    else if (api->db_get(ctx, "cfg_reply_mode", buf, sizeof(buf) - 1) > 0) c.reply_mode = buf;
+
+    // 4. Тегать админов (bool)
+    if (api->cfg_get && api->cfg_get(ctx, "tag_admins", buf, sizeof(buf) - 1) > 0) {
+        c.tag_admins = (strcmp(buf, "0") != 0 && strcmp(buf, "false") != 0);
+    } else if (api->db_get(ctx, "cfg_tag_admins", buf, sizeof(buf) - 1) > 0) {
+        c.tag_admins = (strcmp(buf, "0") != 0 && strcmp(buf, "false") != 0);
     }
-    c.chunk_min = (int)api->db_get_int(ctx, "cfg_chunk_min", 5);
-    c.chunk_max = (int)api->db_get_int(ctx, "cfg_chunk_max", 5);
-    c.delay_min = (int)api->db_get_int(ctx, "cfg_delay_min", 3);
-    c.delay_max = (int)api->db_get_int(ctx, "cfg_delay_max", 3);
+
+    // 5. Диапазон участников
+    if (api->cfg_get && api->cfg_get(ctx, "chunk_min", buf, sizeof(buf) - 1) > 0) c.chunk_min = atoi(buf);
+    else c.chunk_min = (int)api->db_get_int(ctx, "cfg_chunk_min", 5);
+
+    if (api->cfg_get && api->cfg_get(ctx, "chunk_max", buf, sizeof(buf) - 1) > 0) c.chunk_max = atoi(buf);
+    else c.chunk_max = (int)api->db_get_int(ctx, "cfg_chunk_max", 5);
+
+    // 6. Диапазон задержки
+    if (api->cfg_get && api->cfg_get(ctx, "delay_min", buf, sizeof(buf) - 1) > 0) c.delay_min = atoi(buf);
+    else c.delay_min = (int)api->db_get_int(ctx, "cfg_delay_min", 3);
+
+    if (api->cfg_get && api->cfg_get(ctx, "delay_max", buf, sizeof(buf) - 1) > 0) c.delay_max = atoi(buf);
+    else c.delay_max = (int)api->db_get_int(ctx, "cfg_delay_max", 3);
 
     return c;
 }
 
 static void save_config(koto_ctx* ctx, const koto_api* api, const TaggerConfig& c) {
+    if (api->cfg_set) {
+        api->cfg_set(ctx, "priority", c.priority.c_str());
+        api->cfg_set(ctx, "position", c.position.c_str());
+        api->cfg_set(ctx, "reply_mode", c.reply_mode.c_str());
+        api->cfg_set(ctx, "tag_admins", c.tag_admins ? "1" : "0");
+        api->cfg_set(ctx, "chunk_min", std::to_string(c.chunk_min).c_str());
+        api->cfg_set(ctx, "chunk_max", std::to_string(c.chunk_max).c_str());
+        api->cfg_set(ctx, "delay_min", std::to_string(c.delay_min).c_str());
+        api->cfg_set(ctx, "delay_max", std::to_string(c.delay_max).c_str());
+    }
     api->db_set(ctx, "cfg_priority", c.priority.c_str());
     api->db_set(ctx, "cfg_position", c.position.c_str());
     api->db_set(ctx, "cfg_reply_mode", c.reply_mode.c_str());
@@ -1195,6 +1226,65 @@ static const koto_command COMMANDS[] = {
     }
 };
 
+static const koto_setting_field SETTINGS[] = {
+    {
+        "priority",
+        "Приоритет отображения тега",
+        KOTO_FIELD_CHOICE,
+        "id",
+        "id,username"
+    },
+    {
+        "position",
+        "Позиция текста сообщения",
+        KOTO_FIELD_CHOICE,
+        "before",
+        "before,after"
+    },
+    {
+        "tag_admins",
+        "Тегать администраторов чата",
+        KOTO_FIELD_BOOL,
+        "1",
+        nullptr
+    },
+    {
+        "reply_mode",
+        "Режим обработки реплая",
+        KOTO_FIELD_CHOICE,
+        "off",
+        "off,include,exclude"
+    },
+    {
+        "chunk_min",
+        "Мин. участников в пачке",
+        KOTO_FIELD_INT,
+        "5",
+        nullptr
+    },
+    {
+        "chunk_max",
+        "Макс. участников в пачке",
+        KOTO_FIELD_INT,
+        "5",
+        nullptr
+    },
+    {
+        "delay_min",
+        "Мин. задержка (сек)",
+        KOTO_FIELD_INT,
+        "3",
+        nullptr
+    },
+    {
+        "delay_max",
+        "Макс. задержка (сек)",
+        KOTO_FIELD_INT,
+        "3",
+        nullptr
+    }
+};
+
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
@@ -1206,7 +1296,8 @@ static const koto_module MODULE = {
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     nullptr, 0,
     &on_callback,
-    nullptr, 0,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so"
 };
 

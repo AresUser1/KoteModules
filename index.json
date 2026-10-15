@@ -416,8 +416,8 @@
           "usage": "<текст / реплай на сообщение>"
         }
       ],
-      "size": 45776,
-      "sha256": "6f58bdce17dc6ee88b382b5652d6574ca4fbbc7cc0b42110be10f423cd467c29",
+      "size": 46312,
+      "sha256": "4ca0395e0c49f29babdb462c149628fec894db8fb4f77d133f8be21db25c301d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
       "license": "MIT",
@@ -721,8 +721,8 @@
           "usage": "<@user/ID/ответ>"
         }
       ],
-      "size": 40320,
-      "sha256": "58c8646a35eafa23de37bd8eec79e3b698193a81e3d29d11e3d94e66c00b874b",
+      "size": 40664,
+      "sha256": "9a7f1e2c5a91a7b98774f3d5728ae51802809906e15c64d26a7b2d9af8be89dd",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
       "license": "MIT",
@@ -782,8 +782,8 @@
           "usage": ""
         }
       ],
-      "size": 91800,
-      "sha256": "eb5f7dce9be15acbe29696f1ff36998c6112e724fc670d2e2dcf59d7549d5bab",
+      "size": 93024,
+      "sha256": "a158515ba7901d090785f61bd862f76802ee02cc68c870a08532a4db690f44fa",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -860,8 +860,8 @@
           "usage": ""
         }
       ],
-      "size": 109976,
-      "sha256": "91871fcbf0357978f5aedcd601a5cf115380c0ae8ea142a428f11b25704f749c",
+      "size": 111656,
+      "sha256": "7ff903f89d46964d6b77734318ac009cb6883f029995b0a549957d7a3b05c709",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",

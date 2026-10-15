@@ -223,7 +223,18 @@ static void cmd_lsall(koto_ctx* ctx, const koto_api* api) {
     int sent_count = 0;
     int error_count = 0;
 
+    // Получаем настройку задержки из UI приложения
+    int delay_sec = 0;
+    if (api->cfg_get) {
+        char buf[32] = {0};
+        if (api->cfg_get(ctx, "delay_sec", buf, sizeof(buf) - 1) > 0) {
+            delay_sec = atoi(buf);
+        }
+    }
+
+    size_t uidx = 0;
     for (long long uid : target_users) {
+        uidx++;
         if (!custom_text.empty()) {
             api->c_reset(ctx);
             api->c_text(ctx, custom_text.c_str());
@@ -250,6 +261,13 @@ static void cmd_lsall(koto_ctx* ctx, const koto_api* api) {
             sent_count++;
         } else {
             error_count++;
+        }
+
+        if (delay_sec > 0 && delay_sec <= 30 && uidx + 1 < target_users.size()) {
+            struct timespec ts;
+            ts.tv_sec = delay_sec;
+            ts.tv_nsec = 0;
+            nanosleep(&ts, nullptr);
         }
     }
 
@@ -288,6 +306,16 @@ static const koto_command COMMANDS[] = {
     }
 };
 
+static const koto_setting_field SETTINGS[] = {
+    {
+        "delay_sec",
+        "Задержка между отправками в ЛС (сек)",
+        KOTO_FIELD_INT,
+        "1",
+        nullptr
+    }
+};
+
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mass_notifier",
@@ -299,7 +327,8 @@ static const koto_module MODULE = {
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     nullptr, 0,
     &on_callback,
-    nullptr, 0,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so"
 };
 
