@@ -299,21 +299,11 @@ static std::string get_tag_display_name(koto_ctx* ctx, const koto_api* api, long
     return "User " + std::to_string(uid);
 }
 
-// ── Проверка, является ли пользователь ботом ──────────────────────────────────
+// ── Проверка, является ли пользователь ботом (MTProto флаг is_bot) ───────────
 static bool is_user_bot(koto_ctx* ctx, const koto_api* api, long long uid) {
     if (uid <= 0) return false;
 
-    // 1. Быстрая проверка username
-    char un_buf[128] = {0};
-    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
-        std::string un = un_buf;
-        for (char& c : un) c = (char)std::tolower((unsigned char)c);
-        if (un.size() >= 3 && un.rfind("bot") == un.size() - 3) return true;
-        if (un.find("botnet") != std::string::npos) return true;
-        if (un.size() >= 3 && un.rfind("b0t") == un.size() - 3) return true;
-    }
-
-    // 2. Проверка user_full_json (MTProto флаг is_bot)
+    // 1. Официальный флаг Telegram MTProto (u->bot) через user_full_json (как entity.bot в Telethon)
     if (api->user_full_json) {
         char buf[2048] = {0};
         int len = api->user_full_json(ctx, uid, buf, sizeof(buf) - 1);
@@ -324,16 +314,23 @@ static bool is_user_bot(koto_ctx* ctx, const koto_api* api, long long uid) {
                 j.find("\"is_bot\": true") != std::string::npos) {
                 return true;
             }
+            if (j.find("\"is_bot\":false") != std::string::npos ||
+                j.find("\"is_bot\": false") != std::string::npos) {
+                return false;
+            }
         }
     }
 
-    // 3. Проверка отображаемого имени
-    char n_buf[256] = {0};
-    if (api->user_name && api->user_name(ctx, uid, n_buf, sizeof(n_buf)) > 0 && n_buf[0]) {
-        std::string name = n_buf;
-        for (char& c : name) c = (char)std::tolower((unsigned char)c);
-        if (name.size() >= 3 && name.rfind("bot") == name.size() - 3) return true;
-        if (name.find(" bot") != std::string::npos) return true;
+    // 2. Fallback (если инфо пользователя ещё не подгрузилось по сети):
+    // В Telegram все официальные боты от @BotFather обязаны оканчиваться строго на "bot" (например: @gamebot, @some_bot).
+    // Никаких подстрок вроде "botnet", чтобы не отсеивать реальных людей (как @Antihristbotnet).
+    char un_buf[128] = {0};
+    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
+        std::string un = un_buf;
+        for (char& c : un) c = (char)std::tolower((unsigned char)c);
+        if (un.size() >= 3 && un.rfind("bot") == un.size() - 3) {
+            return true;
+        }
     }
 
     return false;
@@ -1448,7 +1445,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
-    "3.4.2",
+    "3.4.3",
     26,
     0,
     COMMANDS,
