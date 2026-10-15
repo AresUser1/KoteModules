@@ -395,38 +395,60 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
         reply_uids = extract_users_from_reply(ctx, api);
     }
 
+    std::set<long long> admin_ids;
+    std::string cj;
+    if (api->chat_full_json) {
+        char cbuf[32768];
+        int clen = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
+        if (clen > 0) {
+            cbuf[clen] = '\0';
+            cj = cbuf;
+            size_t apos = cj.find("\"admin_ids\"");
+            if (apos != std::string::npos) {
+                size_t abracket = cj.find('[', apos);
+                size_t aend = (abracket != std::string::npos) ? cj.find(']', abracket) : std::string::npos;
+                if (abracket != std::string::npos && aend != std::string::npos) {
+                    std::string aids_str = cj.substr(abracket + 1, aend - abracket - 1);
+                    std::stringstream ass(aids_str);
+                    std::string aitem;
+                    while (std::getline(ass, aitem, ',')) {
+                        char* ae = nullptr;
+                        long long auid = strtoll(aitem.c_str(), &ae, 10);
+                        if (auid > 0) admin_ids.insert(auid);
+                    }
+                }
+            }
+        }
+    }
+
     if (rmode == "include" && !reply_uids.empty()) {
         for (long long uid : reply_uids) {
             if (uid != me_id && seen.insert(uid).second) {
                 if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
+                if (!config.tag_admins && admin_ids.find(uid) != admin_ids.end()) continue;
                 users.push_back(uid);
             }
         }
     } else {
         // 1. Попытка получить участников чата из chat_full_json
-        if (api->chat_full_json) {
-            char cbuf[32768];
-            int clen = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
-            if (clen > 0) {
-                cbuf[clen] = '\0';
-                std::string cj(cbuf);
-                size_t ppos = cj.find("\"participant_ids\"");
-                if (ppos != std::string::npos) {
-                    size_t bracket = cj.find('[', ppos);
-                    size_t end = (bracket != std::string::npos) ? cj.find(']', bracket) : std::string::npos;
-                    if (bracket != std::string::npos && end != std::string::npos) {
-                        std::string ids_str = cj.substr(bracket + 1, end - bracket - 1);
-                        std::stringstream ss(ids_str);
-                        std::string item;
-                        while (std::getline(ss, item, ',')) {
-                            char* e = nullptr;
-                            long long uid = strtoll(item.c_str(), &e, 10);
-                            if (uid > 0 && uid != me_id) {
-                                if (rmode == "exclude" && reply_uids.find(uid) != reply_uids.end()) continue;
-                                if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
-                                if (seen.insert(uid).second) {
-                                    users.push_back(uid);
-                                }
+        if (!cj.empty()) {
+            size_t ppos = cj.find("\"participant_ids\"");
+            if (ppos != std::string::npos) {
+                size_t bracket = cj.find('[', ppos);
+                size_t end = (bracket != std::string::npos) ? cj.find(']', bracket) : std::string::npos;
+                if (bracket != std::string::npos && end != std::string::npos) {
+                    std::string ids_str = cj.substr(bracket + 1, end - bracket - 1);
+                    std::stringstream ss(ids_str);
+                    std::string item;
+                    while (std::getline(ss, item, ',')) {
+                        char* e = nullptr;
+                        long long uid = strtoll(item.c_str(), &e, 10);
+                        if (uid > 0 && uid != me_id) {
+                            if (rmode == "exclude" && reply_uids.find(uid) != reply_uids.end()) continue;
+                            if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
+                            if (!config.tag_admins && admin_ids.find(uid) != admin_ids.end()) continue;
+                            if (seen.insert(uid).second) {
+                                users.push_back(uid);
                             }
                         }
                     }
@@ -456,6 +478,8 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
                                     // Пропускаем исключенных
                                 } else if (!config.tag_bots && is_user_bot(ctx, api, uid)) {
                                     // Пропускаем ботов!
+                                } else if (!config.tag_admins && admin_ids.find(uid) != admin_ids.end()) {
+                                    // Пропускаем админов!
                                 } else if (seen.insert(uid).second) {
                                     users.push_back(uid);
                                 }
@@ -473,6 +497,17 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
         std::vector<long long> filtered;
         for (long long uid : users) {
             if (!is_user_bot(ctx, api, uid)) {
+                filtered.push_back(uid);
+            }
+        }
+        users = filtered;
+    }
+
+    // Финальная фильтрация админов (если выключено tag_admins)
+    if (!config.tag_admins && !admin_ids.empty() && !users.empty()) {
+        std::vector<long long> filtered;
+        for (long long uid : users) {
+            if (admin_ids.find(uid) == admin_ids.end()) {
                 filtered.push_back(uid);
             }
         }
@@ -1181,6 +1216,39 @@ static void cmd_tagbots(koto_ctx* ctx, const koto_api* api) {
     send_result(ctx, api);
 }
 
+// ── .tagadmins ──────────────────────────────────────────────────────────────
+static void cmd_tagadmins(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    const char* raw = api->cmd_args(ctx);
+    std::string args = raw ? trim(raw) : "";
+    auto config = get_config(ctx, api);
+
+    if (args.empty()) {
+        config.tag_admins = !config.tag_admins;
+    } else {
+        std::string lower = args;
+        for (char& c : lower) c = (char)std::tolower((unsigned char)c);
+        if (lower == "on" || lower == "1" || lower == "true" || lower == "вкл" || lower == "да") {
+            config.tag_admins = true;
+        } else if (lower == "off" || lower == "0" || lower == "false" || lower == "выкл" || lower == "нет") {
+            config.tag_admins = false;
+        } else {
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "❌", EMOJI_ERROR);
+            api->c_fmt(ctx, " Используйте: .tagadmins <on/off/вкл/выкл>", KOTO_ENT_BOLD);
+            send_result(ctx, api);
+            return;
+        }
+    }
+
+    save_config(ctx, api, config);
+    api->c_reset(ctx);
+    api->c_emoji(ctx, config.tag_admins ? "👮" : "🚫", config.tag_admins ? EMOJI_SUCCESS : EMOJI_STOP);
+    api->c_fmt(ctx, (" Тегирование админов: " + std::string(config.tag_admins ? "ВКЛЮЧЕНО" : "ВЫКЛЮЧЕНО")).c_str(), KOTO_ENT_BOLD);
+    send_result(ctx, api);
+}
+
 // ── .tagsettings ────────────────────────────────────────────────────────────
 static void cmd_tagsettings(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -1370,6 +1438,13 @@ static const koto_command COMMANDS[] = {
         "[on/off]"
     },
     {
+        "tagadmins",
+        &cmd_tagadmins,
+        KOTO_LEVEL_TRUSTED,
+        "Включить или выключить тегирование администраторов чата.",
+        "[on/off]"
+    },
+    {
         "tagsettings",
         &cmd_tagsettings,
         KOTO_LEVEL_TRUSTED,
@@ -1448,7 +1523,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
-    "3.4.4",
+    "3.4.5",
     26,
     0,
     COMMANDS,
