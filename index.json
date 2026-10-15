@@ -1,8 +1,66 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "updated": "2026-10-15",
   "modules": [
+    {
+      "id": "administration",
+      "name": "administration",
+      "display_name": "Администрирование чатов",
+      "author": "Kote",
+      "description": "Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки.",
+      "version": "1.1.3",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "admin",
+          "doc": "Назначить пользователя администратором с правами и рангом",
+          "usage": "[@user/ID] [Ранг]"
+        },
+        {
+          "name": "unadmin",
+          "doc": "Полностью разжаловать администратора",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "unrank",
+          "doc": "Снять ранг, права и boost-тег участника",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "untag",
+          "doc": "Убрать тег-метку (Member Tag) у участников чата",
+          "usage": ""
+        },
+        {
+          "name": "rank",
+          "doc": "Установить должность (ранг) администратору",
+          "usage": "[@user/ID] <Ранг>"
+        },
+        {
+          "name": "adminhelp",
+          "doc": "Справка по правам и флагам администратора",
+          "usage": ""
+        },
+        {
+          "name": "admincfg",
+          "doc": "Управление сохраненными конфигурациями прав",
+          "usage": "[save/del/load/list] [name]"
+        },
+        {
+          "name": "adminsettings",
+          "doc": "Открыть инлайн-панель настройки шаблона прав админа",
+          "usage": ""
+        }
+      ],
+      "size": 91016,
+      "sha256": "5f4ac8cb5cda695cdda6af762024250cb8df671b1f5b6b4dc65f57a07832214d",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
     {
       "id": "afk",
       "name": "afk",
@@ -43,6 +101,34 @@
       "sha256": "a08813202656e91678a0ced2b03b599a4ed4883fc46eb0fbe04f58470ece9479",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/afk.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
+      "license": "MIT",
+      "min_host_version": 26
+    },
+    {
+      "id": "autoresponder",
+      "name": "autoresponder",
+      "display_name": "Автоответчик (AutoResponder)",
+      "author": "Kote",
+      "description": "Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов.",
+      "version": "2.4.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "pm",
+          "doc": "Главная панель настройки автоответчика в ЛС",
+          "usage": "[on|off|text|premtext|time|pic|nopic|cd|block|read|ghost|stats]"
+        },
+        {
+          "name": "pmignore",
+          "doc": "Добавить или удалить текущий чат из игнор-листа автоответчика",
+          "usage": ""
+        }
+      ],
+      "size": 66144,
+      "sha256": "5ec8c5142cd0b316c89ac8f196dd2a2aff5d3635aec80168965b4b94fe71cf84",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/autoresponder.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
       "license": "MIT",
       "min_host_version": 26
     },
@@ -313,6 +399,29 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
       "min_host_version": 28
+    },
+    {
+      "id": "mass_notifier",
+      "name": "mass_notifier",
+      "display_name": "Рассылка в ЛС (Mass Notifier)",
+      "author": "Kote",
+      "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
+      "version": "1.0.3",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "lsall",
+          "doc": "Рассылка сообщений участникам чата в ЛС",
+          "usage": "<текст / реплай на сообщение>"
+        }
+      ],
+      "size": 45776,
+      "sha256": "6f58bdce17dc6ee88b382b5652d6574ca4fbbc7cc0b42110be10f423cd467c29",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
+      "license": "MIT",
+      "min_host_version": 26
     },
     {
       "id": "moderation",
