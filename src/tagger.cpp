@@ -303,37 +303,40 @@ static std::string get_tag_display_name(koto_ctx* ctx, const koto_api* api, long
 static bool is_user_bot(koto_ctx* ctx, const koto_api* api, long long uid) {
     if (uid <= 0) return false;
 
-    // 1. Официальный флаг Telegram MTProto (u->bot) через user_full_json (как entity.bot в Telethon)
+    // 1. Быстрая проверка username: в Telegram ВСЕ официальные боты (BotFather)
+    // обязаны иметь username, оканчивающийся строго на "bot" (например: @spambot, @my_bot).
+    // Если у пользователя нет юзернейма или он не оканчивается на "bot" — это 100% человек!
+    // Это выполняется мгновенно (0 мс) из локального кэша и исключает блокирующие сетевые запросы.
+    char un_buf[128] = {0};
+    bool has_username = (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]);
+    if (!has_username) {
+        // Нет юзернейма -> бот в Telegram не может быть без юзернейма! Это человек!
+        return false;
+    }
+
+    std::string un = un_buf;
+    for (char& c : un) c = (char)std::tolower((unsigned char)c);
+    if (un.size() < 3 || un.rfind("bot") != un.size() - 3) {
+        // Юзернейм НЕ оканчивается на "bot" (например: @Antihristbotnet, @CROVAETelo, @zxc_xlebyshek) -> 100% человек!
+        return false;
+    }
+
+    // 2. Если юзернейм оканчивается строго на "bot" (например: @Raspgamebot, @poebalkabot):
+    // Проверяем MTProto флаг is_bot через user_full_json, чтобы убедиться, что это не человек с редким ником
     if (api->user_full_json) {
         char buf[2048] = {0};
         int len = api->user_full_json(ctx, uid, buf, sizeof(buf) - 1);
         if (len > 0) {
             buf[len] = '\0';
             std::string j(buf);
-            if (j.find("\"is_bot\":true") != std::string::npos ||
-                j.find("\"is_bot\": true") != std::string::npos) {
-                return true;
-            }
             if (j.find("\"is_bot\":false") != std::string::npos ||
                 j.find("\"is_bot\": false") != std::string::npos) {
-                return false;
+                return false; // MTProto подтвердил, что это человек
             }
         }
     }
 
-    // 2. Fallback (если инфо пользователя ещё не подгрузилось по сети):
-    // В Telegram все официальные боты от @BotFather обязаны оканчиваться строго на "bot" (например: @gamebot, @some_bot).
-    // Никаких подстрок вроде "botnet", чтобы не отсеивать реальных людей (как @Antihristbotnet).
-    char un_buf[128] = {0};
-    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
-        std::string un = un_buf;
-        for (char& c : un) c = (char)std::tolower((unsigned char)c);
-        if (un.size() >= 3 && un.rfind("bot") == un.size() - 3) {
-            return true;
-        }
-    }
-
-    return false;
+    return true; // Юзернейм оканчивается на "bot" -> бот!
 }
 
 // ── Извлечение участников из реплая (reply_mode = include / exclude) ──────────
@@ -407,12 +410,12 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
             if (clen > 0) {
                 cbuf[clen] = '\0';
                 std::string cj(cbuf);
-                size_t ppos = cj.find("\"participant_ids\":[");
+                size_t ppos = cj.find("\"participant_ids\"");
                 if (ppos != std::string::npos) {
-                    size_t start = ppos + 19;
-                    size_t end = cj.find(']', start);
-                    if (end != std::string::npos) {
-                        std::string ids_str = cj.substr(start, end - start);
+                    size_t bracket = cj.find('[', ppos);
+                    size_t end = (bracket != std::string::npos) ? cj.find(']', bracket) : std::string::npos;
+                    if (bracket != std::string::npos && end != std::string::npos) {
+                        std::string ids_str = cj.substr(bracket + 1, end - bracket - 1);
                         std::stringstream ss(ids_str);
                         std::string item;
                         while (std::getline(ss, item, ',')) {
@@ -714,7 +717,7 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
         api->c_send(ctx, target_chat_id, 0);
 
         if (idx < targets.size() && g_active_tag_chats.find(target_chat_id) != g_active_tag_chats.end()) {
-            int d_min = std::max(1, config.delay_min);
+            int d_min = std::max(0, config.delay_min);
             int d_max = std::max(d_min, config.delay_max);
             int wait_sec = d_min;
             if (d_max > d_min) {
@@ -1445,7 +1448,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
-    "3.4.3",
+    "3.4.4",
     26,
     0,
     COMMANDS,
