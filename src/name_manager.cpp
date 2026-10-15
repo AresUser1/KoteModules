@@ -360,13 +360,6 @@ static const koto_command COMMANDS[] = {
         nullptr
     },
     {
-        "setpfp",
-        &cmd_setava,
-        KOTO_LEVEL_TRUSTED,
-        "Установить аватар из фото (псевдоним).",
-        nullptr
-    },
-    {
         "delava",
         &cmd_delava,
         KOTO_LEVEL_TRUSTED,
