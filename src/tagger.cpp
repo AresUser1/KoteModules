@@ -468,6 +468,59 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
         return;
     }
 
+    // Сохранение форматирования и Премиум-эмодзи (авторский метод Kote: прем + тег)
+    std::string final_template = template_text;
+    std::vector<SavedEntity> template_entities;
+
+    if (!template_text.empty() && api->msg_text && api->msg_entity_count && api->msg_entity) {
+        const char* raw_msg = api->msg_text(ctx);
+        std::string full_msg = raw_msg ? raw_msg : "";
+        int template_u16_start = 0;
+        size_t bpos = full_msg.find(template_text);
+        if (bpos != std::string::npos) {
+            template_u16_start = utf16_len(full_msg.c_str(), (int)bpos);
+        }
+        int template_u16_len = utf16_len(template_text.c_str(), (int)template_text.size());
+
+        int n_ents = api->msg_entity_count(ctx);
+        for (int i = 0; i < n_ents; ++i) {
+            int type = 0, off = 0, len = 0;
+            long long docid = 0;
+            char url[512] = {0};
+            if (!api->msg_entity(ctx, i, &type, &off, &len, &docid, url, sizeof(url))) continue;
+            if (type == KOTO_ENT_NONE) continue;
+            if (off >= template_u16_start && (off + len) <= (template_u16_start + template_u16_len)) {
+                SavedEntity se;
+                se.type = type;
+                se.off = off - template_u16_start;
+                se.len = len;
+                se.docid = docid;
+                se.url = url;
+                template_entities.push_back(se);
+            }
+        }
+    } else if (final_template.empty() && api->reply_text && api->reply_entity_count && api->reply_entity) {
+        const char* rep_t = api->reply_text(ctx);
+        if (rep_t && rep_t[0]) {
+            final_template = rep_t;
+            int n_rep = api->reply_entity_count(ctx);
+            for (int i = 0; i < n_rep; ++i) {
+                int type = 0, off = 0, len = 0;
+                long long docid = 0;
+                char url[512] = {0};
+                if (!api->reply_entity(ctx, i, &type, &off, &len, &docid, url, sizeof(url))) continue;
+                if (type == KOTO_ENT_NONE) continue;
+                SavedEntity se;
+                se.type = type;
+                se.off = off;
+                se.len = len;
+                se.docid = docid;
+                se.url = url;
+                template_entities.push_back(se);
+            }
+        }
+    }
+
     auto config = get_config(ctx, api);
     g_active_tag_chats.insert(target_chat_id);
 
@@ -481,7 +534,7 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
 
     // Разбиваем на пачки
     size_t idx = 0;
-    while (idx < targets.size()) {
+    while (idx < targets.size() && g_active_tag_chats.find(target_chat_id) != g_active_tag_chats.end()) {
         int current_chunk_size = c_min;
         if (c_max > c_min) {
             current_chunk_size = c_min + (rand() % (c_max - c_min + 1));
@@ -489,8 +542,14 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
 
         api->c_reset(ctx);
 
-        if (config.position == "after" && !template_text.empty()) {
-            api->c_markdown(ctx, template_text.c_str());
+        if (config.position == "after" && !final_template.empty()) {
+            int base_off = api->c_mark(ctx);
+            api->c_text(ctx, final_template.c_str());
+            if (!template_entities.empty()) {
+                for (const auto& se : template_entities) {
+                    api->c_entity(ctx, se.type, base_off + se.off, se.len, se.docid, se.url.empty() ? nullptr : se.url.c_str());
+                }
+            }
             api->c_text(ctx, "\n");
         }
 
@@ -503,16 +562,40 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
             if (!first_user) {
                 api->c_text(ctx, " ");
             }
-            api->c_url(ctx, dname.c_str(), link.c_str());
+            int u_off = api->c_mark(ctx);
+            api->c_text(ctx, dname.c_str());
+            int u_len = api->c_mark(ctx) - u_off;
+            api->c_entity(ctx, KOTO_ENT_URL, u_off, u_len, 0, link.c_str());
             first_user = false;
         }
 
-        if (config.position == "before" && !template_text.empty()) {
+        if (config.position == "before" && !final_template.empty()) {
             api->c_text(ctx, "\n");
-            api->c_markdown(ctx, template_text.c_str());
+            int base_off = api->c_mark(ctx);
+            api->c_text(ctx, final_template.c_str());
+            if (!template_entities.empty()) {
+                for (const auto& se : template_entities) {
+                    api->c_entity(ctx, se.type, base_off + se.off, se.len, se.docid, se.url.empty() ? nullptr : se.url.c_str());
+                }
+            }
         }
 
         api->c_send(ctx, target_chat_id, 0);
+
+        if (idx < targets.size() && g_active_tag_chats.find(target_chat_id) != g_active_tag_chats.end()) {
+            int d_min = std::max(1, config.delay_min);
+            int d_max = std::max(d_min, config.delay_max);
+            int wait_sec = d_min;
+            if (d_max > d_min) {
+                wait_sec = d_min + (rand() % (d_max - d_min + 1));
+            }
+            if (wait_sec > 0 && wait_sec <= 60) {
+                struct timespec ts;
+                ts.tv_sec = wait_sec;
+                ts.tv_nsec = 0;
+                nanosleep(&ts, nullptr);
+            }
+        }
     }
 
     g_active_tag_chats.erase(target_chat_id);

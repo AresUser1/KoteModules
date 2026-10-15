@@ -860,8 +860,8 @@
           "usage": ""
         }
       ],
-      "size": 105224,
-      "sha256": "4a0a62335686f5c7868ff3c457063db3bc34fb15c5cf5b4e23bf181e5419c54f",
+      "size": 109976,
+      "sha256": "91871fcbf0357978f5aedcd601a5cf115380c0ae8ea142a428f11b25704f749c",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",
