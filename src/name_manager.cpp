@@ -207,7 +207,11 @@ static void cmd_namelist(koto_ctx* ctx, const koto_api* api) {
     if (history.empty()) {
         api->c_emoji(ctx, "📋", LIST_EMOJI_ID);
         api->c_fmt(ctx, " Ваша история имён пуста.", KOTO_ENT_BOLD);
-        api->c_button(ctx, "❌ Закрыть", "close_panel", 1);
+        if (api->c_button_ex) {
+            api->c_button_ex(ctx, "❌ Закрыть", "close_panel", 1, KOTO_BTN_DANGER, 0);
+        } else {
+            api->c_button(ctx, "❌ Закрыть", "close_panel", 1);
+        }
     } else {
         api->c_emoji(ctx, "📋", LIST_EMOJI_ID);
         api->c_fmt(ctx, " Выберите имя из списка:", KOTO_ENT_BOLD);
@@ -219,7 +223,11 @@ static void cmd_namelist(koto_ctx* ctx, const koto_api* api) {
             std::string btn_data = "setname:" + std::to_string(i);
             api->c_button(ctx, btn_label.c_str(), btn_data.c_str(), 1);
         }
-        api->c_button(ctx, "❌ Закрыть", "close_panel", 1);
+        if (api->c_button_ex) {
+            api->c_button_ex(ctx, "❌ Закрыть", "close_panel", 1, KOTO_BTN_DANGER, 0);
+        } else {
+            api->c_button(ctx, "❌ Закрыть", "close_panel", 1);
+        }
     }
 
     send_result(ctx, api);
@@ -281,6 +289,19 @@ static void cmd_delava(koto_ctx* ctx, const koto_api* api) {
 // ─── ИНЛАЙН / КОЛБЭКИ ───────────────────────────────────────────────────────
 
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    long long sender = api->sender_id ? api->sender_id(ctx) : 0;
+    long long me = api->get_me ? api->get_me(ctx) : 0;
+
+    bool allowed = (me != 0 && sender == me);
+    if (!allowed && api->check_permission) {
+        allowed = (api->check_permission(ctx, KOTO_LEVEL_TRUSTED) != 0);
+    }
+
+    if (!allowed) {
+        api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
+        return;
+    }
+
     const char* data = api->cb_data(ctx);
     if (!data) return;
 
@@ -372,7 +393,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "name_manager",
     "Управление именем профиля, его историей и аватаром (C++ ABI 3).",
-    "1.2.0",
+    "1.2.1",
     26,
     0,
     COMMANDS,

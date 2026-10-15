@@ -1634,8 +1634,16 @@ static const koto_command MAFIA_COMMANDS[] = {
 
 // ── Обработчик нажатий inline-кнопок (on_callback) ───────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
-    if (api->check_permission && !api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
-        api->cb_answer(ctx, "⛔ Доступ запрещён", 1);
+    long long sender = api->sender_id ? api->sender_id(ctx) : 0;
+    long long me = api->get_me ? api->get_me(ctx) : 0;
+
+    bool allowed = (me != 0 && sender == me);
+    if (!allowed && api->check_permission) {
+        allowed = (api->check_permission(ctx, KOTO_LEVEL_TRUSTED) != 0);
+    }
+
+    if (!allowed) {
+        api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
         return;
     }
     const char* data_ptr = api->cb_data(ctx);
