@@ -89,6 +89,7 @@ struct TaggerConfig {
     std::string priority;   // "id" или "username"
     std::string position;   // "before" или "after"
     bool tag_admins;
+    bool tag_bots;          // Тегать ботов (по умолчанию false)
     int chunk_min;
     int chunk_max;
     int delay_min;
@@ -101,6 +102,7 @@ static TaggerConfig get_config(koto_ctx* ctx, const koto_api* api) {
     c.priority = "id";
     c.position = "before";
     c.tag_admins = true;
+    c.tag_bots = false;
     c.chunk_min = 5;
     c.chunk_max = 5;
     c.delay_min = 3;
@@ -127,14 +129,21 @@ static TaggerConfig get_config(koto_ctx* ctx, const koto_api* api) {
         c.tag_admins = (strcmp(buf, "0") != 0 && strcmp(buf, "false") != 0);
     }
 
-    // 5. Диапазон участников
+    // 5. Тегать ботов (bool, по умолчанию выключено)
+    if (api->cfg_get && api->cfg_get(ctx, "tag_bots", buf, sizeof(buf) - 1) > 0) {
+        c.tag_bots = (strcmp(buf, "1") == 0 || strcmp(buf, "true") == 0);
+    } else if (api->db_get(ctx, "cfg_tag_bots", buf, sizeof(buf) - 1) > 0) {
+        c.tag_bots = (strcmp(buf, "1") == 0 || strcmp(buf, "true") == 0);
+    }
+
+    // 6. Диапазон участников
     if (api->cfg_get && api->cfg_get(ctx, "chunk_min", buf, sizeof(buf) - 1) > 0) c.chunk_min = atoi(buf);
     else c.chunk_min = (int)api->db_get_int(ctx, "cfg_chunk_min", 5);
 
     if (api->cfg_get && api->cfg_get(ctx, "chunk_max", buf, sizeof(buf) - 1) > 0) c.chunk_max = atoi(buf);
     else c.chunk_max = (int)api->db_get_int(ctx, "cfg_chunk_max", 5);
 
-    // 6. Диапазон задержки
+    // 7. Диапазон задержки
     if (api->cfg_get && api->cfg_get(ctx, "delay_min", buf, sizeof(buf) - 1) > 0) c.delay_min = atoi(buf);
     else c.delay_min = (int)api->db_get_int(ctx, "cfg_delay_min", 3);
 
@@ -150,6 +159,7 @@ static void save_config(koto_ctx* ctx, const koto_api* api, const TaggerConfig& 
         api->cfg_set(ctx, "position", c.position.c_str());
         api->cfg_set(ctx, "reply_mode", c.reply_mode.c_str());
         api->cfg_set(ctx, "tag_admins", c.tag_admins ? "1" : "0");
+        api->cfg_set(ctx, "tag_bots", c.tag_bots ? "1" : "0");
         api->cfg_set(ctx, "chunk_min", std::to_string(c.chunk_min).c_str());
         api->cfg_set(ctx, "chunk_max", std::to_string(c.chunk_max).c_str());
         api->cfg_set(ctx, "delay_min", std::to_string(c.delay_min).c_str());
@@ -159,6 +169,7 @@ static void save_config(koto_ctx* ctx, const koto_api* api, const TaggerConfig& 
     api->db_set(ctx, "cfg_position", c.position.c_str());
     api->db_set(ctx, "cfg_reply_mode", c.reply_mode.c_str());
     api->db_set(ctx, "cfg_tag_admins", c.tag_admins ? "1" : "0");
+    api->db_set(ctx, "cfg_tag_bots", c.tag_bots ? "1" : "0");
     api->db_set_int(ctx, "cfg_chunk_min", c.chunk_min);
     api->db_set_int(ctx, "cfg_chunk_max", c.chunk_max);
     api->db_set_int(ctx, "cfg_delay_min", c.delay_min);
@@ -288,6 +299,46 @@ static std::string get_tag_display_name(koto_ctx* ctx, const koto_api* api, long
     return "User " + std::to_string(uid);
 }
 
+// ── Проверка, является ли пользователь ботом ──────────────────────────────────
+static bool is_user_bot(koto_ctx* ctx, const koto_api* api, long long uid) {
+    if (uid <= 0) return false;
+
+    // 1. Быстрая проверка username
+    char un_buf[128] = {0};
+    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
+        std::string un = un_buf;
+        for (char& c : un) c = (char)std::tolower((unsigned char)c);
+        if (un.size() >= 3 && un.rfind("bot") == un.size() - 3) return true;
+        if (un.find("botnet") != std::string::npos) return true;
+        if (un.size() >= 3 && un.rfind("b0t") == un.size() - 3) return true;
+    }
+
+    // 2. Проверка user_full_json (MTProto флаг is_bot)
+    if (api->user_full_json) {
+        char buf[2048] = {0};
+        int len = api->user_full_json(ctx, uid, buf, sizeof(buf) - 1);
+        if (len > 0) {
+            buf[len] = '\0';
+            std::string j(buf);
+            if (j.find("\"is_bot\":true") != std::string::npos ||
+                j.find("\"is_bot\": true") != std::string::npos) {
+                return true;
+            }
+        }
+    }
+
+    // 3. Проверка отображаемого имени
+    char n_buf[256] = {0};
+    if (api->user_name && api->user_name(ctx, uid, n_buf, sizeof(n_buf)) > 0 && n_buf[0]) {
+        std::string name = n_buf;
+        for (char& c : name) c = (char)std::tolower((unsigned char)c);
+        if (name.size() >= 3 && name.rfind("bot") == name.size() - 3) return true;
+        if (name.find(" bot") != std::string::npos) return true;
+    }
+
+    return false;
+}
+
 // ── Извлечение участников из реплая (reply_mode = include / exclude) ──────────
 static std::set<long long> extract_users_from_reply(koto_ctx* ctx, const koto_api* api) {
     std::set<long long> ids;
@@ -347,14 +398,46 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
     if (rmode == "include" && !reply_uids.empty()) {
         for (long long uid : reply_uids) {
             if (uid != me_id && seen.insert(uid).second) {
+                if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
                 users.push_back(uid);
             }
         }
     } else {
-        // Сбор из недавней истории чата
-        if (api->get_history_json) {
+        // 1. Попытка получить участников чата из chat_full_json
+        if (api->chat_full_json) {
+            char cbuf[32768];
+            int clen = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
+            if (clen > 0) {
+                cbuf[clen] = '\0';
+                std::string cj(cbuf);
+                size_t ppos = cj.find("\"participant_ids\":[");
+                if (ppos != std::string::npos) {
+                    size_t start = ppos + 19;
+                    size_t end = cj.find(']', start);
+                    if (end != std::string::npos) {
+                        std::string ids_str = cj.substr(start, end - start);
+                        std::stringstream ss(ids_str);
+                        std::string item;
+                        while (std::getline(ss, item, ',')) {
+                            char* e = nullptr;
+                            long long uid = strtoll(item.c_str(), &e, 10);
+                            if (uid > 0 && uid != me_id) {
+                                if (rmode == "exclude" && reply_uids.find(uid) != reply_uids.end()) continue;
+                                if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
+                                if (seen.insert(uid).second) {
+                                    users.push_back(uid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Сбор из недавней истории чата (если участники не получены или для дополнительного охвата)
+        if (users.empty() && api->get_history_json) {
             char hbuf[65536];
-            for (int offset = 0; offset <= 200; offset += 100) {
+            for (int offset = 0; offset <= 300; offset += 100) {
                 int hlen = api->get_history_json(ctx, cid, 0, 100, offset, hbuf, sizeof(hbuf) - 1);
                 if (hlen <= 0) break;
                 hbuf[hlen] = '\0';
@@ -371,6 +454,8 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
                             if (uid > 0 && uid != me_id) {
                                 if (rmode == "exclude" && reply_uids.find(uid) != reply_uids.end()) {
                                     // Пропускаем исключенных
+                                } else if (!config.tag_bots && is_user_bot(ctx, api, uid)) {
+                                    // Пропускаем ботов!
                                 } else if (seen.insert(uid).second) {
                                     users.push_back(uid);
                                 }
@@ -381,6 +466,17 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
                 }
             }
         }
+    }
+
+    // Финальная фильтрация ботов (если выключено tag_bots)
+    if (!config.tag_bots && !users.empty()) {
+        std::vector<long long> filtered;
+        for (long long uid : users) {
+            if (!is_user_bot(ctx, api, uid)) {
+                filtered.push_back(uid);
+            }
+        }
+        users = filtered;
     }
 
     // Исключение по вайтлисту чата
@@ -427,6 +523,7 @@ static void build_settings_panel(koto_ctx* ctx, const koto_api* api) {
 
     std::string pos_icon = (config.position == "before") ? "Начало" : "Конец";
     std::string adm_icon = config.tag_admins ? "✅ Вкл" : "❌ Выкл";
+    std::string bots_icon = config.tag_bots ? "✅ Вкл" : "❌ Выкл";
 
     api->c_reset(ctx);
     api->c_emoji(ctx, "🏷️", EMOJI_TAG);
@@ -447,6 +544,9 @@ static void build_settings_panel(koto_ctx* ctx, const koto_api* api) {
     api->c_emoji(ctx, "👮", EMOJI_ADMINS);
     api->c_text(ctx, (" Тегать админов: " + adm_icon + "\n").c_str());
 
+    api->c_emoji(ctx, "🤖", EMOJI_TAG);
+    api->c_text(ctx, (" Тегать ботов: " + bots_icon + "\n").c_str());
+
     api->c_emoji(ctx, "↩️", EMOJI_REPLY);
     api->c_text(ctx, (" Режим ответа: " + rmode_icon + "\n\n").c_str());
 
@@ -464,19 +564,22 @@ static void build_settings_panel(koto_ctx* ctx, const koto_api* api) {
         api->c_button_ex(ctx, ("📍 " + pos_icon).c_str(), "ts_toggle_position", 0, KOTO_BTN_DEFAULT, 0);
 
         api->c_button_ex(ctx, ("👮 " + adm_icon).c_str(), "ts_toggle_admins", 1, config.tag_admins ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
-        api->c_button_ex(ctx, ("↩️ " + rmode_icon).c_str(), "ts_toggle_reply", 0, (config.reply_mode != "off") ? KOTO_BTN_PRIMARY : KOTO_BTN_DEFAULT, 0);
+        api->c_button_ex(ctx, ("🤖 " + bots_icon).c_str(), "ts_toggle_bots", 0, config.tag_bots ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
 
-        api->c_button_ex(ctx, "🔄 Обновить", "ts_back", 1, KOTO_BTN_DEFAULT, 0);
-        api->c_button_ex(ctx, "❌ Закрыть", "close_panel", 0, KOTO_BTN_DANGER, 0);
+        api->c_button_ex(ctx, ("↩️ " + rmode_icon).c_str(), "ts_toggle_reply", 1, (config.reply_mode != "off") ? KOTO_BTN_PRIMARY : KOTO_BTN_DEFAULT, 0);
+        api->c_button_ex(ctx, "🔄 Обновить", "ts_back", 0, KOTO_BTN_DEFAULT, 0);
+
+        api->c_button_ex(ctx, "❌ Закрыть", "close_panel", 1, KOTO_BTN_DANGER, 0);
     } else {
         api->c_button(ctx, "⏱️ Задержка", "ts_set_delay", 1);
         api->c_button(ctx, "👥 Кол-во", "ts_set_users", 0);
         api->c_button(ctx, ("🏆 " + config.priority).c_str(), "ts_toggle_priority", 1);
         api->c_button(ctx, ("📍 " + pos_icon).c_str(), "ts_toggle_position", 0);
         api->c_button(ctx, ("👮 " + adm_icon).c_str(), "ts_toggle_admins", 1);
-        api->c_button(ctx, ("↩️ " + rmode_icon).c_str(), "ts_toggle_reply", 0);
-        api->c_button(ctx, "🔄 Обновить", "ts_back", 1);
-        api->c_button(ctx, "❌ Закрыть", "close_panel", 0);
+        api->c_button(ctx, ("🤖 " + bots_icon).c_str(), "ts_toggle_bots", 0);
+        api->c_button(ctx, ("↩️ " + rmode_icon).c_str(), "ts_toggle_reply", 1);
+        api->c_button(ctx, "🔄 Обновить", "ts_back", 0);
+        api->c_button(ctx, "❌ Закрыть", "close_panel", 1);
     }
 }
 
@@ -1045,6 +1148,39 @@ static void cmd_nonick(koto_ctx* ctx, const koto_api* api) {
     send_result(ctx, api);
 }
 
+// ── .tagbots ───────────────────────────────────────────────────────────────
+static void cmd_tagbots(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    const char* raw = api->cmd_args(ctx);
+    std::string args = raw ? trim(raw) : "";
+    auto config = get_config(ctx, api);
+
+    if (args.empty()) {
+        config.tag_bots = !config.tag_bots;
+    } else {
+        std::string lower = args;
+        for (char& c : lower) c = (char)std::tolower((unsigned char)c);
+        if (lower == "on" || lower == "1" || lower == "true" || lower == "вкл" || lower == "да") {
+            config.tag_bots = true;
+        } else if (lower == "off" || lower == "0" || lower == "false" || lower == "выкл" || lower == "нет") {
+            config.tag_bots = false;
+        } else {
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "❌", EMOJI_ERROR);
+            api->c_fmt(ctx, " Используйте: .tagbots <on/off/вкл/выкл>", KOTO_ENT_BOLD);
+            send_result(ctx, api);
+            return;
+        }
+    }
+
+    save_config(ctx, api, config);
+    api->c_reset(ctx);
+    api->c_emoji(ctx, config.tag_bots ? "🤖" : "🚫", config.tag_bots ? EMOJI_TAG : EMOJI_STOP);
+    api->c_fmt(ctx, (" Тегирование ботов: " + std::string(config.tag_bots ? "ВКЛЮЧЕНО" : "ВЫКЛЮЧЕНО")).c_str(), KOTO_ENT_BOLD);
+    send_result(ctx, api);
+}
+
 // ── .tagsettings ────────────────────────────────────────────────────────────
 static void cmd_tagsettings(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -1105,6 +1241,15 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
         build_settings_panel(ctx, api);
         api->c_edit_message(ctx, api->chat_id(ctx), api->cb_message_id(ctx), 0);
         if (api->cb_answer) api->cb_answer(ctx, config.tag_admins ? "Админы: Вкл" : "Админы: Выкл", 0);
+        return;
+    }
+
+    if (data == "ts_toggle_bots") {
+        config.tag_bots = !config.tag_bots;
+        save_config(ctx, api, config);
+        build_settings_panel(ctx, api);
+        api->c_edit_message(ctx, api->chat_id(ctx), api->cb_message_id(ctx), 0);
+        if (api->cb_answer) api->cb_answer(ctx, config.tag_bots ? "Боты: Вкл" : "Боты: Выкл", 0);
         return;
     }
 
@@ -1218,6 +1363,13 @@ static const koto_command COMMANDS[] = {
         "<add/del/list> [@user] [Name] [-g]"
     },
     {
+        "tagbots",
+        &cmd_tagbots,
+        KOTO_LEVEL_TRUSTED,
+        "Включить или выключить тегирование ботов чата.",
+        "[on/off]"
+    },
+    {
         "tagsettings",
         &cmd_tagsettings,
         KOTO_LEVEL_TRUSTED,
@@ -1246,6 +1398,13 @@ static const koto_setting_field SETTINGS[] = {
         "Тегать администраторов чата",
         KOTO_FIELD_BOOL,
         "1",
+        nullptr
+    },
+    {
+        "tag_bots",
+        "Тегать ботов чата",
+        KOTO_FIELD_BOOL,
+        "0",
         nullptr
     },
     {
@@ -1289,7 +1448,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
-    "3.4.1",
+    "3.4.2",
     26,
     0,
     COMMANDS,
