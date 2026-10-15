@@ -203,7 +203,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spam_ban",
     "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user) (C++ ABI 3).",
-    "1.6.0",
+    "1.6.1",
     27,
     0,
     COMMANDS,

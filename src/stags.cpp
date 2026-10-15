@@ -805,7 +805,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.8.5",
+    "2.8.6",
     26,
     0,
     COMMANDS,

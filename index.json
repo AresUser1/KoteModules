@@ -1,6 +1,6 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "updated": "2026-10-15",
   "modules": [
     {
@@ -406,7 +406,7 @@
       "display_name": "Рассылка в ЛС (Mass Notifier)",
       "author": "Kote",
       "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -416,8 +416,8 @@
           "usage": "<текст / реплай на сообщение>"
         }
       ],
-      "size": 46312,
-      "sha256": "4ca0395e0c49f29babdb462c149628fec894db8fb4f77d133f8be21db25c301d",
+      "size": 46256,
+      "sha256": "ab07b646107bf1e032bbafbef09e870151e1a5d50285a39d97f235e06ff9255d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
       "license": "MIT",
@@ -706,7 +706,7 @@
       "display_name": "Spam Ban",
       "author": "Kote",
       "description": "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3).",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -721,8 +721,8 @@
           "usage": "<@user/ID/ответ>"
         }
       ],
-      "size": 40664,
-      "sha256": "9a7f1e2c5a91a7b98774f3d5728ae51802809906e15c64d26a7b2d9af8be89dd",
+      "size": 40496,
+      "sha256": "b5e6b78c13a5ecd97beaf33e3b7c1e153a0dfa6e7a7aec2fe220f133f68bafbd",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
       "license": "MIT",
@@ -762,7 +762,7 @@
       "display_name": "Silent Tags",
       "author": "Kote",
       "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
-      "version": "2.8.5",
+      "version": "2.8.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -782,8 +782,8 @@
           "usage": ""
         }
       ],
-      "size": 93024,
-      "sha256": "a158515ba7901d090785f61bd862f76802ee02cc68c870a08532a4db690f44fa",
+      "size": 93328,
+      "sha256": "db3c850e03aaaf27587ed20848eaf6ebef5cb34cfe403f0b5fb3ef1f3c1fc8a6",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -795,7 +795,7 @@
       "display_name": "Tagger",
       "author": "Kote",
       "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
-      "version": "3.4.0",
+      "version": "3.4.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -860,8 +860,8 @@
           "usage": ""
         }
       ],
-      "size": 111656,
-      "sha256": "7ff903f89d46964d6b77734318ac009cb6883f029995b0a549957d7a3b05c709",
+      "size": 112544,
+      "sha256": "8c45c401b4e45f37826890a631940027a61ab0037fef25276f6dac2dd040c355",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",
