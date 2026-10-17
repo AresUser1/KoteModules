@@ -193,15 +193,23 @@ static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long l
     if (api->chat_full_json) {
         char buf[4096] = {0};
         int len = api->chat_full_json(ctx, cid, buf, sizeof(buf) - 1);
+        if (len <= 2 && cid > 0) {
+            len = api->chat_full_json(ctx, -1000000000000LL - cid, buf, sizeof(buf) - 1);
+        }
         if (len > 0) {
             buf[len] = '\0';
             std::string j(buf);
             size_t pos = j.find("\"title\":\"");
             if (pos != std::string::npos) {
                 size_t start = pos + 9;
-                size_t end = j.find('"', start);
-                if (end != std::string::npos) {
-                    return j.substr(start, end - start);
+                size_t end = start;
+                while (end < j.size()) {
+                    if (j[end] == '"' && (end == start || j[end - 1] != '\\')) break;
+                    ++end;
+                }
+                if (end < j.size()) {
+                    std::string t = j.substr(start, end - start);
+                    if (!t.empty()) return t;
                 }
             }
         }
@@ -645,7 +653,16 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if (!cfg.process_bots) return 0;
     }
 
-    // 3. Обработка уведомления (если не silent)
+    // 3. Отметка о прочтении упоминания и сообщения (Silent Tags)
+    if (api->read_mentions) {
+        api->read_mentions(ctx, cid);
+    }
+    if (api->read_history) {
+        long long mid = api->msg_id ? api->msg_id(ctx) : 0;
+        api->read_history(ctx, cid, mid);
+    }
+
+    // 4. Обработка уведомления (если не silent)
     if (!cfg.silent) {
         api->c_reset(ctx);
         api->c_emoji(ctx, cfg.silent_emoji_fallback.c_str(), cfg.silent_emoji_id);
@@ -653,7 +670,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->c_send(ctx, cid, 0);
     }
 
-    // 4. Отправка подробного лога в группу логов
+    // 5. Отправка подробного лога в группу логов
     if (cfg.log_group_id != 0) {
         long long mid = api->msg_id ? api->msg_id(ctx) : 0;
         std::string chat_link = build_chat_message_link(cid, mid);
@@ -665,7 +682,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->c_text(ctx, " Вас упомянули в ");
         api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
         api->c_text(ctx, " пользователем ");
-        api->c_fmt(ctx, sender_name.c_str(), KOTO_ENT_BOLD);
+        std::string user_link = "tg://user?id=" + std::to_string(sid);
+        api->c_url(ctx, sender_name.c_str(), user_link.c_str());
         api->c_text(ctx, "\n\n");
 
         const char* raw_txt = api->msg_text ? api->msg_text(ctx) : "";
@@ -673,8 +691,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if (preview_text.size() > 500) preview_text = preview_text.substr(0, 500) + "...";
 
         int qmark = api->c_mark(ctx);
-        api->c_fmt(ctx, "Сообщение:\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, preview_text.c_str());
+        api->c_fmt(ctx, "Сообщение:", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, ("\n" + preview_text).c_str(), KOTO_ENT_CODE);
         api->c_wrap(ctx, qmark, KOTO_ENT_BLOCKQUOTE, 1);
 
         api->c_text(ctx, "\n\n");
