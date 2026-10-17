@@ -646,19 +646,47 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
     // 2. Проверяем черные списки (ignore_users, ignore_chats)
     auto ignore_users = load_id_set(ctx, api, "ignore_users");
-    if (ignore_users.find(sid) != ignore_users.end()) return 0;
+    if (ignore_users.find(sid) != ignore_users.end() ||
+        ignore_users.find(std::abs(sid)) != ignore_users.end()) return 0;
+
+    bool is_bot = false;
+    if (api->user_full_json) {
+        char ubuf[2048] = {0};
+        int ulen = api->user_full_json(ctx, sid, ubuf, sizeof(ubuf) - 1);
+        if (ulen > 0) {
+            ubuf[ulen] = '\0';
+            if (strstr(ubuf, "\"is_bot\":true") != nullptr) is_bot = true;
+        }
+    }
+
+    // Если отправитель — бот, а чтение тегов ботов выключено
+    if (is_bot && !cfg.process_bots) return 0;
 
     auto ignore_chats = load_id_set(ctx, api, "ignore_chats");
-    if (ignore_chats.find(cid) != ignore_chats.end()) {
-        if (!cfg.process_bots) return 0;
+    long long abs_cid = std::abs(cid);
+    long long norm_cid = abs_cid;
+    std::string abs_str = std::to_string(abs_cid);
+    if (abs_str.rfind("100", 0) == 0 && abs_str.size() > 3) {
+        norm_cid = strtoll(abs_str.substr(3).c_str(), nullptr, 10);
+    }
+    bool chat_ignored = (ignore_chats.find(cid) != ignore_chats.end() ||
+                         ignore_chats.find(-cid) != ignore_chats.end() ||
+                         ignore_chats.find(abs_cid) != ignore_chats.end() ||
+                         ignore_chats.find(norm_cid) != ignore_chats.end() ||
+                         ignore_chats.find(-1000000000000LL - norm_cid) != ignore_chats.end());
+    if (chat_ignored) {
+        // В игнорируемом чате читаем тег ТОЛЬКО если это бот и включено process_bots
+        if (!(is_bot && cfg.process_bots)) {
+            return 0;
+        }
     }
 
     // 3. Отметка о прочтении упоминания и сообщения (Silent Tags)
+    long long mid = api->msg_id ? api->msg_id(ctx) : 0;
     if (api->read_mentions) {
         api->read_mentions(ctx, cid);
     }
     if (api->read_history) {
-        long long mid = api->msg_id ? api->msg_id(ctx) : 0;
         api->read_history(ctx, cid, mid);
     }
 
@@ -823,7 +851,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.8.6",
+    "2.8.8",
     26,
     0,
     COMMANDS,
