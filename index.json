@@ -565,11 +565,11 @@
       "min_host_version": 13
     },
     {
-      "id": "name_manager",
-      "name": "name_manager",
-      "display_name": "Name Manager",
+      "id": "profile_manager",
+      "name": "profile_manager",
+      "display_name": "Profile Manager",
       "author": "Kote",
-      "description": "Управление именем профиля, его историей и аватаром: смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
+      "description": "Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
       "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a",
@@ -610,10 +610,10 @@
           "usage": ""
         }
       ],
-      "size": 63360,
-      "sha256": "bdc92143b353006fe34a5671dc20015225cdbacf3d7c2ce4fadbb42db5d0a892",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/name_manager.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/name_manager.cpp",
+      "size": 84392,
+      "sha256": "c2713a97f01fdc0c64dc87e0cf4ff8cc5d142b1ff59f34bdf3fa771f016ed4bf",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/profile_manager.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/profile_manager.cpp",
       "license": "MIT",
       "min_host_version": 26
     },

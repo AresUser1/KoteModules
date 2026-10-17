@@ -1,5 +1,5 @@
-// name_manager.cpp — Управление именем профиля, его историей и аватаром (C++ ABI 3).
-// Портирован из Python-модуля name_manager.py (v1.2.0).
+// profile_manager.cpp — Управление профилем (имя, аватар, история имён) (C++ ABI 3).
+// Портирован из Python-модуля profile_manager.py (v1.2.0).
 // Автор: Kote
 
 #include "module_abi.h"
@@ -391,8 +391,8 @@ static const koto_command COMMANDS[] = {
 
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
-    "name_manager",
-    "Управление именем профиля, его историей и аватаром (C++ ABI 3).",
+    "profile_manager",
+    "Управление профилем (имя, аватар, история имён) (C++ ABI 3).",
     "1.2.1",
     26,
     0,
@@ -401,7 +401,7 @@ static const koto_module MODULE = {
     nullptr, 0,
     &on_callback,
     nullptr, 0,
-    "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/name_manager.so"
+    "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/profile_manager.so"
 };
 
 extern "C" const koto_module* koto_module_register(void) {
