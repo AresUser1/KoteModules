@@ -113,6 +113,14 @@ static void save_stags_config(koto_ctx* ctx, const koto_api* api, const StagsCon
 }
 
 // ── Черные списки (ignore_users, ignore_chats) ────────────────────────────────
+static void save_id_set(koto_ctx* ctx, const koto_api* api, const char* key, const std::set<long long>& s) {
+    std::string val;
+    for (long long v : s) {
+        val += std::to_string(v) + " ";
+    }
+    api->db_set(ctx, key, val.c_str());
+}
+
 static std::set<long long> load_id_set(koto_ctx* ctx, const koto_api* api, const char* key) {
     std::set<long long> out;
     char buf[16384];
@@ -126,15 +134,18 @@ static std::set<long long> load_id_set(koto_ctx* ctx, const koto_api* api, const
         long long val = strtoll(token.c_str(), nullptr, 10);
         if (val != 0) out.insert(val);
     }
-    return out;
-}
 
-static void save_id_set(koto_ctx* ctx, const koto_api* api, const char* key, const std::set<long long>& s) {
-    std::string val;
-    for (long long v : s) {
-        val += std::to_string(v) + " ";
+    // Если это ignore_users, автоматически исключаем свой ID (me), если он там был
+    if (strcmp(key, "ignore_users") == 0 && api->get_me) {
+        long long me = api->get_me(ctx);
+        if (me != 0) {
+            bool had_me = (out.erase(me) > 0 || out.erase(-me) > 0 || out.erase(std::abs(me)) > 0);
+            if (had_me) {
+                save_id_set(ctx, api, key, out);
+            }
+        }
     }
-    api->db_set(ctx, key, val.c_str());
+    return out;
 }
 
 // ── Режимы твинков (twin_modes) ───────────────────────────────────────────────
@@ -175,6 +186,7 @@ static std::string get_twin_mode_label(const std::string& mode) {
 
 // ── Получение имен пользователя и чата ────────────────────────────────────────
 static std::string get_user_name_str(koto_ctx* ctx, const koto_api* api, long long uid) {
+    if (!api) return "Пользователь " + std::to_string(uid);
     char name_buf[256] = {0};
     if (api->user_first_name && api->user_first_name(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
         char last_buf[256] = {0};
@@ -186,17 +198,27 @@ static std::string get_user_name_str(koto_ctx* ctx, const koto_api* api, long lo
     if (api->user_name && api->user_name(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
         return name_buf;
     }
-    return "User " + std::to_string(uid);
+    if (api->user_username && api->user_username(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
+        return "@" + std::string(name_buf);
+    }
+    return "Пользователь " + std::to_string(uid);
 }
 
 static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long long cid) {
-    if (api->chat_full_json) {
+    if (!api || !api->chat_full_json) return "Чат " + std::to_string(cid);
+
+    long long candidates[] = {
+        cid,
+        (cid > 0 && cid < 1000000000000LL) ? (-1000000000000LL - cid) : 0,
+        cid < 0 ? std::abs(cid) : 0,
+        (std::abs(cid) > 1000000000000LL) ? -(std::abs(cid) - 1000000000000LL) : 0
+    };
+
+    for (long long c : candidates) {
+        if (c == 0) continue;
         char buf[4096] = {0};
-        int len = api->chat_full_json(ctx, cid, buf, sizeof(buf) - 1);
-        if (len <= 2 && cid > 0) {
-            len = api->chat_full_json(ctx, -1000000000000LL - cid, buf, sizeof(buf) - 1);
-        }
-        if (len > 0) {
+        int len = api->chat_full_json(ctx, c, buf, sizeof(buf) - 1);
+        if (len > 2) {
             buf[len] = '\0';
             std::string j(buf);
             size_t pos = j.find("\"title\":\"");
@@ -214,7 +236,7 @@ static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long l
             }
         }
     }
-    return "Chat " + std::to_string(cid);
+    return "Чат " + std::to_string(cid);
 }
 
 // ── Построение ссылки на сообщение в чате ─────────────────────────────────────
@@ -477,11 +499,65 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         viss >> action >> target_str;
         for (auto& c : action) c = (char)std::tolower((unsigned char)c);
 
+        // Если действие не указано или запрошен список: показываем текущее содержимое списка
+        if (action.empty() || action == "list" || action == "ls" || action == "show") {
+            auto current_set = load_id_set(ctx, api, key.c_str());
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "📋", INFO_EMOJI_ID);
+            if (key == "ignore_chats") {
+                api->c_fmt(ctx, " Список игнорируемых чатов (ignore_chats):\n\n", KOTO_ENT_BOLD);
+                if (current_set.empty()) {
+                    api->c_text(ctx, "Список пуст.\n\n");
+                } else {
+                    int mark = api->c_mark(ctx);
+                    int idx = 1;
+                    for (auto cid : current_set) {
+                        std::string title = get_chat_title_str(ctx, api, cid);
+                        api->c_text(ctx, (std::to_string(idx++) + ". " + title + " (").c_str());
+                        api->c_fmt(ctx, std::to_string(cid).c_str(), KOTO_ENT_CODE);
+                        api->c_text(ctx, ")\n");
+                    }
+                    api->c_wrap(ctx, mark, KOTO_ENT_BLOCKQUOTE, 1);
+                    api->c_text(ctx, "\n\n");
+                }
+                api->c_fmt(ctx, "Команды управления:\n", KOTO_ENT_BOLD);
+                api->c_text(ctx, "• .stconfig ignore_chats add [ID | this]\n• .stconfig ignore_chats del [ID | this]\n• .stconfig ignore_chats clear");
+            } else {
+                api->c_fmt(ctx, " Список игнорируемых пользователей (ignore_users):\n\n", KOTO_ENT_BOLD);
+                if (current_set.empty()) {
+                    api->c_text(ctx, "Список пуст.\n\n");
+                } else {
+                    int mark = api->c_mark(ctx);
+                    int idx = 1;
+                    for (auto uid : current_set) {
+                        std::string uname = get_user_name_str(ctx, api, uid);
+                        api->c_text(ctx, (std::to_string(idx++) + ". " + uname + " (").c_str());
+                        api->c_fmt(ctx, std::to_string(uid).c_str(), KOTO_ENT_CODE);
+                        api->c_text(ctx, ")\n");
+                    }
+                    api->c_wrap(ctx, mark, KOTO_ENT_BLOCKQUOTE, 1);
+                    api->c_text(ctx, "\n\n");
+                }
+                api->c_fmt(ctx, "Команды управления:\n", KOTO_ENT_BOLD);
+                api->c_text(ctx, "• .stconfig ignore_users add [ID | reply]\n• .stconfig ignore_users del [ID | reply]\n• .stconfig ignore_users clear");
+            }
+            send_result(ctx, api);
+            return;
+        }
+
         if (action == "clear" || action == "cl") {
             save_id_set(ctx, api, key.c_str(), {});
             api->c_reset(ctx);
             api->c_emoji(ctx, "✅", SUCCESS_EMOJI_ID);
-            api->c_fmt(ctx, (" Список " + key + " очищен.").c_str(), KOTO_ENT_BOLD);
+            api->c_fmt(ctx, (" Список " + key + " успешно очищен.").c_str(), KOTO_ENT_BOLD);
+            send_result(ctx, api);
+            return;
+        }
+
+        if (action != "add" && action != "del") {
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
+            api->c_fmt(ctx, (" Неизвестное действие: \"" + action + "\". Используйте: add, del, clear или list.").c_str(), KOTO_ENT_BOLD);
             send_result(ctx, api);
             return;
         }
@@ -493,7 +569,7 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
             } else {
                 target_id = strtoll(target_str.c_str(), nullptr, 10);
             }
-        } else if (action == "add" || action == "del") {
+        } else {
             if (key == "ignore_chats") {
                 target_id = api->chat_id(ctx);
             } else {
@@ -504,7 +580,20 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         if (target_id == 0) {
             api->c_reset(ctx);
             api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
-            api->c_fmt(ctx, " Укажите корректный ID или ответьте на сообщение.", KOTO_ENT_BOLD);
+            if (key == "ignore_chats") {
+                api->c_fmt(ctx, " Укажите ID чата или используйте 'this': .stconfig ignore_chats <add/del> [ID | this]", KOTO_ENT_BOLD);
+            } else {
+                api->c_fmt(ctx, " Укажите ID пользователя или ответьте на его сообщение: .stconfig ignore_users <add/del> [ID | reply]", KOTO_ENT_BOLD);
+            }
+            send_result(ctx, api);
+            return;
+        }
+
+        long long me = api->get_me ? api->get_me(ctx) : 0;
+        if (key == "ignore_users" && action == "add" && me != 0 && (target_id == me || std::abs(target_id) == std::abs(me))) {
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
+            api->c_fmt(ctx, " Нельзя добавить самого себя в список игнорирования.", KOTO_ENT_BOLD);
             send_result(ctx, api);
             return;
         }
@@ -515,24 +604,58 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
             save_id_set(ctx, api, key.c_str(), current_set);
             api->c_reset(ctx);
             api->c_emoji(ctx, "✅", SUCCESS_EMOJI_ID);
-            api->c_fmt(ctx, (" ID " + std::to_string(target_id) + " добавлен в " + key + ".").c_str(), KOTO_ENT_BOLD);
+            if (key == "ignore_chats") {
+                std::string chat_name = get_chat_title_str(ctx, api, target_id);
+                api->c_text(ctx, " Чат ");
+                api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, " (");
+                api->c_fmt(ctx, std::to_string(target_id).c_str(), KOTO_ENT_CODE);
+                api->c_text(ctx, ") добавлен в ");
+                api->c_fmt(ctx, "ignore_chats", KOTO_ENT_CODE);
+                api->c_text(ctx, ".");
+            } else {
+                std::string user_name = get_user_name_str(ctx, api, target_id);
+                api->c_text(ctx, " Пользователь ");
+                std::string ulink = "tg://user?id=" + std::to_string(target_id);
+                api->c_url(ctx, user_name.c_str(), ulink.c_str());
+                api->c_text(ctx, " (");
+                api->c_fmt(ctx, std::to_string(target_id).c_str(), KOTO_ENT_CODE);
+                api->c_text(ctx, ") добавлен в ");
+                api->c_fmt(ctx, "ignore_users", KOTO_ENT_CODE);
+                api->c_text(ctx, ".");
+            }
             send_result(ctx, api);
             return;
         } else if (action == "del") {
             current_set.erase(target_id);
+            current_set.erase(-target_id);
+            current_set.erase(std::abs(target_id));
             save_id_set(ctx, api, key.c_str(), current_set);
             api->c_reset(ctx);
             api->c_emoji(ctx, "✅", SUCCESS_EMOJI_ID);
-            api->c_fmt(ctx, (" ID " + std::to_string(target_id) + " удален из " + key + ".").c_str(), KOTO_ENT_BOLD);
+            if (key == "ignore_chats") {
+                std::string chat_name = get_chat_title_str(ctx, api, target_id);
+                api->c_text(ctx, " Чат ");
+                api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, " (");
+                api->c_fmt(ctx, std::to_string(target_id).c_str(), KOTO_ENT_CODE);
+                api->c_text(ctx, ") удален из ");
+                api->c_fmt(ctx, "ignore_chats", KOTO_ENT_CODE);
+                api->c_text(ctx, ".");
+            } else {
+                std::string user_name = get_user_name_str(ctx, api, target_id);
+                api->c_text(ctx, " Пользователь ");
+                std::string ulink = "tg://user?id=" + std::to_string(target_id);
+                api->c_url(ctx, user_name.c_str(), ulink.c_str());
+                api->c_text(ctx, " (");
+                api->c_fmt(ctx, std::to_string(target_id).c_str(), KOTO_ENT_CODE);
+                api->c_text(ctx, ") удален из ");
+                api->c_fmt(ctx, "ignore_users", KOTO_ENT_CODE);
+                api->c_text(ctx, ".");
+            }
             send_result(ctx, api);
             return;
         }
-
-        api->c_reset(ctx);
-        api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
-        api->c_fmt(ctx, " Неизвестное действие. Используйте: add, del или clear.", KOTO_ENT_BOLD);
-        send_result(ctx, api);
-        return;
     }
 
     // set_log_group
@@ -876,7 +999,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.8.9",
+    "2.9.0",
     26,
     0,
     COMMANDS,
