@@ -606,11 +606,27 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long me = api->get_me ? api->get_me(ctx) : 0;
     if (sid == me) return 0;
 
-    // 1. Проверяем триггер упоминания
+    // 1. Проверяем триггер упоминания или закрепления
     bool is_mention_of_me = false;
+    bool is_pin_action = false;
+
+    // Нативные флаги хоста (v0.3.22 / ABI Section 31)
+    if (api->msg_is_pinned && api->msg_is_pinned(ctx)) {
+        is_pin_action = true;
+    }
+    if (api->msg_is_mentioned && api->msg_is_mentioned(ctx)) {
+        is_mention_of_me = true;
+    }
+
+    // Проверяем ответ на мое сообщение (reply)
+    if (!is_mention_of_me && api->reply_sender_id) {
+        if (api->reply_sender_id(ctx) == me) {
+            is_mention_of_me = true;
+        }
+    }
 
     // Проверяем entities (KOTO_ENT_URL tg://user?id=me или KOTO_ENT_MENTION)
-    if (api->msg_entity_count) {
+    if (!is_mention_of_me && api->msg_entity_count) {
         int cnt = api->msg_entity_count(ctx);
         for (int i = 0; i < cnt; ++i) {
             int etype = 0, eoff = 0, elen = 0;
@@ -642,12 +658,14 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    if (!is_mention_of_me) return 0;
+    if (!is_mention_of_me && !is_pin_action) return 0;
 
     // 2. Проверяем черные списки (ignore_users, ignore_chats)
-    auto ignore_users = load_id_set(ctx, api, "ignore_users");
-    if (ignore_users.find(sid) != ignore_users.end() ||
-        ignore_users.find(std::abs(sid)) != ignore_users.end()) return 0;
+    if (!is_pin_action) {
+        auto ignore_users = load_id_set(ctx, api, "ignore_users");
+        if (ignore_users.find(sid) != ignore_users.end() ||
+            ignore_users.find(std::abs(sid)) != ignore_users.end()) return 0;
+    }
 
     bool is_bot = false;
     if (api->user_full_json) {
@@ -694,7 +712,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     if (!cfg.silent) {
         api->c_reset(ctx);
         api->c_emoji(ctx, cfg.silent_emoji_fallback.c_str(), cfg.silent_emoji_id);
-        api->c_text(ctx, " Тег получен. Silent Tags активен...");
+        std::string action_str = is_pin_action ? "Закрепление получено." : "Тег получен.";
+        api->c_text(ctx, (" " + action_str + " Silent Tags активен...").c_str());
         api->c_send(ctx, cid, 0);
     }
 
@@ -707,11 +726,17 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
         api->c_reset(ctx);
         api->c_emoji(ctx, cfg.silent_emoji_fallback.c_str(), cfg.silent_emoji_id);
-        api->c_text(ctx, " Вас упомянули в ");
-        api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
-        api->c_text(ctx, " пользователем ");
-        std::string user_link = "tg://user?id=" + std::to_string(sid);
-        api->c_url(ctx, sender_name.c_str(), user_link.c_str());
+        if (is_pin_action) {
+            api->c_text(ctx, " Silent Tags: Закрепление в чате ");
+            api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
+            api->c_fmt(ctx, (" (" + std::to_string(cid) + ")").c_str(), KOTO_ENT_CODE);
+        } else {
+            api->c_text(ctx, " Вас упомянули в ");
+            api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
+            api->c_text(ctx, " пользователем ");
+            std::string user_link = "tg://user?id=" + std::to_string(sid);
+            api->c_url(ctx, sender_name.c_str(), user_link.c_str());
+        }
         api->c_text(ctx, "\n\n");
 
         const char* raw_txt = api->msg_text ? api->msg_text(ctx) : "";
@@ -851,7 +876,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.8.8",
+    "2.8.9",
     26,
     0,
     COMMANDS,
