@@ -12,9 +12,9 @@ static constexpr long long LINK_EMOJI_ID     = 5778586619380503542LL; // 🔗
 
 static void send_result(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) {
-        api->c_edit(ctx, 0);
+        api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
     } else {
-        api->c_reply(ctx, 0);
+        api->c_reply(ctx, KOTO_NO_LINK_PREVIEW);
     }
 }
 
@@ -102,7 +102,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "id",
     "Показывает ID, юзернейм и ссылку на пользователя (C++ ABI 3).",
-    "1.0.5",
+    "1.0.6",
     26,
     0,
     COMMANDS,

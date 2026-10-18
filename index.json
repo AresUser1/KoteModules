@@ -222,7 +222,7 @@
       "display_name": "User ID & Link",
       "author": "Kote",
       "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -237,8 +237,8 @@
           "usage": "(в ответ или без)"
         }
       ],
-      "size": 37512,
-      "sha256": "03d621b1d89796e2eb51fe1abd456bf84c5d80d48ded4d6ca169be1a74525cf4",
+      "size": 49912,
+      "sha256": "8aed6af9ea82576dfc639fe52eb93263894c9398392339e9f9af9ee95f2ab072",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/id.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
       "license": "MIT",
