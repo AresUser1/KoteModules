@@ -762,7 +762,7 @@
       "display_name": "Silent Tags",
       "author": "Kote",
       "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
-      "version": "2.9.0",
+      "version": "2.9.5",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -782,8 +782,8 @@
           "usage": ""
         }
       ],
-      "size": 126952,
-      "sha256": "4ea0c6c3c57482dcfd7dbb54c4839c2353df2d503943755f69b424a87c0d4eb7",
+      "size": 127736,
+      "sha256": "2190d1bed401e37f5d39e7edf10570f6fcb67793cad4556c7c31946e53bd87ef",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",

@@ -39,6 +39,7 @@ struct StagsConfig {
     bool enabled;
     bool silent;
     bool process_bots;
+    bool process_pm;
     bool ignore_blocked;
     long long log_group_id;
     long long silent_emoji_id;
@@ -50,6 +51,7 @@ static StagsConfig load_stags_config(koto_ctx* ctx, const koto_api* api) {
     c.enabled = false;
     c.silent = false;
     c.process_bots = true;
+    c.process_pm = false;
     c.ignore_blocked = false;
     c.log_group_id = 0;
     c.silent_emoji_id = SILENT_EMOJI_ID;
@@ -72,6 +74,12 @@ static StagsConfig load_stags_config(koto_ctx* ctx, const koto_api* api) {
         c.process_bots = (strcmp(buf, "0") != 0 && strcmp(buf, "False") != 0 && strcmp(buf, "false") != 0);
     } else if (api->db_get(ctx, "process_bots", buf, sizeof(buf) - 1) > 0) {
         c.process_bots = (strcmp(buf, "0") != 0 && strcmp(buf, "False") != 0);
+    }
+
+    if (api->cfg_get && api->cfg_get(ctx, "process_pm", buf, sizeof(buf) - 1) > 0) {
+        c.process_pm = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0 || strcmp(buf, "true") == 0);
+    } else if (api->db_get(ctx, "process_pm", buf, sizeof(buf) - 1) > 0) {
+        c.process_pm = (strcmp(buf, "1") == 0 || strcmp(buf, "True") == 0);
     }
 
     if (api->cfg_get && api->cfg_get(ctx, "ignore_blocked", buf, sizeof(buf) - 1) > 0) {
@@ -100,12 +108,14 @@ static void save_stags_config(koto_ctx* ctx, const koto_api* api, const StagsCon
         api->cfg_set(ctx, "enabled", c.enabled ? "1" : "0");
         api->cfg_set(ctx, "silent", c.silent ? "1" : "0");
         api->cfg_set(ctx, "process_bots", c.process_bots ? "1" : "0");
+        api->cfg_set(ctx, "process_pm", c.process_pm ? "1" : "0");
         api->cfg_set(ctx, "ignore_blocked", c.ignore_blocked ? "1" : "0");
         api->cfg_set(ctx, "log_group_id", std::to_string(c.log_group_id).c_str());
     }
     api->db_set(ctx, "enabled", c.enabled ? "1" : "0");
     api->db_set(ctx, "silent", c.silent ? "1" : "0");
     api->db_set(ctx, "process_bots", c.process_bots ? "1" : "0");
+    api->db_set(ctx, "process_pm", c.process_pm ? "1" : "0");
     api->db_set(ctx, "ignore_blocked", c.ignore_blocked ? "1" : "0");
     api->db_set_int(ctx, "log_group_id", c.log_group_id);
     api->db_set_int(ctx, "silent_emoji_id", c.silent_emoji_id);
@@ -402,6 +412,7 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         api->c_fmt(ctx, "Основные настройки (on/off):\n", KOTO_ENT_BOLD);
         api->c_text(ctx, "• .stconfig silent <on/off> — Тихий режим (без временных сообщений)\n");
         api->c_text(ctx, "• .stconfig process_bots <on/off> — Читать теги ботов\n");
+        api->c_text(ctx, "• .stconfig process_pm <on/off> — Читать теги в ЛС (по умолчанию: выкл)\n");
         api->c_text(ctx, "• .stconfig ignore_blocked <on/off> — Игнор заблокированных\n\n");
 
         api->c_fmt(ctx, "Списки игнорирования:\n", KOTO_ENT_BOLD);
@@ -430,6 +441,7 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         api->c_fmt(ctx, "Основные настройки:\n", KOTO_ENT_BOLD);
         api->c_text(ctx, ("• Режим Silent: " + std::string(cfg.silent ? "✅ Включено" : "❌ Выключено") + "\n").c_str());
         api->c_text(ctx, ("• Читать Теги Ботов: " + std::string(cfg.process_bots ? "✅ Включено" : "❌ Выключено") + "\n").c_str());
+        api->c_text(ctx, ("• Читать Теги в ЛС: " + std::string(cfg.process_pm ? "✅ Включено" : "❌ Выключено") + "\n").c_str());
         api->c_text(ctx, ("• Игнор Заблокированных: " + std::string(cfg.ignore_blocked ? "✅ Включено" : "❌ Выключено") + "\n").c_str());
         api->c_wrap(ctx, mark1, KOTO_ENT_BLOCKQUOTE, 1);
 
@@ -469,9 +481,10 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
 
     for (auto& c : key) c = (char)std::tolower((unsigned char)c);
     if (key == "ignore_bots") key = "process_bots";
+    if (key == "pm") key = "process_pm";
 
     // Булевы параметры
-    if (key == "silent" || key == "process_bots" || key == "ignore_blocked") {
+    if (key == "silent" || key == "process_bots" || key == "process_pm" || key == "ignore_blocked") {
         if (val.empty()) {
             api->c_reset(ctx);
             api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
@@ -482,6 +495,7 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         bool b_val = (val == "on" || val == "true" || val == "1");
         if (key == "silent") cfg.silent = b_val;
         else if (key == "process_bots") cfg.process_bots = b_val;
+        else if (key == "process_pm") cfg.process_pm = b_val;
         else if (key == "ignore_blocked") cfg.ignore_blocked = b_val;
         save_stags_config(ctx, api, cfg);
 
@@ -729,6 +743,58 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long me = api->get_me ? api->get_me(ctx) : 0;
     if (sid == me) return 0;
 
+    // Определение: является ли текущий аккаунт твинком
+    bool is_twin = false;
+    std::string twin_name;
+    if (api->get_twins_json) {
+        char buf[16384];
+        int len = api->get_twins_json(ctx, buf, sizeof(buf) - 1);
+        if (len > 0) {
+            buf[len] = '\0';
+            std::string j(buf);
+            std::string uid_needle = "\"uid\":" + std::to_string(me);
+            size_t pos = j.find(uid_needle);
+            if (pos != std::string::npos) {
+                size_t obj_start = j.rfind('{', pos);
+                size_t obj_end = j.find('}', pos);
+                if (obj_start != std::string::npos && obj_end != std::string::npos) {
+                    std::string obj = j.substr(obj_start, obj_end - obj_start + 1);
+                    if (obj.find("\"is_main\":true") == std::string::npos) {
+                        is_twin = true;
+                        size_t name_pos = obj.find("\"name\":\"");
+                        if (name_pos != std::string::npos) {
+                            size_t n_start = name_pos + 8;
+                            size_t n_end = obj.find('"', n_start);
+                            if (n_end != std::string::npos) twin_name = obj.substr(n_start, n_end - n_start);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    std::string tw_mode = "off";
+    if (is_twin) {
+        auto modes = load_twin_modes(ctx, api);
+        auto it = modes.find(std::to_string(me));
+        if (it != modes.end()) tw_mode = it->second;
+        // Если твинк выключен в Silent Tags — не обрабатываем:
+        if (tw_mode == "off") return 0;
+    }
+
+    // Личные сообщения (ЛС / PM): cid > 0
+    bool is_pm = (cid > 0);
+    if (is_pm) {
+        // Твинк в режиме "all" читает ВСЕ чаты (включая ЛС), независимо от настроек основы.
+        // Для основы (или твинка в режиме "semi") проверяем тумблер cfg.process_pm:
+        if (!is_twin && !cfg.process_pm) {
+            return 0;
+        }
+        if (is_twin && tw_mode == "semi" && !cfg.process_pm) {
+            return 0;
+        }
+    }
+
     // 1. Проверяем триггер упоминания или закрепления
     bool is_mention_of_me = false;
     bool is_pin_action = false;
@@ -816,9 +882,14 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
                          ignore_chats.find(norm_cid) != ignore_chats.end() ||
                          ignore_chats.find(-1000000000000LL - norm_cid) != ignore_chats.end());
     if (chat_ignored) {
-        // В игнорируемом чате читаем тег ТОЛЬКО если это бот и включено process_bots
-        if (!(is_bot && cfg.process_bots)) {
-            return 0;
+        // Твинк в режиме "all" игнорирует список ignore_chats и читает ВСЕ чаты!
+        if (is_twin && tw_mode == "all") {
+            // Разрешено!
+        } else {
+            // В игнорируемом чате читаем тег ТОЛЬКО если это бот и включено process_bots
+            if (!(is_bot && cfg.process_bots)) {
+                return 0;
+            }
         }
     }
 
@@ -853,12 +924,22 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
             api->c_text(ctx, " Silent Tags: Закрепление в чате ");
             api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
             api->c_fmt(ctx, (" (" + std::to_string(cid) + ")").c_str(), KOTO_ENT_CODE);
+            if (is_twin) {
+                api->c_text(ctx, " [");
+                api->c_text(ctx, ("👤 Твинк: " + (twin_name.empty() ? std::to_string(me) : twin_name)).c_str());
+                api->c_text(ctx, "]");
+            }
         } else {
             api->c_text(ctx, " Вас упомянули в ");
             api->c_fmt(ctx, chat_name.c_str(), KOTO_ENT_BOLD);
             api->c_text(ctx, " пользователем ");
             std::string user_link = "tg://user?id=" + std::to_string(sid);
             api->c_url(ctx, sender_name.c_str(), user_link.c_str());
+            if (is_twin) {
+                api->c_text(ctx, " [");
+                api->c_text(ctx, ("👤 Твинк: " + (twin_name.empty() ? std::to_string(me) : twin_name)).c_str());
+                api->c_text(ctx, "]");
+            }
         }
         api->c_text(ctx, "\n\n");
 
@@ -980,6 +1061,13 @@ static const koto_setting_field SETTINGS[] = {
         nullptr
     },
     {
+        "process_pm",
+        "Обрабатывать теги в личных сообщениях (ЛС)",
+        KOTO_FIELD_BOOL,
+        "0",
+        nullptr
+    },
+    {
         "ignore_blocked",
         "Игнорировать заблокированных пользователей",
         KOTO_FIELD_BOOL,
@@ -999,7 +1087,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.9.0",
+    "2.9.5",
     26,
     0,
     COMMANDS,
