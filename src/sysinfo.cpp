@@ -569,7 +569,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "sysinfo",
     "Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и Neofetch.",
-    "1.0.0",
+    "1.0.1",
     26,
     0,
     COMMANDS,

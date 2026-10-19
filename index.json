@@ -503,7 +503,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 343408,
-      "sha256": "0632ea984a35593a4b3a698db788edc79f4f51ac4152f3548ae022c11c4ecd75"
+      "sha256": "ec1a6995543149e2737420530a6e37e08af8f51329677765f391d9c9e67313ca"
     },
     {
       "id": "id",
@@ -1165,7 +1165,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 121912,
-      "sha256": "024cac2f9a93ffd5b63671d4385a73ef003c32a62d25f99e68ab0a573e01003e"
+      "sha256": "cb9618427d7831d466ee9a991a95bf1c7d510c47838abd2dbf309eba939d2e4d"
     },
     {
       "id": "tagger",
