@@ -455,7 +455,7 @@
       "display_name": "Депозит / Ставки (Dep)",
       "author": "Kote",
       "description": "Эмуляция ставок и азартного броска в чате со слотами (🎰).",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -474,8 +474,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dep.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 454136,
-      "sha256": "8d8425a5032a78993b3dc2059d43b45d1ceba3cc8c72075b39108b781c078ab9"
+      "size": 48680,
+      "sha256": "0decbe5ac25d4dc6dbce41b6a793f839923ae6bd4d7ff61de8931969d271fb2e"
     },
     {
       "id": "dox",
@@ -483,7 +483,7 @@
       "display_name": "Поиск данных (Dox)",
       "author": "Kote",
       "description": "Интеграция с поисковыми Dox-ботами: автовыбор направления Telegram, сбор телефонов, истории имен и связей.",
-      "version": "1.0.7",
+      "version": "1.0.8",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -502,8 +502,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 351576,
-      "sha256": "4db1b078c485025f60339d0962fc6a4c580ed74be48e095858c0a4501fba9271"
+      "size": 343408,
+      "sha256": "0632ea984a35593a4b3a698db788edc79f4f51ac4152f3548ae022c11c4ecd75"
     },
     {
       "id": "id",
@@ -1140,7 +1140,7 @@
       "display_name": "Мониторинг сервера (SysInfo)",
       "author": "Kote",
       "description": "Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и красивый Neofetch.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1164,8 +1164,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 116912,
-      "sha256": "64f29a24888f130306a01ccafc3deb863db66ad51545a6253c18b4a6972437c1"
+      "size": 121912,
+      "sha256": "024cac2f9a93ffd5b63671d4385a73ef003c32a62d25f99e68ab0a573e01003e"
     },
     {
       "id": "tagger",

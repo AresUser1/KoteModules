@@ -16,6 +16,7 @@ namespace {
 static constexpr long long EMO_PROCESS = 5386367538735104399LL; // ⌛️
 static constexpr long long EMO_SUCCESS = 5206607081334906820LL; // ✔️
 static constexpr long long EMO_FAIL    = 5210952531676504517LL; // ❌
+static constexpr long long DEFAULT_DOX_BOT_ID = 7940282943LL; // @Pribavkakzpbot
 
 static void send_result(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) {
@@ -25,7 +26,7 @@ static void send_result(koto_ctx* ctx, const koto_api* api) {
     }
 }
 
-// Извлечение номера телефона из текста (только по явным меткам строки)
+// Извлечение номера телефона из текста (по меткам строки или по формату)
 static std::string extract_phone(const std::string& text) {
     std::istringstream iss(text);
     std::string line;
@@ -47,6 +48,32 @@ static std::string extract_phone(const std::string& text) {
             if (digits.size() >= 10 && digits.size() <= 16) {
                 return digits;
             }
+        }
+    }
+
+    // Fallback: ищем последовательность 10-15 цифр рядом со словами телефон/номер
+    size_t pos = 0;
+    while (pos < text.size()) {
+        if (text[pos] == '+' || isdigit(static_cast<unsigned char>(text[pos]))) {
+            size_t start = pos;
+            std::string cand;
+            if (text[pos] == '+') { cand += '+'; pos++; }
+            while (pos < text.size() && (isdigit(static_cast<unsigned char>(text[pos])) || text[pos] == ' ' || text[pos] == '-' || text[pos] == '(' || text[pos] == ')')) {
+                if (isdigit(static_cast<unsigned char>(text[pos]))) cand += text[pos];
+                pos++;
+            }
+            if (cand.size() >= 10 && cand.size() <= 16) {
+                size_t ctx_start = (start > 40) ? start - 40 : 0;
+                std::string ctx_snippet = text.substr(ctx_start, pos - ctx_start + 20);
+                std::string slow;
+                for (char c : ctx_snippet) slow += static_cast<char>(tolower(static_cast<unsigned char>(c)));
+                if (slow.find("телефон") != std::string::npos || slow.find("phone") != std::string::npos ||
+                    slow.find("📞") != std::string::npos || slow.find("номер") != std::string::npos) {
+                    return cand;
+                }
+            }
+        } else {
+            pos++;
         }
     }
     return "";
@@ -217,8 +244,24 @@ static void cmd_dox(koto_ctx* ctx, const koto_api* api) {
             koto_utils::db_set_int64(api, ctx, "dox_bot_id", bot_uid);
         }
     }
+    if (bot_uid == 0) {
+        if (dox_bot == "@Pribavkakzpbot" || dox_bot == "Pribavkakzpbot" || dox_bot.empty()) {
+            bot_uid = DEFAULT_DOX_BOT_ID;
+            koto_utils::db_set_int64(api, ctx, "dox_bot_id", bot_uid);
+        }
+    }
+
+    if (bot_uid == 0) {
+        api->c_reset(ctx);
+        api->c_emoji(ctx, "❌", EMO_FAIL);
+        api->c_fmt(ctx, " Ошибка: Dox-бот не настроен или недоступен.", KOTO_ENT_BOLD);
+        api->c_text(ctx, "\nИспользуйте .setdoxbot для привязки бота.");
+        send_result(ctx, api);
+        return;
+    }
 
     long long cur_chat = api->chat_id(ctx);
+    if (cur_chat == 0 && api->get_me) cur_chat = api->get_me(ctx);
     long long cur_msg = api->msg_id ? api->msg_id(ctx) : 0;
 
     // Сохраняем состояние ожидания
@@ -236,11 +279,10 @@ static void cmd_dox(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, "\nЗапрос направлен в базу данных...");
     send_result(ctx, api);
 
-    // 2. Отправляем ID боту в диалог с ботом
-    long long send_target = (bot_uid != 0) ? bot_uid : cur_chat;
+    // 2. Отправляем ID ТОЛЬКО боту в диалог с ботом
     api->c_reset(ctx);
     api->c_text(ctx, std::to_string(target_id).c_str());
-    api->c_send(ctx, send_target, 0);
+    api->c_send(ctx, bot_uid, 0);
 }
 
 // ── Watcher: автоматический выбор кнопки Telegram и получение досье ───────────
@@ -252,7 +294,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     if (state == 0) return 0;
 
     long long start_t = koto_utils::db_get_int64(api, ctx, "dox_start_t", 0);
-    if (time(nullptr) - start_t > 60) {
+    if (time(nullptr) - start_t > 90) {
         koto_utils::db_set_int64(api, ctx, "dox_state", 0);
         return 0;
     }
@@ -260,6 +302,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long sender = api->sender_id(ctx);
     long long chat_id = api->chat_id(ctx);
     long long bot_id = koto_utils::db_get_int64(api, ctx, "dox_bot_id", 0);
+    if (bot_id == 0) bot_id = DEFAULT_DOX_BOT_ID;
 
     const char* raw_txt = api->msg_text(ctx);
     std::string text = raw_txt ? raw_txt : "";

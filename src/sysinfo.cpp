@@ -15,6 +15,9 @@
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
+#if defined(__ANDROID__)
+#include <sys/system_properties.h>
+#endif
 
 namespace {
 
@@ -32,6 +35,7 @@ struct SysMetrics {
 
     std::string cpu_model;
     int cpu_cores = 1;
+    bool has_loadavg = false;
     double load_1m = 0.0;
     double load_5m = 0.0;
     double load_15m = 0.0;
@@ -59,6 +63,16 @@ struct SysMetrics {
     double net_rx_mb = 0.0;
     double net_tx_mb = 0.0;
 };
+
+static std::string get_prop(const char* name) {
+#if defined(__ANDROID__)
+    char val[PROP_VALUE_MAX] = {0};
+    if (__system_property_get(name, val) > 0) {
+        return val;
+    }
+#endif
+    return "";
+}
 
 std::string make_bar(double percent, int width = 10) {
     if (percent < 0.0) percent = 0.0;
@@ -101,32 +115,34 @@ SysMetrics collect_metrics() {
         m.arch = "aarch64";
     }
 
-    // 2. OS Name (из /etc/os-release или build.prop)
-    std::ifstream os_file("/etc/os-release");
-    if (os_file.is_open()) {
-        std::string line;
-        while (std::getline(os_file, line)) {
-            if (line.rfind("PRETTY_NAME=", 0) == 0) {
-                std::string val = line.substr(12);
-                if (val.size() >= 2 && val.front() == '"' && val.back() == '"') {
-                    val = val.substr(1, val.size() - 2);
-                }
-                m.os_name = val;
-                break;
-            }
-        }
+    // 2. OS Name (из Android properties или /etc/os-release)
+    std::string android_rel = get_prop("ro.build.version.release");
+    if (!android_rel.empty()) {
+        std::string market = get_prop("ro.product.marketname");
+        if (market.empty()) market = get_prop("ro.product.odm.marketname");
+        std::string brand = get_prop("ro.product.brand");
+        std::string model = get_prop("ro.product.model");
+        std::string dev;
+        if (!market.empty()) dev = market;
+        else if (!brand.empty() && !model.empty()) dev = brand + " " + model;
+        else if (!model.empty()) dev = model;
+
+        m.os_name = "Android " + android_rel + (dev.empty() ? "" : " (" + dev + ")");
     }
+
     if (m.os_name.empty()) {
-        // Попробуем определить Android
-        std::ifstream prop_file("/system/build.prop");
-        if (prop_file.is_open()) {
-            std::string line, rel, model;
-            while (std::getline(prop_file, line)) {
-                if (line.rfind("ro.build.version.release=", 0) == 0) rel = line.substr(25);
-                else if (line.rfind("ro.product.model=", 0) == 0) model = line.substr(17);
-            }
-            if (!rel.empty() || !model.empty()) {
-                m.os_name = "Android " + (rel.empty() ? "" : rel) + (model.empty() ? "" : " (" + model + ")");
+        std::ifstream os_file("/etc/os-release");
+        if (os_file.is_open()) {
+            std::string line;
+            while (std::getline(os_file, line)) {
+                if (line.rfind("PRETTY_NAME=", 0) == 0) {
+                    std::string val = line.substr(12);
+                    if (val.size() >= 2 && val.front() == '"' && val.back() == '"') {
+                        val = val.substr(1, val.size() - 2);
+                    }
+                    m.os_name = val;
+                    break;
+                }
             }
         }
     }
@@ -147,31 +163,74 @@ SysMetrics collect_metrics() {
     m.cpu_cores = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
     if (m.cpu_cores < 1) m.cpu_cores = 1;
 
-    std::ifstream cpu_file("/proc/cpuinfo");
-    if (cpu_file.is_open()) {
-        std::string line;
-        while (std::getline(cpu_file, line)) {
-            if (line.rfind("model name", 0) == 0 || line.rfind("Hardware", 0) == 0) {
-                auto colon = line.find(':');
-                if (colon != std::string::npos && colon + 2 < line.size()) {
-                    m.cpu_model = koto_utils::trim(line.substr(colon + 1));
-                    break;
+    // Проверяем SoC свойства Android
+    std::string soc_manuf = get_prop("ro.soc.manufacturer");
+    std::string soc_model = get_prop("ro.soc.model");
+    if (soc_model.empty()) soc_model = get_prop("ro.board.platform");
+    if (soc_model.empty()) soc_model = get_prop("ro.hardware");
+    if (soc_model.empty()) soc_model = get_prop("ro.chipname");
+
+    if (!soc_manuf.empty() && !soc_model.empty()) {
+        m.cpu_model = soc_manuf + " " + soc_model;
+    } else if (!soc_model.empty()) {
+        m.cpu_model = soc_model;
+    }
+
+    // Проверяем /proc/cpuinfo
+    if (m.cpu_model.empty()) {
+        std::ifstream cpu_file("/proc/cpuinfo");
+        if (cpu_file.is_open()) {
+            std::string line;
+            while (std::getline(cpu_file, line)) {
+                if (line.rfind("model name", 0) == 0 || line.rfind("Hardware", 0) == 0) {
+                    auto colon = line.find(':');
+                    if (colon != std::string::npos && colon + 2 < line.size()) {
+                        m.cpu_model = koto_utils::trim(line.substr(colon + 1));
+                        break;
+                    }
                 }
             }
         }
     }
-    if (m.cpu_model.empty()) m.cpu_model = "ARM / x86_64 Processor";
 
+    // Частота CPU (sysfs)
+    long long max_khz = 0;
+    for (int i = 0; i < m.cpu_cores; ++i) {
+        std::string p = "/sys/devices/system/cpu/cpu" + std::to_string(i) + "/cpufreq/cpuinfo_max_freq";
+        std::ifstream ff(p);
+        long long k = 0;
+        if (ff >> k && k > max_khz) max_khz = k;
+    }
+    if (max_khz == 0) {
+        std::ifstream ff("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq");
+        ff >> max_khz;
+    }
+    if (max_khz > 0) {
+        double ghz = static_cast<double>(max_khz) / 1000000.0;
+        std::ostringstream fss;
+        fss << std::fixed << std::setprecision(2) << ghz << " GHz";
+        if (!m.cpu_model.empty()) m.cpu_model += " @ " + fss.str();
+        else m.cpu_model = fss.str();
+    }
+
+    if (m.cpu_model.empty()) {
+        m.cpu_model = m.arch + " Processor (" + std::to_string(m.cpu_cores) + " Cores)";
+    }
+
+    // Чтение LoadAvg
     std::ifstream la_file("/proc/loadavg");
     if (la_file.is_open()) {
         double l1 = 0.0, l5 = 0.0, l15 = 0.0;
         if (la_file >> l1 >> l5 >> l15) {
-            m.load_1m = l1;
-            m.load_5m = l5;
-            m.load_15m = l15;
-            m.cpu_percent = (m.load_1m / static_cast<double>(m.cpu_cores)) * 100.0;
-            if (m.cpu_percent > 100.0) m.cpu_percent = 100.0;
-            if (m.cpu_percent < 0.0) m.cpu_percent = 0.0;
+            if (l1 > 0.001 || l5 > 0.001 || l15 > 0.001) {
+                m.has_loadavg = true;
+                m.load_1m = l1;
+                m.load_5m = l5;
+                m.load_15m = l15;
+                m.cpu_percent = (m.load_1m / static_cast<double>(m.cpu_cores)) * 100.0;
+                if (m.cpu_percent > 100.0) m.cpu_percent = 100.0;
+                if (m.cpu_percent < 0.0) m.cpu_percent = 0.0;
+            }
         }
     }
 
@@ -297,15 +356,22 @@ void render_main_panel(koto_ctx* ctx, const koto_api* api, const SysMetrics& m) 
     api->c_text(ctx, " • Ядер: ");
     api->c_fmt(ctx, (std::to_string(m.cpu_cores) + "\n").c_str(), KOTO_ENT_CODE);
 
-    std::ostringstream cpu_ss;
-    cpu_ss << " • Загрузка: " << make_bar(m.cpu_percent, 10) << " "
-           << std::fixed << std::setprecision(1) << m.cpu_percent << "%\n";
-    api->c_text(ctx, cpu_ss.str().c_str());
+    if (m.has_loadavg) {
+        std::ostringstream cpu_ss;
+        cpu_ss << " • Загрузка: " << make_bar(m.cpu_percent, 10) << " "
+               << std::fixed << std::setprecision(1) << m.cpu_percent << "%\n";
+        api->c_text(ctx, cpu_ss.str().c_str());
 
-    std::ostringstream la_ss;
-    la_ss << " • Load Avg: " << std::fixed << std::setprecision(2)
-          << m.load_1m << ", " << m.load_5m << ", " << m.load_15m << "\n\n";
-    api->c_fmt(ctx, la_ss.str().c_str(), KOTO_ENT_CODE);
+        std::ostringstream la_ss;
+        la_ss << " • Load Avg: " << std::fixed << std::setprecision(2)
+              << m.load_1m << ", " << m.load_5m << ", " << m.load_15m << "\n\n";
+        api->c_fmt(ctx, la_ss.str().c_str(), KOTO_ENT_CODE);
+    } else {
+        std::string cpu_status = " • Статус: Онлайн (" + std::to_string(m.cpu_cores) + " активных ядер)\n";
+        api->c_text(ctx, cpu_status.c_str());
+        api->c_text(ctx, " • Режим: ");
+        api->c_fmt(ctx, "SELinux Protected (App Sandbox)\n\n", KOTO_ENT_CODE);
+    }
 
     // ── Память ──
     api->c_emoji(ctx, "📊", ICON_CHART);
