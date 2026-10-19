@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.3.9",
-  "updated": "2026-10-15",
+  "version": "1.4.0",
+  "updated": "2026-10-19",
   "modules": [
     {
       "id": "administration",
@@ -105,6 +105,140 @@
       "min_host_version": 26
     },
     {
+      "id": "aniliberty",
+      "name": "aniliberty",
+      "display_name": "AniLiberty (Аниме)",
+      "author": "Kote",
+      "description": "AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах.",
+      "version": "1.0.7",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "aniliberty",
+          "doc": "AniLiberty: случайное аниме или поиск по названию.",
+          "usage": "[название]"
+        },
+        {
+          "name": "arandom",
+          "doc": "Случайное аниме из базы AniLiberty.",
+          "usage": ""
+        },
+        {
+          "name": "anilib_search",
+          "doc": "Поиск аниме по названию в базе AniLiberty.",
+          "usage": "<название>"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/aniliberty.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 1589096,
+      "sha256": "ea6f5bd5b1615c3a97088b4a91d0d2a23559c3ed4df13168344750b67ad076ed"
+    },
+    {
+      "id": "auto_manager",
+      "name": "auto_manager",
+      "display_name": "Менеджер автоматизации (AutoManager)",
+      "author": "Kote",
+      "description": "Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и управление твинками.",
+      "version": "1.1.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "autread",
+          "doc": "Управление авточтением текущего или указанного чата.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "autreadlist",
+          "doc": "Список чатов с включенным авточтением.",
+          "usage": ""
+        },
+        {
+          "name": "autreadnow",
+          "doc": "Прочитать текущий чат и очистить непрочитанные упоминания прямо сейчас.",
+          "usage": ""
+        },
+        {
+          "name": "autoapprove",
+          "doc": "Управление автоодобрением заявок на вступление.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "autoapprovelist",
+          "doc": "Список чатов с автоодобрением заявок.",
+          "usage": ""
+        },
+        {
+          "name": "amtwins",
+          "doc": "Инлайн-панель управления авточтением твинков.",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/auto_manager.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 80712,
+      "sha256": "25dfc96c0e611eeb14275e32ba91de02b544599a785ccb601dc8fec91a00a597"
+    },
+    {
+      "id": "autolast",
+      "name": "autolast",
+      "display_name": "Авто-ласт (AutoLast)",
+      "author": "Kote",
+      "description": "Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом.",
+      "version": "1.7.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "addlastchat",
+          "doc": "Добавить чат в белый список autolast.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "rmlastchat",
+          "doc": "Удалить чат из белого списка autolast.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "addlastuser",
+          "doc": "Добавить юзера в белый список autolast.",
+          "usage": "[@user/id]"
+        },
+        {
+          "name": "rmlastuser",
+          "doc": "Удалить юзера из белого списка autolast.",
+          "usage": "[@user/id]"
+        },
+        {
+          "name": "lastadmin",
+          "doc": "Переключить режим ответа только админам.",
+          "usage": ""
+        },
+        {
+          "name": "lasthard",
+          "doc": "Переключить режим хардмода (отвечать на всё подряд).",
+          "usage": ""
+        },
+        {
+          "name": "listlast",
+          "doc": "Показать конфигурацию и списки autolast.",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/autolast.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autolast.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 71208,
+      "sha256": "b5e5f79c45f129a7b94801ce41c81ba4207dde758e5576bd4b745fe69affb6d8"
+    },
+    {
       "id": "autoresponder",
       "name": "autoresponder",
       "display_name": "Автоответчик (AutoResponder)",
@@ -154,6 +288,105 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
       "license": "MIT",
       "min_host_version": 27
+    },
+    {
+      "id": "banall",
+      "name": "banall",
+      "display_name": "Массовая очистка (BanAll)",
+      "author": "Kote",
+      "description": "Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "banall",
+          "doc": "Забанить всех обычных участников чата.",
+          "usage": ""
+        },
+        {
+          "name": "kickall",
+          "doc": "Кикнуть всех обычных участников чата.",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/banall.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 61376,
+      "sha256": "41a69611600eb7c887778e05127591e235f8af5b1359e514f75e21a4fe2e3ce0"
+    },
+    {
+      "id": "calculator",
+      "name": "calculator",
+      "display_name": "Калькулятор (Calc)",
+      "author": "Kote",
+      "description": "Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями.",
+      "version": "1.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "calc",
+          "doc": "Вычислить математическое выражение.",
+          "usage": "<выражение>"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/calculator.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/calculator.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 68088,
+      "sha256": "5f0b898b48914dc28d44bd289db1fb65425fe3dc18565df151e5cc5a4e85b843"
+    },
+    {
+      "id": "chat",
+      "name": "chat",
+      "display_name": "Управление чатом (Chat)",
+      "author": "Kote",
+      "description": "Управление чатами, списки участников, администраторов и ботов, получение ID.",
+      "version": "1.0.4",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "userid",
+          "doc": "Информация и ID пользователя.",
+          "usage": "[@user/ID/ответ]"
+        },
+        {
+          "name": "chatid",
+          "doc": "Показывает название и ID текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "kickme",
+          "doc": "Выйти из текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "users",
+          "doc": "Список участников текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "admins",
+          "doc": "Список администраторов текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "bots",
+          "doc": "Список ботов в текущем чате.",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/chat.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 243440,
+      "sha256": "ebb5e71ccf37696e77f1ca411bc732a458228feb3223b8cfe3ddbbba5b5dafc1"
     },
     {
       "id": "checkers",
@@ -217,6 +450,62 @@
       "min_host_version": 1
     },
     {
+      "id": "dep",
+      "name": "dep",
+      "display_name": "Депозит / Ставки (Dep)",
+      "author": "Kote",
+      "description": "Эмуляция ставок и азартного броска в чате со слотами (🎰).",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "депаю",
+          "doc": "Сделать ставку на всё что угодно (слот 🎰).",
+          "usage": "[сумма/текст]"
+        },
+        {
+          "name": "dep",
+          "doc": "Сделать ставку (псевдоним депаю).",
+          "usage": "[сумма/текст]"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/dep.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dep.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 454136,
+      "sha256": "8d8425a5032a78993b3dc2059d43b45d1ceba3cc8c72075b39108b781c078ab9"
+    },
+    {
+      "id": "dox",
+      "name": "dox",
+      "display_name": "Поиск данных (Dox)",
+      "author": "Kote",
+      "description": "Интеграция с поисковыми Dox-ботами: автовыбор направления Telegram, сбор телефонов, истории имен и связей.",
+      "version": "1.0.7",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "dox",
+          "doc": "Ищет информацию о пользователе через Dox-бота с автовыбором Telegram.",
+          "usage": "[@user/ID/номер]"
+        },
+        {
+          "name": "setdoxbot",
+          "doc": "Устанавливает персонального Dox-бота или текущий диалог.",
+          "usage": "[@bot]"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/dox.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 351576,
+      "sha256": "4db1b078c485025f60339d0962fc6a4c580ed74be48e095858c0a4501fba9271"
+    },
+    {
       "id": "id",
       "name": "id",
       "display_name": "User ID & Link",
@@ -266,6 +555,34 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
       "license": "MIT",
       "min_host_version": 17
+    },
+    {
+      "id": "kotserv",
+      "name": "kotserv",
+      "display_name": "Сервер Kote (KotServ)",
+      "author": "Kote",
+      "description": "Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации.",
+      "version": "2.0.3",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "serv",
+          "doc": "Статус и подключение к серверу Kote.",
+          "usage": ""
+        },
+        {
+          "name": "kscfg",
+          "doc": "Настройка параметров отображения модуля kotserv.",
+          "usage": "[ключ] [значение]"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/kotserv.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kotserv.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 111920,
+      "sha256": "3a897b32acf3e5b995a93d1034f0201d2dfd01448dcb7b9c22d4131aaec83b90"
     },
     {
       "id": "mafia_multitool",
@@ -399,6 +716,34 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
       "min_host_version": 28
+    },
+    {
+      "id": "mafia_triggers",
+      "name": "mafia_triggers",
+      "display_name": "Триггеры Мафии (MafiaTriggers)",
+      "author": "Kote",
+      "description": "Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков, выходящих или афкашащих.",
+      "version": "2.1.3",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "wtr",
+          "doc": "Вкл/Выкл Warn-триггер для Мафии (варнит вышедших/afk).",
+          "usage": ""
+        },
+        {
+          "name": "mtr",
+          "doc": "Вкл/Выкл Mute-триггер для Мафии (мутит вышедших/afk).",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_triggers.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_triggers.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 64104,
+      "sha256": "fd928c63a2c0b1294225026b7e888fe7377ca13ef64fd9b4f0e04b086dc6fbc5"
     },
     {
       "id": "mass_notifier",
@@ -790,6 +1135,39 @@
       "min_host_version": 26
     },
     {
+      "id": "sysinfo",
+      "name": "sysinfo",
+      "display_name": "Мониторинг сервера (SysInfo)",
+      "author": "Kote",
+      "description": "Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и красивый Neofetch.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "sys",
+          "doc": "Показывает точные метрики системы, нагрузку CPU, RAM, диска и процесса.",
+          "usage": ""
+        },
+        {
+          "name": "sysinfo",
+          "doc": "Полная системная панель мониторинга сервера и устройства.",
+          "usage": ""
+        },
+        {
+          "name": "neofetch",
+          "doc": "Красивый ASCII Neofetch с логотипом Kotogram и характеристиками системы.",
+          "usage": ""
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 116912,
+      "sha256": "64f29a24888f130306a01ccafc3deb863db66ad51545a6253c18b4a6972437c1"
+    },
+    {
       "id": "tagger",
       "name": "tagger",
       "display_name": "Tagger",
@@ -899,6 +1277,34 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
       "min_host_version": 24
+    },
+    {
+      "id": "weather",
+      "name": "weather",
+      "display_name": "Погода (Weather)",
+      "author": "Kote",
+      "description": "Текущая погода и подробный прогноз через сервис wttr.in с эмодзи и параметрами.",
+      "version": "1.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "weather",
+          "doc": "Показывает текущую погоду и прогноз в указанном городе.",
+          "usage": "[город]"
+        },
+        {
+          "name": "w",
+          "doc": "Погода (псевдоним weather).",
+          "usage": "[город]"
+        }
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/weather.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 255424,
+      "sha256": "d4ac9f740be17bf870c883c40277187bd0b1662b0118e059826e843f3917c49b"
     }
   ]
 }
