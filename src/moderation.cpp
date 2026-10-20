@@ -278,40 +278,9 @@ static void save_global_sets(koto_ctx* ctx, const koto_api* api,
 
 // ── Проверка доступа и типа чата ──────────────────────────────────────────────
 static bool is_group_chat(koto_ctx* ctx, const koto_api* api, long long cid) {
-    if (cid < 0) return true; // Отрицательные ID (-100... или -...) всегда группы/супергруппы/каналы
-    if (cid == 0) return false;
-
-    long long me = api->get_me ? api->get_me(ctx) : 0;
-    if (me != 0 && cid == me) {
-        return false; // Избранное (личные сообщения с самим собой)
-    }
-
-    long long sid = api->sender_id ? api->sender_id(ctx) : 0;
-    if (sid != 0 && cid == sid) {
-        return false; // Входящее личное сообщение от собеседника (в ЛС sender_id == chat_id)
-    }
-
-    if (api->chat_full_json) {
-        char cbuf[512] = {0};
-        int len = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
-        if (len > 0) {
-            if (strstr(cbuf, "\"is_group\":true") || strstr(cbuf, "\"is_channel\":true")) {
-                return true;
-            }
-            if (strstr(cbuf, "\"is_group\":false") && strstr(cbuf, "\"is_channel\":false")) {
-                return false;
-            }
-        }
-    }
-
-    if (api->user_first_name) {
-        char ubuf[128] = {0};
-        if (api->user_first_name(ctx, cid, ubuf, sizeof(ubuf) - 1) > 0 && ubuf[0] != '\0') {
-            return false;
-        }
-    }
-
-    return true;
+    (void)cid;
+    int type = api->chat_type(ctx);
+    return type == KOTO_CHAT_GROUP || type == KOTO_CHAT_CHANNEL;
 }
 
 static bool ensure_group_and_permission(koto_ctx* ctx, const koto_api* api, int min_level) {
@@ -952,8 +921,7 @@ static const koto_module MODERATION_MODULE = {
     KOTO_MODULE_ABI,
     "moderation",
     "Мощный модуль для администрирования чатов (бан, мут, варны, gameban, gban/gkick).",
-    "1.1.6",
-    27, // min_host_version 27 (0.3.7+)
+    "1.1.7", 60, // min_host_version: resolved peer API
     0,  // flags
     MODERATION_COMMANDS,
     sizeof(MODERATION_COMMANDS) / sizeof(MODERATION_COMMANDS[0]),

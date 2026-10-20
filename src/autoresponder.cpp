@@ -398,8 +398,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long sid = api->sender_id(ctx);
     long long me = api->get_me ? api->get_me(ctx) : 0;
 
-    // Автоответчик работает исключительно во входящих ЛС (cid > 0, cid == sid, не от себя)
-    if (cid <= 0 || cid != sid || sid == me) return 0;
+    // Тип чата задаётся Telegram peer; положительный ID бывает и у группы.
+    if (api->chat_type(ctx) != KOTO_CHAT_PRIVATE || sid == me) return 0;
 
     // Проверяем включение модуля
     char e_buf[32] = {0};
@@ -541,8 +541,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "autoresponder",
     "Продвинутый автоответчик для ЛС с Rich Text, медиа и кулдауном (C++ ABI 3).",
-    "2.4.2",
-    26,
+    "2.4.3", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
   "version": "1.4.0",
-  "updated": "2026-10-19",
+  "updated": "2026-10-20",
   "modules": [
     {
       "id": "administration",
@@ -9,7 +9,7 @@
       "display_name": "Администрирование чатов",
       "author": "Kote",
       "description": "Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки.",
-      "version": "1.1.3",
+      "version": "1.2.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -54,12 +54,12 @@
           "usage": ""
         }
       ],
-      "size": 91016,
-      "sha256": "5f4ac8cb5cda695cdda6af762024250cb8df671b1f5b6b4dc65f57a07832214d",
+      "size": 384088,
+      "sha256": "a728f4715037809429f6d5a436a7ad1ae5819212427875cf51ad22573b5b207e",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 60
     },
     {
       "id": "afk",
@@ -67,7 +67,7 @@
       "display_name": "Автоответчик (AFK)",
       "author": "Kote",
       "description": "Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' || AFK' в профиле Telegram.",
-      "version": "2.1.2",
+      "version": "2.1.3",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -97,12 +97,12 @@
           "usage": ""
         }
       ],
-      "size": 93464,
-      "sha256": "a08813202656e91678a0ced2b03b599a4ed4883fc46eb0fbe04f58470ece9479",
+      "size": 93448,
+      "sha256": "7bf9b123a4e6f69b0dc7a9bdd09053437937c4ade6d31612ff97b32c36dd348a",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/afk.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 60
     },
     {
       "id": "aniliberty",
@@ -134,8 +134,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 265864,
-      "sha256": "0836c26866e5dad9d750ac7690a238315628d6d0a95729e71dd1cbf23245ae1c"
+      "size": 271200,
+      "sha256": "803319ecc12b3abddd49cc020080f905be35453e5bfdfe389f06707b353b41ef"
     },
     {
       "id": "auto_manager",
@@ -235,8 +235,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autolast.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 71208,
-      "sha256": "b5e5f79c45f129a7b94801ce41c81ba4207dde758e5576bd4b745fe69affb6d8"
+      "size": 81640,
+      "sha256": "aca578aa46fa7571c388b729f183d36bd6ca12cc311c3997aa2c130444de4aff"
     },
     {
       "id": "autoresponder",
@@ -244,7 +244,7 @@
       "display_name": "Автоответчик (AutoResponder)",
       "author": "Kote",
       "description": "Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов.",
-      "version": "2.4.2",
+      "version": "2.4.3",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -259,12 +259,12 @@
           "usage": ""
         }
       ],
-      "size": 66144,
-      "sha256": "5ec8c5142cd0b316c89ac8f196dd2a2aff5d3635aec80168965b4b94fe71cf84",
+      "size": 87760,
+      "sha256": "6990e7ee1bb936ef3c633e0d1b65c7caa380e2faef2d6af89121c6a893acdfd5",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/autoresponder.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 60
     },
     {
       "id": "bakusearch",
@@ -282,8 +282,8 @@
           "usage": "[red/blue]"
         }
       ],
-      "size": 101936,
-      "sha256": "29c92ec57a4a1f997bbeca7ee28675ae94597ba701427f2658976e8816312990",
+      "size": 101536,
+      "sha256": "0662e6efbc3d0579e59a9f0766995b2fe51d48738719ceeb558ec809acab892d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/bakusearch.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
       "license": "MIT",
@@ -295,7 +295,7 @@
       "display_name": "Массовая очистка (BanAll)",
       "author": "Kote",
       "description": "Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя).",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -313,9 +313,9 @@
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/banall.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
       "license": "MIT",
-      "min_host_version": 26,
-      "size": 61376,
-      "sha256": "41a69611600eb7c887778e05127591e235f8af5b1359e514f75e21a4fe2e3ce0"
+      "min_host_version": 60,
+      "size": 75944,
+      "sha256": "c363db99b526e53dd127b81d1ac054325a7cb10017fb5e6b869bc35bd9a12928"
     },
     {
       "id": "calculator",
@@ -337,8 +337,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/calculator.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 68088,
-      "sha256": "5f0b898b48914dc28d44bd289db1fb65425fe3dc18565df151e5cc5a4e85b843"
+      "size": 78072,
+      "sha256": "a58324315bc5481d8464196156f7312cddf110aefdc9d41a0970cef29efe4013"
     },
     {
       "id": "chat",
@@ -385,8 +385,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 278256,
-      "sha256": "aae64f046f05275c69ead1abb39c2ed46f0442cdd55a480a4eefa0142b3b9988"
+      "size": 278304,
+      "sha256": "01b7e8d00c5a91a138a6151d54de9fc0eff7cc0af58edcb13bdec266330de026"
     },
     {
       "id": "checkers",
@@ -414,12 +414,50 @@
           "usage": "[id]"
         }
       ],
-      "size": 25184,
-      "sha256": "47ec7b12f6b6e059f26fa75c95de28d08d601078567794470382c26f17067ffc",
+      "size": 27704,
+      "sha256": "764a82069e5d877ed7dea86166856bbede25c53b02043172e7cab6d43bc04469",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
       "min_host_version": 18
+    },
+    {
+      "id": "chess",
+      "name": "chess",
+      "display_name": "Шахматы",
+      "author": "Kote",
+      "description": "Шахматы PvP на кнопках: рокировка, взятие на проходе, превращение, мат, ничьи, реванш и обычные Unicode-фигуры.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "chess",
+          "doc": "Создать шахматный вызов",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "шахматы",
+          "doc": "Создать шахматный вызов",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "chessend",
+          "doc": "Партии в чате / закрыть свою",
+          "usage": "[id]"
+        },
+        {
+          "name": "chesshelp",
+          "doc": "Управление и правила",
+          "usage": ""
+        }
+      ],
+      "size": 31896,
+      "sha256": "cb3b1d8e6b07c524039b61b409bb5292502deb9adf815b81ec15f38bee49a791",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/chess.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chess.c",
+      "license": "MIT",
+      "min_host_version": 56
     },
     {
       "id": "copymessage",
@@ -443,11 +481,11 @@
         }
       ],
       "size": 7944,
-      "sha256": "1fd2ec925ae90f052fed8c58804b719a180afed176ddb41c71da44884c05455d",
+      "sha256": "90bec6af5594b7180db9ba103c19b22ff9999b507241e89ff379d0da101db2d4",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
       "license": "MIT",
-      "min_host_version": 1
+      "min_host_version": 0
     },
     {
       "id": "dep",
@@ -475,7 +513,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 48680,
-      "sha256": "0decbe5ac25d4dc6dbce41b6a793f839923ae6bd4d7ff61de8931969d271fb2e"
+      "sha256": "380cc89e7eb2b6e838dd2a408c48c809b0f030f407d2ceb9857422755bafe538"
     },
     {
       "id": "dox",
@@ -501,9 +539,9 @@
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/dox.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
       "license": "MIT",
-      "min_host_version": 26,
-      "size": 469144,
-      "sha256": "94cf344e9f07d9f65403e544fec7294d3856759ba30b31636ba6a97745e7f555"
+      "min_host_version": 28,
+      "size": 469176,
+      "sha256": "df1a014ec53197f0d45bc4b73314befafcbf401c771c1c9f624499bc5c1080a9"
     },
     {
       "id": "id",
@@ -550,7 +588,7 @@
         }
       ],
       "size": 51032,
-      "sha256": "eb587a3a0cfa5aafc0329ab38bc35db978ce8d7605cc53b3f9620e1cffd748a7",
+      "sha256": "c505bd1bfe9f07bec0807d7f57647b2b000f48700a9c2e7bfdb72a93c3e895cc",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/idprem.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
       "license": "MIT",
@@ -581,8 +619,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kotserv.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 111920,
-      "sha256": "3a897b32acf3e5b995a93d1034f0201d2dfd01448dcb7b9c22d4131aaec83b90"
+      "size": 111168,
+      "sha256": "ac0ea76de39b97e65372abb5b4e1e9f1c6dfb042416ba537a9e7bcdfef24fd1c"
     },
     {
       "id": "mafia_multitool",
@@ -710,8 +748,8 @@
           "usage": "<ник>"
         }
       ],
-      "size": 241320,
-      "sha256": "6194833670d590828fa53cb6fbc7ca2a72240b8821b12357e9231cb63ea56991",
+      "size": 239880,
+      "sha256": "61974eb698d9d133580bf7351bfb583a1165474961517f97501fa11726df91e8",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
@@ -742,8 +780,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_triggers.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 64104,
-      "sha256": "fd928c63a2c0b1294225026b7e888fe7377ca13ef64fd9b4f0e04b086dc6fbc5"
+      "size": 74544,
+      "sha256": "ac30a5c93057d75efaa6de1511bf6b5ee35af0d4317b24610ba1c06e8af11ce1"
     },
     {
       "id": "mass_notifier",
@@ -751,7 +789,7 @@
       "display_name": "Рассылка в ЛС (Mass Notifier)",
       "author": "Kote",
       "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -761,12 +799,12 @@
           "usage": "<текст / реплай на сообщение>"
         }
       ],
-      "size": 46256,
-      "sha256": "ab07b646107bf1e032bbafbef09e870151e1a5d50285a39d97f235e06ff9255d",
+      "size": 61232,
+      "sha256": "228d337d3e18cc7676fb24773792be66d747d155d06b880f35040225d6211541",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 60
     },
     {
       "id": "moderation",
@@ -774,7 +812,7 @@
       "display_name": "Модерация (Moderation)",
       "author": "Kote",
       "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
-      "version": "1.1.6",
+      "version": "1.1.7",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -874,12 +912,12 @@
           "usage": "<категория> [user/id] [причина]"
         }
       ],
-      "size": 104216,
-      "sha256": "f10695ae02c78b0674877e348626b50bca7030d04d895ca7298589a08812ff9a",
+      "size": 138192,
+      "sha256": "c691216a7a045eb117b79727693ba9e32d56b320dae1f1ff05d6f349879c3887",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moderation.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
       "license": "MIT",
-      "min_host_version": 27
+      "min_host_version": 60
     },
     {
       "id": "music",
@@ -903,7 +941,7 @@
         }
       ],
       "size": 47736,
-      "sha256": "f8bd5553468d2ad1f88880005f4396091eaa6f1411855fb26d9e59617d86c96f",
+      "sha256": "5e7473f19061b8025845cfdf65e6b7a32c54b45f9293a6b37be385717ad5a48f",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
       "license": "MIT",
@@ -968,7 +1006,7 @@
       "display_name": "Role-Play (РП команды)",
       "author": "Kote",
       "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
-      "version": "3.0.2",
+      "version": "3.0.3",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1038,12 +1076,12 @@
           "usage": ""
         }
       ],
-      "size": 168304,
-      "sha256": "284606025c3ed7a406c418cbb75ddb8fff85d83aeb0ae44b271a09f2f922c7c4",
+      "size": 168024,
+      "sha256": "4bb1bf9e193ce48b82e87fa84dbecdd97e6627005671914b2a0dd0e3ac5b4c55",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
-      "min_host_version": 12
+      "min_host_version": 60
     },
     {
       "id": "spam_ban",
@@ -1051,7 +1089,7 @@
       "display_name": "Spam Ban",
       "author": "Kote",
       "description": "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3).",
-      "version": "1.6.1",
+      "version": "1.6.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1066,12 +1104,12 @@
           "usage": "<@user/ID/ответ>"
         }
       ],
-      "size": 40496,
-      "sha256": "b5e6b78c13a5ecd97beaf33e3b7c1e153a0dfa6e7a7aec2fe220f133f68bafbd",
+      "size": 49224,
+      "sha256": "f629112167b5276ebc28d4dc3cc4f6e5f2c29107de64f55bad00f832a3d2e91e",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
       "license": "MIT",
-      "min_host_version": 27
+      "min_host_version": 60
     },
     {
       "id": "spammer",
@@ -1095,7 +1133,7 @@
         }
       ],
       "size": 63208,
-      "sha256": "861b3262a9eb6c71f95f886b1d00fb3201577f051a0ef9e152d077da0931e038",
+      "sha256": "30e226ae40d8df39da5e9f06be5f546c20ce792755e1d3ea7f1935584c920902",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spammer.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
       "license": "MIT",
@@ -1107,7 +1145,7 @@
       "display_name": "Silent Tags",
       "author": "Kote",
       "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
-      "version": "2.9.6",
+      "version": "2.9.7",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1127,12 +1165,12 @@
           "usage": ""
         }
       ],
-      "size": 130856,
-      "sha256": "5ef46a9740780f97255f4a2a574000212aec47dc771288578bcbfca2a536d9ee",
+      "size": 130760,
+      "sha256": "76c978463bee4cfd2668767cb8b19f13b445e34a8a159637f485c8e4ece91d6b",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
-      "min_host_version": 26
+      "min_host_version": 60
     },
     {
       "id": "sysinfo",
@@ -1165,7 +1203,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 121912,
-      "sha256": "cb9618427d7831d466ee9a991a95bf1c7d510c47838abd2dbf309eba939d2e4d"
+      "sha256": "ba36580a9e58f80bc351f8e33a365ddfa79349ad08e394ac7f83e0191a6ea7e3"
     },
     {
       "id": "tagger",
@@ -1248,8 +1286,8 @@
           "usage": ""
         }
       ],
-      "size": 131208,
-      "sha256": "0984bb25bcf90dd7de233b13a731e2c203c57dcd050273ce033301ce73bd07f2",
+      "size": 160232,
+      "sha256": "1d13c12c93ccc6f0eff1350b405490e7b665c8fe394faeb01c6640fde658c10a",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",
@@ -1272,7 +1310,7 @@
         }
       ],
       "size": 62824,
-      "sha256": "a9195691bd4071a5604b844b544392e838822bdbbcc7b9f41dd62b1e19503578",
+      "sha256": "353e058b14c1da57f649f5601139aa6c50e06e98e469b0e08784eb2059838809",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
@@ -1303,8 +1341,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 255424,
-      "sha256": "d4ac9f740be17bf870c883c40277187bd0b1662b0118e059826e843f3917c49b"
+      "size": 265760,
+      "sha256": "85f8f4d9216cc439cd99309082eba7231e5d517bf4e626f4cda0a06387b20ffe"
     }
   ]
 }

@@ -54,7 +54,13 @@ void cmd_banall(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
 
     long long chat_id = api->chat_id(ctx);
-    if (chat_id == 0) return;
+    int type = api->chat_type(ctx);
+    if (type != KOTO_CHAT_GROUP && type != KOTO_CHAT_CHANNEL) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Эта команда работает только в группах и каналах.");
+        send_result(ctx, api);
+        return;
+    }
 
     api->c_reset(ctx);
     api->c_text(ctx, "⌛ ");
@@ -89,8 +95,8 @@ void cmd_banall(koto_ctx* ctx, const koto_api* api) {
 
     api->c_reset(ctx);
     api->c_text(ctx, "🎉 ");
-    api->c_fmt(ctx, "Очистка завершена!\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, "✅ Забанено: ");
+    api->c_fmt(ctx, "Запросы на очистку сформированы.\n", KOTO_ENT_BOLD);
+    api->c_text(ctx, "Запросов на бан: ");
     api->c_fmt(ctx, std::to_string(count).c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n❌ Пропущено (админы/ошибки): ");
     api->c_fmt(ctx, std::to_string(errors + (int)admin_ids.size()).c_str(), KOTO_ENT_CODE);
@@ -101,7 +107,13 @@ void cmd_kickall(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
 
     long long chat_id = api->chat_id(ctx);
-    if (chat_id == 0) return;
+    int type = api->chat_type(ctx);
+    if (type != KOTO_CHAT_GROUP && type != KOTO_CHAT_CHANNEL) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Эта команда работает только в группах и каналах.");
+        send_result(ctx, api);
+        return;
+    }
 
     api->c_reset(ctx);
     api->c_text(ctx, "⌛ ");
@@ -136,7 +148,7 @@ void cmd_kickall(koto_ctx* ctx, const koto_api* api) {
 
     api->c_reset(ctx);
     api->c_text(ctx, "🎉 ");
-    api->c_fmt(ctx, "Очистка завершена!\n", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "Запросы на очистку сформированы.\n", KOTO_ENT_BOLD);
     api->c_text(ctx, "👞 Кикнуто: ");
     api->c_fmt(ctx, std::to_string(count).c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n❌ Пропущено (админы/ошибки): ");
@@ -165,8 +177,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "banall",
     "Массовая очистка чата: бан или кик всех участников (C++ ABI 3).",
-    "1.0.0",
-    27, // ban_user / kick_user доступны в versionCode 27+
+    "1.0.1", 60, // ban_user / kick_user доступны в versionCode 27+
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
