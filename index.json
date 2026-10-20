@@ -143,7 +143,7 @@
       "display_name": "Менеджер автоматизации (AutoManager)",
       "author": "Kote",
       "description": "Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и управление твинками.",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -182,8 +182,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/auto_manager.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 80712,
-      "sha256": "25dfc96c0e611eeb14275e32ba91de02b544599a785ccb601dc8fec91a00a597"
+      "size": 277008,
+      "sha256": "4ddabef0020143cf638cf975e0794145ed02613e2a890c155a8953ab44b7e251"
     },
     {
       "id": "autolast",

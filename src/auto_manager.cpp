@@ -219,37 +219,81 @@ static void cmd_autoapprovelist(koto_ctx* ctx, const koto_api* api) {
 // УПРАВЛЕНИЕ ТВИНКАМИ (.amtwins)
 // ══════════════════════════════════════════════════════════════════════════════
 
+struct TwinItem {
+    long long uid = 0;
+    std::string name;
+};
+
+static std::vector<TwinItem> get_all_twins(koto_ctx* ctx, const koto_api* api) {
+    std::vector<TwinItem> twins;
+
+    // 1. Попытка через twin_list ("uid\tname\tphone\n...")
+    if (api->twin_list) {
+        char tw_buf[4096] = {0};
+        int tw_len = api->twin_list(ctx, tw_buf, sizeof(tw_buf) - 1);
+        if (tw_len > 0) {
+            std::istringstream iss(tw_buf);
+            std::string line;
+            while (std::getline(iss, line)) {
+                std::vector<std::string> parts = koto_utils::split(line, '\t');
+                if (parts.empty()) continue;
+                long long tw_id = strtoll(parts[0].c_str(), nullptr, 10);
+                if (tw_id <= 0) continue;
+                std::string tw_name = (parts.size() > 1 && !parts[1].empty()) ? parts[1] : ("UID " + parts[0]);
+                twins.push_back({tw_id, tw_name});
+            }
+        }
+    }
+
+    // 2. Fallback через get_twins_json (если twin_list пуст)
+    if (twins.empty() && api->get_twins_json) {
+        char json_buf[16384] = {0};
+        int jlen = api->get_twins_json(ctx, json_buf, sizeof(json_buf) - 1);
+        if (jlen > 0) {
+            try {
+                auto j = nlohmann::json::parse(json_buf);
+                if (j.is_array()) {
+                    for (const auto& item : j) {
+                        bool is_main = item.value("is_main", false);
+                        if (is_main) continue;
+                        long long uid = item.value("uid", 0LL);
+                        std::string name = item.value("name", "");
+                        if (uid > 0) {
+                            if (name.empty()) name = "UID " + std::to_string(uid);
+                            twins.push_back({uid, name});
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    return twins;
+}
+
 static void render_amtwins_panel(koto_ctx* ctx, const koto_api* api) {
     api->c_reset(ctx);
     api->c_fmt(ctx, "⚙️ AutoManager — Твинки (авточтение)\n\n", KOTO_ENT_BOLD);
     api->c_text(ctx, "• ❌ Выкл — твин не читает сообщения\n");
     api->c_text(ctx, "• ✅ Вкл  — твин читает входящие чаты\n\n");
 
-    char tw_buf[4096] = {0};
-    int tw_len = (api->twin_list) ? api->twin_list(ctx, tw_buf, sizeof(tw_buf) - 1) : 0;
+    std::vector<TwinItem> twins = get_all_twins(ctx, api);
 
-    if (tw_len <= 0) {
+    if (twins.empty()) {
         api->c_text(ctx, "Нет добавленных твинков.");
-        api->c_button(ctx, "❌ Закрыть", "am_close", 0);
+        api->c_button(ctx, "❌ Закрыть", "am_close", 1);
         return;
     }
 
-    std::istringstream iss(tw_buf);
-    std::string line;
-    while (std::getline(iss, line)) {
-        std::vector<std::string> parts = koto_utils::split(line, '\t');
-        if (parts.empty()) continue;
-        long long tw_id = strtoll(parts[0].c_str(), nullptr, 10);
-        std::string tw_name = (parts.size() > 1 && !parts[1].empty()) ? parts[1] : ("UID " + parts[0]);
-
-        std::string mode_key = "twin_mode:" + std::to_string(tw_id);
+    for (const auto& tw : twins) {
+        std::string mode_key = "twin_mode:" + std::to_string(tw.uid);
         long long mode = koto_utils::db_get_int64(api, ctx, mode_key.c_str(), 0);
 
-        std::string btn_label = "👤 " + tw_name + " [" + (mode ? "✅ Вкл" : "❌ Выкл") + "]";
+        std::string btn_label = "👤 " + tw.name + " [" + (mode ? "✅ Вкл" : "❌ Выкл") + "]";
         api->c_button(ctx, btn_label.c_str(), "am_noop", 1);
 
-        std::string toggle_cb = "amtwins_toggle:" + std::to_string(tw_id);
-        api->c_button(ctx, mode ? "Отключить ❌" : "Включить ✅", toggle_cb.c_str(), 0);
+        std::string toggle_cb = "amtwins_toggle:" + std::to_string(tw.uid);
+        api->c_button(ctx, mode ? "Отключить ❌" : "Включить ✅", toggle_cb.c_str(), 1);
     }
 
     api->c_button(ctx, "❌ Закрыть", "am_close", 1);
@@ -269,6 +313,37 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     if (cid == 0) return 0;
 
+    long long my_id = api->get_me ? api->get_me(ctx) : 0;
+
+    static std::set<long long> s_twin_uids;
+    static long long s_last_check_ts = 0;
+    long long now_sec = api->uptime_sec ? api->uptime_sec(ctx) : 0;
+    if (s_twin_uids.empty() || (now_sec - s_last_check_ts > 15)) {
+        s_last_check_ts = now_sec;
+        auto tw_list = get_all_twins(ctx, api);
+        s_twin_uids.clear();
+        for (const auto& tw : tw_list) {
+            s_twin_uids.insert(tw.uid);
+        }
+    }
+
+    // Проверяем: выполняется ли watcher на твинке
+    if (my_id > 0 && s_twin_uids.find(my_id) != s_twin_uids.end()) {
+        std::string mode_key = "twin_mode:" + std::to_string(my_id);
+        long long mode = koto_utils::db_get_int64(api, ctx, mode_key.c_str(), 0);
+        if (mode == 1) {
+            long long mid = api->msg_id ? api->msg_id(ctx) : 0;
+            if (api->read_history) {
+                api->read_history(ctx, cid, mid);
+            }
+            if (api->read_mentions) {
+                api->read_mentions(ctx, cid);
+            }
+        }
+        return 0;
+    }
+
+    // Основной аккаунт: проверяем список autoread_chats
     std::set<long long> autoread_chats = load_chat_set(api, ctx, "autoread_chats");
     if (autoread_chats.find(0) != autoread_chats.end() || autoread_chats.find(cid) != autoread_chats.end()) {
         long long mid = api->msg_id ? api->msg_id(ctx) : 0;
@@ -295,6 +370,11 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
     if (!data) return;
     std::string d = data;
 
+    if (d == "am_noop") {
+        if (api->cb_answer) api->cb_answer(ctx, "", 0);
+        return;
+    }
+
     if (d == "am_close") {
         if (api->cb_answer) api->cb_answer(ctx, "Закрыто", 0);
         api->delete_msg(ctx);
@@ -307,7 +387,7 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
             std::string mode_key = "twin_mode:" + std::to_string(tw_id);
             long long current = koto_utils::db_get_int64(api, ctx, mode_key.c_str(), 0);
             koto_utils::db_set_int64(api, ctx, mode_key.c_str(), current ? 0 : 1);
-            if (api->cb_answer) api->cb_answer(ctx, current ? "Твинк выключен" : "Твинк включен", 0);
+            if (api->cb_answer) api->cb_answer(ctx, current ? "Твинк выключен ❌" : "Твинк включен ✅", 0);
             render_amtwins_panel(ctx, api);
             api->c_edit(ctx, 0);
         }
@@ -364,7 +444,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "auto_manager",
     "Автоматизация: авточтение сообщений, автоодобрение заявок и поддержка твинков (C++ ABI 3).",
-    "1.1.2",
+    "1.1.3",
     40, // read_history и read_mentions появились в versionCode 40+
     KOTO_MOD_TWINS, // Явная поддержка работы на твинках
     COMMANDS,
