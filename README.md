@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
   <img src="https://img.shields.io/badge/ABI-Native%20ABI%203-blue?style=for-the-badge" alt="ABI" />
-  <img src="https://img.shields.io/badge/Kotogram-v0.3.35+-orange?style=for-the-badge" alt="Kotogram Version" />
+  <img src="https://img.shields.io/badge/Kotogram-v0.3.40+-orange?style=for-the-badge" alt="Kotogram Version" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
@@ -107,7 +107,7 @@
 ## 👨‍💻 Разработчикам модулей
 
 Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK (ABI 3)**:
-* 🧰 **[Скачать Kote Module SDK Kit (ZIP)](https://github.com/AresUser1/LoaderKote/releases/latest/download/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочным файлом `module_abi.h`, кроссплатформенными скриптами `build.sh` / `Makefile` / `build.bat` и подробными руководствами по C и Lua.
+* 🧰 **[Скачать Kote Module SDK Kit (ZIP)](https://github.com/AresUser1/LoaderKote/releases/latest/download/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочным файлом `module_abi.h`, кроссплатформенными скриптами `build.sh` / `Makefile` / `CMakeLists.txt` и подробными руководствами по C и Lua.
 * **Сборка под Android**: NDK Clang под `arm64-v8a` (или под локальный Linux через `./build.sh --host`).
 * **Инлайн-кнопки и колбэки**: универсальная поддержка интерактивных игр и кнопочных меню через `api->c_button()`, `on_callback`, `api->cb_answer()` и `api->c_edit_message()`.
 * **Готовый шаблон**: используйте `src/my_module.c` из архива SDK для быстрого старта.
