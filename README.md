@@ -16,7 +16,7 @@
 
 | Модуль | Тип | Версия | Команды | Описание |
 | :--- | :---: | :---: | :--- | :--- |
-| **[administration](src/administration.cpp)** | `Native .so` | `v1.1.3` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки. |
+| **[administration](src/administration.cpp)** | `C++ / исходник` | `v1.2.0` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Реальные MTProto-действия, шаблоны и панели; требуется исправленное ядро 60+. [Исправления и сборка](docs/ADMINISTRATION_FIX.md). |
 | **[afk](src/afk.cpp)** | `Native .so` | `v2.1.2` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[aniliberty](src/aniliberty.cpp)** | `Native .so` | `v1.0.8` | `.aniliberty`, `.arandom`, `.anilib_search` | AniLiberty: поиск аниме по названию, случайные тайтлы (зеркала aniliberty/anilibria) и подробная информация. |
 | **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.2.0` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и надёжное управление твинками (pure C, zero crash). |
@@ -27,6 +27,7 @@
 | **[calculator](src/calculator.cpp)** | `Native .so` | `v1.2.0` | `.calc` | Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями. |
 | **[chat](src/chat.cpp)** | `Native .so` | `v1.0.5` | `.userid`, `.chatid`, `.kickme`, `.users`, `.admins`, `.bots` | Управление чатами, списки участников, администраторов и ботов чата (кэширование bot_ids, MTProto). |
 | **[checkers](src/checkers.c)** | `Native .so` | `v2.2.0` | `.checkers`, `.шашки`, `.checkersend` | Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья. |
+| **[chess](src/chess.c)** | `C / исходник` | `v1.0.0` | `.chess`, `.шахматы`, `.chessend`, `.chesshelp` | Шахматы PvP на кнопках, обычные Unicode-фигуры, рокировка, en passant, превращение, мат, ничьи и реванш. [Сборка](docs/CHESS.md). |
 | **[copymessage](src/copymessage.c)** | `Native .so` | `v1.3.0` | `.copy`, `.hcopy` | Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy). |
 | **[dep](src/dep.cpp)** | `Native .so` | `v1.0.2` | `.депаю`, `.dep` | Эмуляция ставок и азартного броска в чате со слотами (🎰). |
 | **[dox](src/dox.cpp)** | `Native .so` | `v1.0.9` | `.dox`, `.setdoxbot` | Интеграция с Dox-ботами: точный 1:1 порт dox.py, автовыбор направления Telegram, мгновенное извлечение и выдача номера телефона. |
@@ -116,3 +117,7 @@
 ## 📄 Лицензия
 
 Все модули в данном репозитории распространяются под свободной лицензией [MIT](LICENSE).
+
+## Разработка и GitHub Actions
+
+Тесты перед push, Android-сборки, SDK, Artifacts и ручная подготовка релизов: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

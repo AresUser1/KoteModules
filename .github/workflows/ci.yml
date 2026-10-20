@@ -1,0 +1,79 @@
+name: CI
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: modules
+          persist-credentials: false
+      - id: core
+        shell: bash
+        run: |
+          ref="$(cat modules/ci/kotogram-ref)"
+          [[ "$ref" =~ ^[0-9a-f]{40}$ ]]
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          repository: AresUser1/Kotogram
+          token: ${{ secrets.KOTOGRAM_READ_TOKEN || github.token }}
+          ref: ${{ steps.core.outputs.ref }}
+          path: core
+          persist-credentials: false
+      - run: sudo apt-get update && sudo apt-get install -y g++ make libssl-dev zlib1g-dev libsqlite3-dev liblua5.4-dev
+      - run: bash modules/tools/check.sh
+        env:
+          KOTO_CORE_DIR: ${{ github.workspace }}/core/kotogram-lib
+          KOTO_SDK_INCLUDE: ${{ github.workspace }}/core/kote_module_sdk/include
+  android:
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: modules
+          persist-credentials: false
+      - id: core
+        shell: bash
+        run: |
+          ref="$(cat modules/ci/kotogram-ref)"
+          [[ "$ref" =~ ^[0-9a-f]{40}$ ]]
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          repository: AresUser1/Kotogram
+          token: ${{ secrets.KOTOGRAM_READ_TOKEN || github.token }}
+          ref: ${{ steps.core.outputs.ref }}
+          path: core
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v4
+        with:
+          cmdline-tools-version: '11076708'
+      - run: sdkmanager 'ndk;26.3.11579264'
+      - shell: bash
+        run: |
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/26.3.11579264"
+          export KOTO_SDK_INCLUDE="$GITHUB_WORKSPACE/core/kote_module_sdk/include"
+          bash modules/tools/build_all_android.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kote-modules-android-arm64-${{ github.sha }}
+          path: modules/dist/android-arm64-v8a/
+          if-no-files-found: error
+          retention-days: 30

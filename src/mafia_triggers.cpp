@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <cstring>
 
 namespace {
 
