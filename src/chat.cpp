@@ -112,6 +112,11 @@ static void cmd_chatid(koto_ctx* ctx, const koto_api* api) {
 static void cmd_kickme(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
+    int type=api->chat_type(ctx);
+    long long me=api->get_me?api->get_me(ctx):0;
+    if ((type!=KOTO_CHAT_GROUP && type!=KOTO_CHAT_CHANNEL) || !me || !api->kick_user) {
+        api->c_reset(ctx);api->c_text(ctx,"❌ Для выхода нужна группа/канал и авторизованный аккаунт.");send_result(ctx,api);return;
+    }
     const char* raw = api->cmd_args(ctx);
     std::string reason = raw ? koto_utils::trim(raw) : "";
 
@@ -123,6 +128,8 @@ static void cmd_kickme(koto_ctx* ctx, const koto_api* api) {
     }
     api->c_fmt(ctx, text.c_str(), KOTO_ENT_BOLD);
     send_result(ctx, api);
+    // Core 61 interprets kicking the current account as leave_chat.
+    api->kick_user(ctx,api->chat_id(ctx),me);
 }
 
 // ── .users ────────────────────────────────────────────────────────────────────
@@ -364,8 +371,8 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "chat",
     "Управление чатами и получение информации об участниках/админах (C++ ABI 3).",
-    "1.0.5",
-    26,
+    "1.0.6",
+    61,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

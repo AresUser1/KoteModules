@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
   "version": "1.4.0",
-  "updated": "2026-10-20",
+  "updated": "2026-10-21",
   "modules": [
     {
       "id": "administration",
@@ -142,15 +142,15 @@
       "name": "auto_manager",
       "display_name": "Менеджер автоматизации (AutoManager)",
       "author": "Kote",
-      "description": "Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и управление твинками.",
-      "version": "1.2.0",
+      "description": "Авточтение с исключениями для отдельных чатов и управлением режимами аккаунтов.",
+      "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "autread",
           "doc": "Управление авточтением текущего или указанного чата.",
-          "usage": "[chat_id]"
+          "usage": "<on|off> [this|ID]"
         },
         {
           "name": "autreadlist",
@@ -181,9 +181,9 @@
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/auto_manager.c",
       "license": "MIT",
-      "min_host_version": 26,
-      "size": 18016,
-      "sha256": "26ba78b6d73f86f840fc3384abb1cf89acde2a578adeb908d6fcf9c14757f0ab"
+      "min_host_version": 61,
+      "size": 20368,
+      "sha256": "ebc5ee41a3817150d9ff825e39fb6993840a6643b18069d731211a45d860f60d"
     },
     {
       "id": "autolast",
@@ -346,7 +346,7 @@
       "display_name": "Управление чатом (Chat)",
       "author": "Kote",
       "description": "Управление чатами, списки участников, администраторов и ботов, получение ID.",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -384,9 +384,9 @@
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/chat.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
       "license": "MIT",
-      "min_host_version": 26,
-      "size": 278304,
-      "sha256": "01b7e8d00c5a91a138a6151d54de9fc0eff7cc0af58edcb13bdec266330de026"
+      "min_host_version": 61,
+      "size": 278560,
+      "sha256": "2096266a25ac8c2ef39afe02c0539d34ebb03090b0f45ef65a66748444031f19"
     },
     {
       "id": "checkers",
