@@ -10,6 +10,10 @@ for src in "$root"/src/*.c "$root"/src/*.cpp; do
     "$compiler" "-std=$standard" -fsyntax-only -pthread -I"$KOTO_SDK_INCLUDE" "$src"
 done
 bash "$root/tests/run_chess.sh"
+input_test="$(mktemp)"
+trap 'rm -f -- "$input_test"' EXIT
+"${CXX:-g++}" -std=c++20 -O1 -I"$KOTO_SDK_INCLUDE" "$root/tests/test_spamban_inputs.cpp" -o "$input_test"
+"$input_test"
 if [[ -f "$core/tests/test_administration.cpp" ]]; then
     export KOTO_CORE_DIR="$core"
     cmp "$core/host/module_abi.h" "$KOTO_SDK_INCLUDE/module_abi.h"

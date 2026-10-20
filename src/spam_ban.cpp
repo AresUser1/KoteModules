@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include <cstdlib>
+#include <cerrno>
 
 static constexpr long long ICON_BAN  = 6030563507299160824LL; // 🚫
 static constexpr long long ICON_DONE = 5774022692642492953LL; // ✅
@@ -55,8 +56,9 @@ static void cmd_spamban(koto_ctx* ctx, const koto_api* api) {
         }
         if (target_id == 0) {
             char* end = nullptr;
+            errno = 0;
             target_id = strtoll(args.c_str(), &end, 10);
-            if (end == args.c_str()) target_id = 0;
+            if (errno == ERANGE || end != args.c_str() + args.size() || target_id <= 0) target_id = 0;
         }
     } else {
         long long r_id = api->reply_sender_id(ctx);
@@ -68,7 +70,7 @@ static void cmd_spamban(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    if (target_id == 0) {
+    if (target_id <= 0) {
         api->c_reset(ctx);
         api->c_text(ctx, "❌ Укажите @user, ответьте на сообщение или используйте в ЛС.");
         send_result(ctx, api);
