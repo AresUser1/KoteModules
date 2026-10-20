@@ -6,10 +6,12 @@ sdk="${KOTO_SDK_INCLUDE:-$core/../kote_module_sdk/include}"
 temp="$(mktemp -d)"
 trap 'rm -rf -- "$temp"' EXIT
 mkdir "$temp/modules"
-for name in afk autoresponder moderation mass_notifier rp stags spam_ban banall; do
+for name in afk autoresponder moderation mass_notifier rp stags spam_ban banall chat; do
     "${CXX:-g++}" -std=c++20 -O0 -g0 -pthread -shared -fPIC -I"$sdk" \
         "$root/src/$name.cpp" -o "$temp/modules/$name.so"
 done
+"${CC:-cc}" -std=c11 -O0 -g0 -pthread -shared -fPIC -I"$sdk" \
+    "$root/src/auto_manager.c" -o "$temp/modules/auto_manager.so"
 sources=()
 for name in storage loader native_module lua_module; do sources+=("$core/host/$name.cpp"); done
 "${CXX:-g++}" -std=c++20 -O0 -g0 -pthread -I"$core/src" -I"$core/gen" -I"$core" \

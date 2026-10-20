@@ -1,3 +1,6 @@
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
 // auto_manager.c — Модуль автоматизации (авточтение, твинки, автоодобрение) (C ABI 3).
 // Портирован из Python-модуля auto_manager.py (v1.1.2) в чистый C.
 // Автор: Kote
@@ -5,6 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include "module_abi.h"
 
 #define EMO_SUCCESS 5774022692642492953LL // ✅
@@ -30,7 +37,7 @@ static int chat_set_has(koto_ctx* ctx, const koto_api* api, const char* key, lon
     char buf[8192] = {0};
     int n = api->db_get(ctx, key, buf, sizeof(buf) - 1);
     if (n <= 0) return 0;
-    buf[n] = '\0';
+    buf[n < (int)sizeof(buf) ? n : (int)sizeof(buf)-1] = '\0';
     char target_str[64];
     snprintf(target_str, sizeof(target_str), "%lld", target_id);
 
@@ -44,11 +51,11 @@ static int chat_set_has(koto_ctx* ctx, const koto_api* api, const char* key, lon
     return 0;
 }
 
-static void chat_set_toggle(koto_ctx* ctx, const koto_api* api, const char* key, long long target_id, int on) {
+static int chat_set_toggle(koto_ctx* ctx, const koto_api* api, const char* key, long long target_id, int on) {
     char buf[8192] = {0};
     int n = api->db_get(ctx, key, buf, sizeof(buf) - 1);
     if (n < 0) n = 0;
-    buf[n] = '\0';
+    buf[n < (int)sizeof(buf) ? n : (int)sizeof(buf)-1] = '\0';
 
     long long ids[256];
     int count = 0;
@@ -58,7 +65,10 @@ static void chat_set_toggle(koto_ctx* ctx, const koto_api* api, const char* key,
     while (line && count < 256) {
         while (*line == ' ') line++;
         if (*line) {
-            long long id = strtoll(line, NULL, 10);
+            errno=0;char* number_end=NULL;
+            long long id = strtoll(line, &number_end, 10);
+            while(number_end && isspace((unsigned char)*number_end)) ++number_end;
+            if(errno || number_end==line || (number_end && *number_end)) {line=strtok_r(NULL,"\r\n",&saveptr);continue;}
             int exists = 0;
             for (int i = 0; i < count; ++i) {
                 if (ids[i] == id) { exists = 1; break; }
@@ -75,9 +85,8 @@ static void chat_set_toggle(koto_ctx* ctx, const koto_api* api, const char* key,
         for (int i = 0; i < count; ++i) {
             if (ids[i] == target_id) { found = 1; break; }
         }
-        if (!found && count < 256) {
-            ids[count++] = target_id;
-        }
+        if (!found && count >= 256) return 0;
+        if (!found) ids[count++] = target_id;
     } else {
         int new_count = 0;
         for (int i = 0; i < count; ++i) {
@@ -95,6 +104,7 @@ static void chat_set_toggle(koto_ctx* ctx, const koto_api* api, const char* key,
         if (off >= (int)sizeof(out) - 32) break;
     }
     api->db_set(ctx, key, out);
+    return 1;
 }
 
 // ── Получение списка твинков (через twin_list или get_twins_json) ─────────────
@@ -196,102 +206,95 @@ static int get_all_twins(koto_ctx* ctx, const koto_api* api, TwinItem* out_twins
 // АВТОЧТЕНИЕ
 // ══════════════════════════════════════════════════════════════════════════════
 
-static void cmd_autread(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
-
-    char pbuf[32] = ".";
-    const char* pfx = get_prefix(ctx, api, pbuf, sizeof(pbuf));
-
-    const char* raw = api->cmd_args(ctx);
-    char args[256] = {0};
-    if (raw) snprintf(args, sizeof(args), "%s", raw);
-
-    char* p = args;
-    while (*p == ' ') p++;
-    char* end = p + strlen(p);
-    while (end > p && (*(end-1) == ' ' || *(end-1) == '\t' || *(end-1) == '\n' || *(end-1) == '\r')) {
-        *(--end) = '\0';
+// Persist group and channel IDs in distinct Bot API domains. Older allow-list
+// entries may contain a raw positive MTProto ID; they remain readable below.
+static long long canonical_chat(koto_ctx* ctx, const koto_api* api) {
+    long long id=api->chat_id(ctx);
+    int type=api->chat_type ? api->chat_type(ctx) : KOTO_CHAT_UNKNOWN;
+    if (!id || id==LLONG_MIN || type==KOTO_CHAT_UNKNOWN) return 0;
+    if (type==KOTO_CHAT_CHANNEL) {
+        long long raw=id<=-1000000000000LL ? -(id+1000000000000LL) : (id<0?-id:id);
+        return raw>0 && raw<1000000000000LL ? -1000000000000LL-raw : 0;
     }
-
-    int on = -1;
-    int this_chat = 0;
-
-    if (strncmp(p, "on", 2) == 0 && (p[2] == '\0' || p[2] == ' ')) {
-        on = 1;
-        p += 2;
-    } else if (strncmp(p, "off", 3) == 0 && (p[3] == '\0' || p[3] == ' ')) {
-        on = 0;
-        p += 3;
-    }
-
-    while (*p == ' ') p++;
-    if (strcmp(p, "this") == 0) {
-        this_chat = 1;
-    }
-
-    if (on == -1) {
-        api->c_reset(ctx);
-        api->c_emoji(ctx, "❌", EMO_ERROR);
-        api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
-        char u[128];
-        snprintf(u, sizeof(u), "%sautread on [this] или %sautread off [this]", pfx, pfx);
-        api->c_fmt(ctx, u, KOTO_ENT_CODE);
-        send_result(ctx, api);
-        return;
-    }
-
-    long long target_id = this_chat ? api->chat_id(ctx) : 0;
-    const char* chat_desc = this_chat ? "текущем чате" : "всех чатах";
-
-    chat_set_toggle(ctx, api, "autoread_chats", target_id, on);
-
-    api->c_reset(ctx);
-    api->c_emoji(ctx, "✅", EMO_SUCCESS);
-    api->c_fmt(ctx, " Авточтение ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, on ? "включено" : "выключено", KOTO_ENT_CODE);
-    char desc[128];
-    snprintf(desc, sizeof(desc), " в %s.", chat_desc);
-    api->c_fmt(ctx, desc, KOTO_ENT_BOLD);
-    send_result(ctx, api);
+    if (type==KOTO_CHAT_GROUP) return id<0?id:-id;
+    return id<0?-id:id;
 }
-
-static void cmd_autreadlist(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
-
-    char buf[8192] = {0};
-    int n = api->db_get(ctx, "autoread_chats", buf, sizeof(buf) - 1);
-
-    api->c_reset(ctx);
-    api->c_emoji(ctx, "📋", EMO_LIST);
-    api->c_fmt(ctx, " Чаты с включённым авточтением:\n\n", KOTO_ENT_BOLD);
-
-    if (n <= 0) {
-        api->c_text(ctx, "Список авточтения пуст.");
+static int parse_id(const char* text,long long* id) {
+    if (!text || !*text) return 0;
+    errno=0;char* end=NULL;long long value=strtoll(text,&end,10);
+    if (errno || !end || *end || !value || value==LLONG_MIN) return 0;
+    *id=value;return 1;
+}
+static void cmd_autread(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx,KOTO_LEVEL_TRUSTED)) return;
+    const char* raw=api->cmd_args(ctx);
+    char args[256]={0};
+    if (raw && strlen(raw)>=sizeof(args)) goto usage;
+    if (raw) snprintf(args,sizeof(args),"%s",raw);
+    char* save=NULL;
+    char* mode=strtok_r(args," \t\r\n",&save);
+    char* scope=strtok_r(NULL," \t\r\n",&save);
+    char* extra=strtok_r(NULL," \t\r\n",&save);
+    if (!mode || extra || (strcasecmp(mode,"on") && strcasecmp(mode,"off"))) goto usage;
+    int on=!strcasecmp(mode,"on");
+    long long target=0;
+    int local=scope!=NULL;
+    if (local) {
+        if (!strcasecmp(scope,"this")) target=canonical_chat(ctx,api);
+        else if (!parse_id(scope,&target)) goto usage;
+        if (!target) goto usage;
+        if (target==api->chat_id(ctx)) target=canonical_chat(ctx,api);
+        if (!target) goto usage;
+    }
+    int ok=1;
+    if (!local) {
+        if (on) ok=chat_set_toggle(ctx,api,"autoread_chats",0,1);
+        else api->db_set(ctx,"autoread_chats","");
+    } else if (on) {
+        ok=chat_set_toggle(ctx,api,"autoread_chats",target,1);
+        if (ok) chat_set_toggle(ctx,api,"autoread_excluded",target,0);
     } else {
-        char* saveptr = NULL;
-        char* line = strtok_r(buf, "\r\n", &saveptr);
-        int printed = 0;
-        while (line) {
-            while (*line == ' ') line++;
-            if (*line) {
-                long long cid = strtoll(line, NULL, 10);
-                api->c_text(ctx, "• ");
-                if (cid == 0) {
-                    api->c_fmt(ctx, "Все чаты\n", KOTO_ENT_BOLD);
-                } else {
-                    char id_str[64];
-                    snprintf(id_str, sizeof(id_str), "%lld\n", cid);
-                    api->c_fmt(ctx, id_str, KOTO_ENT_CODE);
-                }
-                printed++;
-            }
-            line = strtok_r(NULL, "\r\n", &saveptr);
-        }
-        if (!printed) {
-            api->c_text(ctx, "Список авточтения пуст.");
+        ok=chat_set_toggle(ctx,api,"autoread_excluded",target,1);
+        if (ok) {
+            chat_set_toggle(ctx,api,"autoread_chats",target,0);
+            if (target==canonical_chat(ctx,api)) chat_set_toggle(ctx,api,"autoread_chats",api->chat_id(ctx),0);
         }
     }
-    send_result(ctx, api);
+    api->c_reset(ctx);
+    if (!ok) api->c_text(ctx,"❌ Список чатов заполнен. Настройка не применена.");
+    else if (!local) api->c_text(ctx,on ? "✅ Авточтение включено во всех чатах, кроме сохранённых исключений." : "✅ Авточтение основного аккаунта выключено во всех чатах.");
+    else {
+        char text[256];snprintf(text,sizeof(text),"✅ Авточтение %s в чате %lld.%s",on?"включено":"выключено",target,on?"":" Исключение действует и при включённом режиме для всех чатов.");
+        api->c_text(ctx,text);
+    }
+    send_result(ctx,api);return;
+usage:
+    api->c_reset(ctx);api->c_text(ctx,"❌ Использование: .autread on|off [this|ID чата]. Неизвестные аргументы не меняют настройки.");
+    send_result(ctx,api);
+}
+static void print_chat_set(koto_ctx* ctx,const koto_api* api,const char* key) {
+    char buf[8192]={0};int n=api->db_get(ctx,key,buf,sizeof(buf)-1);
+    if (n<0) n=0;
+    buf[n<(int)sizeof(buf)?n:(int)sizeof(buf)-1]=0;
+    char* save=NULL;char* line=strtok_r(buf,"\r\n",&save);int count=0;
+    while (line) {
+        long long id=0;
+        if (parse_id(line,&id)) {
+            if(count<25){char text[64];snprintf(text,sizeof(text),"• %lld\n",id);api->c_text(ctx,text);}
+            ++count;
+        }
+        line=strtok_r(NULL,"\r\n",&save);
+    }
+    if (!count) api->c_text(ctx,"нет\n");
+    if (count>25) {char text[64];snprintf(text,sizeof(text),"… ещё %d\n",count-25);api->c_text(ctx,text);}
+}
+static void cmd_autreadlist(koto_ctx* ctx,const koto_api* api) {
+    if (!api->check_permission(ctx,KOTO_LEVEL_TRUSTED)) return;
+    api->c_reset(ctx);
+    api->c_text(ctx,chat_set_has(ctx,api,"autoread_chats",0)?"Авточтение: все чаты, кроме исключений.\n":"Авточтение по умолчанию выключено.\n");
+    api->c_text(ctx,"\nИсключения (не читать):\n");print_chat_set(ctx,api,"autoread_excluded");
+    api->c_text(ctx,"\nЯвно включённые чаты:\n");print_chat_set(ctx,api,"autoread_chats");
+    send_result(ctx,api);
 }
 
 static void cmd_autreadnow(koto_ctx* ctx, const koto_api* api) {
@@ -300,21 +303,14 @@ static void cmd_autreadnow(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     long long mid = api->msg_id ? api->msg_id(ctx) : 0;
 
-    api->c_reset(ctx);
-    api->c_text(ctx, "⏳ Читаю историю и упоминания...");
-    send_result(ctx, api);
-
-    if (api->read_history && cid != 0) {
-        api->read_history(ctx, cid, mid);
+    if (!api->read_history || !api->read_mentions || !cid) {
+        api->c_reset(ctx);api->c_text(ctx,"❌ Ядро не предоставляет чтение истории и упоминаний.");send_result(ctx,api);return;
     }
-    if (api->read_mentions && cid != 0) {
-        api->read_mentions(ctx, cid);
-    }
-
+    api->read_history(ctx,cid,mid);
+    api->read_mentions(ctx,cid);
     api->c_reset(ctx);
-    api->c_emoji(ctx, "✅", EMO_SUCCESS);
-    api->c_fmt(ctx, " История и упоминания прочитаны!", KOTO_ENT_BOLD);
-    send_result(ctx, api);
+    api->c_text(ctx,"✅ История и упоминания прочитаны.");
+    send_result(ctx,api);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -471,6 +467,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     if (cid == 0) return 0;
 
+    long long canonical=canonical_chat(ctx,api);
+    if (!canonical || chat_set_has(ctx,api,"autoread_excluded",canonical)) return 0;
     long long my_id = api->get_me ? api->get_me(ctx) : 0;
     long long mid = api->msg_id ? api->msg_id(ctx) : 0;
 
@@ -513,6 +511,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
     // 2. Основной аккаунт: проверяем autoread_chats (0 = все чаты, или cid)
     if (chat_set_has(ctx, api, "autoread_chats", 0) ||
+        chat_set_has(ctx, api, "autoread_chats", canonical) ||
         chat_set_has(ctx, api, "autoread_chats", cid)) {
         if (api->read_history) api->read_history(ctx, cid, mid);
         if (api->read_mentions) api->read_mentions(ctx, cid);
@@ -572,7 +571,7 @@ static const koto_command COMMANDS[] = {
         &cmd_autread,
         KOTO_LEVEL_TRUSTED,
         "Управление авточтением чатов. Без 'this' — все чаты, с 'this' — текущий.",
-        "<on|off> [this]"
+        "<on|off> [this|ID]"
     },
     {
         "autreadlist",
@@ -615,7 +614,8 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.2.0",
+    .version          = "1.2.1",
+    .min_host_version = 61,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
     .flags            = 0,
     .commands         = COMMANDS,
