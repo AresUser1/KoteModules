@@ -111,7 +111,8 @@ static void cmd_lsall(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     long long me_id = api->get_me ? api->get_me(ctx) : 0;
 
-    if (cid > 0) {
+    int chat_type = api->chat_type(ctx);
+    if (chat_type != KOTO_CHAT_GROUP && chat_type != KOTO_CHAT_CHANNEL) {
         api->c_reset(ctx);
         api->c_emoji(ctx, "❌", ERROR_EMOJI_ID);
         api->c_fmt(ctx, " Эта команда работает только в группах и супергруппах.", KOTO_ENT_BOLD);
@@ -320,8 +321,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mass_notifier",
     "Модуль для рассылки сообщений участникам чата в ЛС (C++ ABI 3).",
-    "1.0.4",
-    26,
+    "1.0.5", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

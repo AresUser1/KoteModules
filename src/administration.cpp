@@ -1,4 +1,4 @@
-// Administration port for Kotogram. Real operations are executed by host 59+.
+// Administration port for Kotogram. Real operations are executed by host 60+.
 #include "module_abi.h"
 #include "nlohmann/json.hpp"
 #include <algorithm>
@@ -44,8 +44,8 @@ void say(koto_ctx* ctx,const koto_api* api,const std::string& text) {
 }
 bool allowed(koto_ctx* ctx,const koto_api* api,bool group=false) {
     if (!api->check_permission(ctx,KOTO_LEVEL_TRUSTED)) return false;
-    if (api->host_version(ctx)<59) {
-        say(ctx,api,"❌ Для реального управления администраторами требуется ядро versionCode 59+. Старый порт не выполнял эти запросы."); return false;
+    if (api->host_version(ctx)<60) {
+        say(ctx,api,"❌ Для реального управления администраторами требуется ядро versionCode 60+. Старый порт не выполнял эти запросы."); return false;
     }
     if (group) {
         int type=api->chat_type(ctx);

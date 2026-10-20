@@ -782,25 +782,9 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if (tw_mode == "off") return 0;
     }
 
-    // Личные сообщения (ЛС / PM):
-    // В Telegram ЛС определяются по совпадению cid == sid при положительном cid,
-    // либо по информации из чата (не является каналом/супергруппой).
-    bool is_pm = false;
-    if (cid > 0) {
-        if (cid == sid) {
-            is_pm = true;
-        } else if (api->chat_full_json) {
-            char cbuf[2048] = {0};
-            int clen = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
-            if (clen > 2) {
-                std::string cj(cbuf);
-                if (cj.find("\"is_group\":true") == std::string::npos &&
-                    cj.find("\"is_channel\":true") == std::string::npos) {
-                    is_pm = (cj.find("\"is_group\":false") != std::string::npos);
-                }
-            }
-        }
-    }
+    int type = api->chat_type(ctx);
+    if (type == KOTO_CHAT_UNKNOWN) return 0;
+    bool is_pm = type == KOTO_CHAT_PRIVATE;
 
     if (is_pm) {
         // Твинк в режиме "all" читает ВСЕ чаты (включая ЛС), независимо от настроек основы.
@@ -1109,8 +1093,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.9.6",
-    26,
+    "2.9.7", 60,
     KOTO_MOD_TWINS,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

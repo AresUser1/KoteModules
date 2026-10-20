@@ -22,7 +22,7 @@ for src in "$root"/src/*.c "$root"/src/*.cpp; do
         "$src" -o "$out/$name.so"
 done
 python3 - "$root" "$out" "$KOTO_SDK_INCLUDE" <<'PY'
-import hashlib, json, subprocess, sys
+import hashlib, json, re, subprocess, sys
 from pathlib import Path
 root, out, sdk = map(Path, sys.argv[1:])
 catalog = json.loads((out/'index.json').read_text())
@@ -35,6 +35,14 @@ for entry in catalog['modules']:
     if not binary.is_file():
         raise SystemExit(f'Не собран модуль каталога: {binary.name}')
     entry.update(size=binary.stat().st_size, sha256=hashlib.sha256(binary.read_bytes()).hexdigest())
+    source = next((root/'src'/f"{entry['id']}{suffix}" for suffix in ['.cpp', '.c'] if (root/'src'/f"{entry['id']}{suffix}").exists()), None)
+    if source:
+        text = source.read_text()
+        descriptors = list(re.finditer(r'const\s+koto_module\s+\w+\s*=', text))
+        if descriptors:
+            fields = re.search(r'"(\d+\.\d+\.\d+)"\s*,\s*(\d+)', text[descriptors[-1].start():])
+            if fields:
+                entry.update(version=fields[1], min_host_version=int(fields[2]))
 (out/'index.json').write_text(json.dumps(catalog, ensure_ascii=False, indent=2)+'\n')
 sha = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
 info = {'repository': 'AresUser1/KoteModules', 'commit': sha, 'abi': 'arm64-v8a', 'api': 26,

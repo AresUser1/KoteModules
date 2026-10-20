@@ -17,13 +17,13 @@
 | Модуль | Тип | Версия | Команды | Описание |
 | :--- | :---: | :---: | :--- | :--- |
 | **[administration](src/administration.cpp)** | `C++ / исходник` | `v1.2.0` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Реальные MTProto-действия, шаблоны и панели; требуется исправленное ядро 60+. [Исправления и сборка](docs/ADMINISTRATION_FIX.md). |
-| **[afk](src/afk.cpp)** | `Native .so` | `v2.1.2` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
+| **[afk](src/afk.cpp)** | `Native .so` | `v2.1.3` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[aniliberty](src/aniliberty.cpp)** | `Native .so` | `v1.0.8` | `.aniliberty`, `.arandom`, `.anilib_search` | AniLiberty: поиск аниме по названию, случайные тайтлы (зеркала aniliberty/anilibria) и подробная информация. |
 | **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.2.0` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и надёжное управление твинками (pure C, zero crash). |
 | **[autolast](src/autolast.cpp)** | `Native .so` | `v1.7.1` | `.addlastchat`, `.rmlastchat`, `.addlastuser`, `.rmlastuser`, `.lastadmin`, `.lasthard`, `.listlast` | Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом. |
-| **[autoresponder](src/autoresponder.cpp)** | `Native .so` | `v2.4.2` | `.pm`, `.pmignore` | Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов. |
+| **[autoresponder](src/autoresponder.cpp)** | `Native .so` | `v2.4.3` | `.pm`, `.pmignore` | Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов. |
 | **[bakusearch](src/bakusearch.cpp)** | `Native .so` | `v1.0.4` | `.baku` | Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue). |
-| **[banall](src/banall.cpp)** | `Native .so` | `v1.0.0` | `.banall`, `.kickall` | Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя). |
+| **[banall](src/banall.cpp)** | `Native .so` | `v1.0.1` | `.banall`, `.kickall` | Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя). |
 | **[calculator](src/calculator.cpp)** | `Native .so` | `v1.2.0` | `.calc` | Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями. |
 | **[chat](src/chat.cpp)** | `Native .so` | `v1.0.5` | `.userid`, `.chatid`, `.kickme`, `.users`, `.admins`, `.bots` | Управление чатами, списки участников, администраторов и ботов чата (кэширование bot_ids, MTProto). |
 | **[checkers](src/checkers.c)** | `Native .so` | `v2.2.0` | `.checkers`, `.шашки`, `.checkersend` | Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья. |
@@ -36,14 +36,14 @@
 | **[kotserv](src/kotserv.cpp)** | `Native .so` | `v2.0.3` | `.serv`, `.kscfg` | Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации. |
 | **[mafia_multitool](src/mafia_multitool.cpp)** | `Native .so` | `v1.2.8` | `.mset`, `.mdelay`, `.mhuman`, `.msettings`, `.mfreeze`, `.mcombat`, `.mlast`, `.mprelast`, `.mvesh`, `.mreg`, `.mbvesh`, `.mblike`, `.mbdis`, `.mrole`, `.mlike`, `.mdis`, `.mprofile`, `.mtrue`, `.mtvesh`, `.mkvesh`, `.mkgraf`, `.mbaku`, `.movesh` | Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf). |
 | **[mafia_triggers](src/mafia_triggers.cpp)** | `Native .so` | `v2.1.3` | `.wtr`, `.mtr` | Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков, выходящих или афкашащих. |
-| **[mass_notifier](src/mass_notifier.cpp)** | `Native .so` | `v1.0.4` | `.lsall` | Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев. |
-| **[moderation](src/moderation.cpp)** | `Native .so` | `v1.1.6` | `.ban`, `.sban`, `.unban`, `.kick`, `.skick`, `.mute`, `.smute`, `.unmute`, `.warn`, `.unwarn`, `.warns`, `.warnlimit`, `.delusers`, `.modhistory`, `.gameban`, `.gset`, `.gban`, `.ungban`, `.gkick` | Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное. |
+| **[mass_notifier](src/mass_notifier.cpp)** | `Native .so` | `v1.0.5` | `.lsall` | Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев. |
+| **[moderation](src/moderation.cpp)** | `Native .so` | `v1.1.7` | `.ban`, `.sban`, `.unban`, `.kick`, `.skick`, `.mute`, `.smute`, `.unmute`, `.warn`, `.unwarn`, `.warns`, `.warnlimit`, `.delusers`, `.modhistory`, `.gameban`, `.gset`, `.gban`, `.ungban`, `.gkick` | Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное. |
 | **[music](src/music.cpp)** | `Native .so` | `v3.0.0` | `.mus`, `.musconfig` | Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства. |
 | **[profile_manager](src/profile_manager.cpp)** | `Native .so` | `v1.2.1` | `.name`, `.sname`, `.lname`, `.dname`, `.namelist`, `.setava`, `.delava` | Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3). |
-| **[rp](src/rp.cpp)** | `Native .so` | `v3.0.2` | `.rp`, `.addrp`, `.delrp`, `.rplist`, `.setrpnick`, `.delrpnick`, `.rpnick`, `.addrpcreator`, `.delrpcreator`, `.listrpcreators`, `.setrpemoji`, `.delrpemoji`, `.rpemojis` | Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji). |
-| **[spam_ban](src/spam_ban.cpp)** | `Native .so` | `v1.6.1` | `.spamtwins`, `.spamban` | Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3). |
+| **[rp](src/rp.cpp)** | `Native .so` | `v3.0.3` | `.rp`, `.addrp`, `.delrp`, `.rplist`, `.setrpnick`, `.delrpnick`, `.rpnick`, `.addrpcreator`, `.delrpcreator`, `.listrpcreators`, `.setrpemoji`, `.delrpemoji`, `.rpemojis` | Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji). |
+| **[spam_ban](src/spam_ban.cpp)** | `Native .so` | `v1.6.2` | `.spamtwins`, `.spamban` | Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3). |
 | **[spammer](src/spammer.cpp)** | `Native .so` | `v1.2.1` | `.spam`, `.stopspam` | Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении. |
-| **[stags](src/stags.cpp)** | `Native .so` | `v2.9.6` | `.stags`, `.stconfig`, `.sttwins` | Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3). |
+| **[stags](src/stags.cpp)** | `Native .so` | `v2.9.7` | `.stags`, `.stconfig`, `.sttwins` | Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3). |
 | **[sysinfo](src/sysinfo.cpp)** | `Native .so` | `v1.0.1` | `.sys`, `.sysinfo`, `.neofetch` | Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и красивый Neofetch. |
 | **[tagger](src/tagger.cpp)** | `Native .so` | `v3.4.5` | `.tag`, `.itag`, `.etag`, `.stoptag`, `.cleartag`, `.tagdelay`, `.tagusers`, `.add`, `.remove`, `.helps`, `.nonick`, `.tagbots`, `.tagadmins`, `.tagsettings` | Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3). |
 | **[tt_dl](src/tt_dl.cpp)** | `Native .so` | `v1.5.0` | `.tt` | Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album) через tikwm API с живым статусом и логами. Настройка подписи: полная или краткая (в приложении и через .tt caption). |
@@ -121,3 +121,24 @@
 ## Разработка и GitHub Actions
 
 Тесты перед push, Android-сборки, SDK, Artifacts и ручная подготовка релизов: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## Обновление для Kotogram 0.3.40
+
+Проверены все 32 нативных исходника и выполнена NDK-сборка под arm64-v8a / API 26.
+Исправлено определение типа чата в administration, moderation, mass_notifier,
+banall, RP, Silent Tags, AFK, autoresponder и spam_ban. Обновлённые варианты
+используют API ядра **60+**; совместимость указана и в `.so`, и в каталоге.
+
+Шахматы используют обычные Unicode-фигуры. Counter и демонстрационные модули
+в каталог не входят. Каталог содержит реальные размеры и SHA-256 бинарников.
+
+`spam_ban` использует настоящий запрос жалобы Telegram и блокировку пользователя.
+Отправка `/start` пользователю удалена. Репорт с нескольких твинков не объявляется
+рабочим: текущая версия выполняет действие выбранным аккаунтом.
+
+Проверки включают реальные загрузку ABI/реестр, сериализацию MTProto, правила
+шахмат, положительные ID групп, пустой кеш и отложенный вывод результатов.
+Это офлайн-проверки: действия с участниками реального Telegram-чата не выполнялись.
+
+CI использует публичный снимок SDK в `sdk/`; доступ к приватным исходникам
+Kotogram для сборки `.so` не нужен. Полная интеграция запускается в приватном CI ядра.

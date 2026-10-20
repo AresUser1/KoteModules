@@ -482,7 +482,9 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     }
 
     // Проверяем: ЛС или упоминание/ответ
-    bool is_private = (cid > 0 && cid == sid);
+    int type = api->chat_type(ctx);
+    if (type == KOTO_CHAT_UNKNOWN) return 0;
+    bool is_private = type == KOTO_CHAT_PRIVATE;
     bool is_mentioned = false;
 
     if (!is_private) {
@@ -624,8 +626,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "afk",
     "Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений.",
-    "2.1.2",
-    26, // min_host_version (требует v0.3.6+ для api->set_name)
+    "2.1.3", 60, // min_host_version (требует v0.3.6+ для api->set_name)
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

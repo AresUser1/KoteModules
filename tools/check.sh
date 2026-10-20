@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-export KOTO_CORE_DIR="${KOTO_CORE_DIR:-$root/../kotogram/kotogram-lib}"
-export KOTO_SDK_INCLUDE="${KOTO_SDK_INCLUDE:-$KOTO_CORE_DIR/../kote_module_sdk/include}"
-cmp "$KOTO_CORE_DIR/host/module_abi.h" "$KOTO_SDK_INCLUDE/module_abi.h"
-make -C "$KOTO_CORE_DIR" -j"${KOTO_JOBS:-2}" \
-    CXXFLAGS='-std=c++20 -O1 -g0 -Wall -Wextra -Wno-unused-parameter -fcoroutines -pthread' lib
+core="${KOTO_CORE_DIR:-$root/../kotogram/kotogram-lib}"
+export KOTO_SDK_INCLUDE="${KOTO_SDK_INCLUDE:-$root/sdk/include}"
 shopt -s nullglob
 for src in "$root"/src/*.c "$root"/src/*.cpp; do
     if [[ "$src" == *.cpp ]]; then compiler="${CXX:-g++}"; standard=c++20
@@ -13,4 +10,12 @@ for src in "$root"/src/*.c "$root"/src/*.cpp; do
     "$compiler" "-std=$standard" -fsyntax-only -pthread -I"$KOTO_SDK_INCLUDE" "$src"
 done
 bash "$root/tests/run_chess.sh"
-bash "$root/tests/run_administration.sh"
+if [[ -f "$core/tests/test_administration.cpp" ]]; then
+    export KOTO_CORE_DIR="$core"
+    cmp "$core/host/module_abi.h" "$KOTO_SDK_INCLUDE/module_abi.h"
+    make -C "$core" -j"${KOTO_JOBS:-2}" CXXFLAGS='-std=c++20 -O1 -g0 -pthread -fcoroutines' lib
+    bash "$root/tests/run_administration.sh"
+    bash "$root/tests/run_chat_types.sh"
+else
+    echo 'Core integration tests run in the private Kotogram CI; public CI uses the exported SDK.'
+fi
