@@ -13,6 +13,7 @@ bash "$root/tests/run_chess.sh"
 if [[ -f "$core/tests/test_administration.cpp" ]]; then
     export KOTO_CORE_DIR="$core"
     cmp "$core/host/module_abi.h" "$KOTO_SDK_INCLUDE/module_abi.h"
+    cmp "$core/host/module_abi.h" "$root/sdk/include/module_abi.h"
     make -C "$core" -j"${KOTO_JOBS:-2}" CXXFLAGS='-std=c++20 -O1 -g0 -pthread -fcoroutines' lib
     bash "$root/tests/run_administration.sh"
     bash "$root/tests/run_chat_types.sh"

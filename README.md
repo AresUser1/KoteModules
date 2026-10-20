@@ -16,7 +16,7 @@
 
 | Модуль | Тип | Версия | Команды | Описание |
 | :--- | :---: | :---: | :--- | :--- |
-| **[administration](src/administration.cpp)** | `C++ / исходник` | `v1.2.0` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Реальные MTProto-действия, шаблоны и панели; требуется исправленное ядро 60+. [Исправления и сборка](docs/ADMINISTRATION_FIX.md). |
+| **[administration](src/administration.cpp)** | `Native .so` | `v1.2.0` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Реальные MTProto-действия, шаблоны и панели; требуется исправленное ядро 60+. [Исправления и сборка](docs/ADMINISTRATION_FIX.md). |
 | **[afk](src/afk.cpp)** | `Native .so` | `v2.1.3` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[aniliberty](src/aniliberty.cpp)** | `Native .so` | `v1.0.8` | `.aniliberty`, `.arandom`, `.anilib_search` | AniLiberty: поиск аниме по названию, случайные тайтлы (зеркала aniliberty/anilibria) и подробная информация. |
 | **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.2.0` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и надёжное управление твинками (pure C, zero crash). |
@@ -27,7 +27,7 @@
 | **[calculator](src/calculator.cpp)** | `Native .so` | `v1.2.0` | `.calc` | Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями. |
 | **[chat](src/chat.cpp)** | `Native .so` | `v1.0.5` | `.userid`, `.chatid`, `.kickme`, `.users`, `.admins`, `.bots` | Управление чатами, списки участников, администраторов и ботов чата (кэширование bot_ids, MTProto). |
 | **[checkers](src/checkers.c)** | `Native .so` | `v2.2.0` | `.checkers`, `.шашки`, `.checkersend` | Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья. |
-| **[chess](src/chess.c)** | `C / исходник` | `v1.0.0` | `.chess`, `.шахматы`, `.chessend`, `.chesshelp` | Шахматы PvP на кнопках, обычные Unicode-фигуры, рокировка, en passant, превращение, мат, ничьи и реванш. [Сборка](docs/CHESS.md). |
+| **[chess](src/chess.c)** | `Native .so` | `v1.0.0` | `.chess`, `.шахматы`, `.chessend`, `.chesshelp` | Шахматы PvP на кнопках, обычные Unicode-фигуры, рокировка, en passant, превращение, мат, ничьи и реванш. [Сборка](docs/CHESS.md). |
 | **[copymessage](src/copymessage.c)** | `Native .so` | `v1.3.0` | `.copy`, `.hcopy` | Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy). |
 | **[dep](src/dep.cpp)** | `Native .so` | `v1.0.2` | `.депаю`, `.dep` | Эмуляция ставок и азартного броска в чате со слотами (🎰). |
 | **[dox](src/dox.cpp)** | `Native .so` | `v1.0.9` | `.dox`, `.setdoxbot` | Интеграция с Dox-ботами: точный 1:1 порт dox.py, автовыбор направления Telegram, мгновенное извлечение и выдача номера телефона. |
@@ -41,7 +41,7 @@
 | **[music](src/music.cpp)** | `Native .so` | `v3.0.0` | `.mus`, `.musconfig` | Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства. |
 | **[profile_manager](src/profile_manager.cpp)** | `Native .so` | `v1.2.1` | `.name`, `.sname`, `.lname`, `.dname`, `.namelist`, `.setava`, `.delava` | Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3). |
 | **[rp](src/rp.cpp)** | `Native .so` | `v3.0.3` | `.rp`, `.addrp`, `.delrp`, `.rplist`, `.setrpnick`, `.delrpnick`, `.rpnick`, `.addrpcreator`, `.delrpcreator`, `.listrpcreators`, `.setrpemoji`, `.delrpemoji`, `.rpemojis` | Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji). |
-| **[spam_ban](src/spam_ban.cpp)** | `Native .so` | `v1.6.2` | `.spamtwins`, `.spamban` | Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3). |
+| **[spam_ban](src/spam_ban.cpp)** | `Native .so` | `v1.6.2` | `.spamban`, `.spamtwins` | Запрос жалобы и блокировки текущим аккаунтом; требуется ядро 60+. Команда `.spamtwins` сообщает о доступности функции. |
 | **[spammer](src/spammer.cpp)** | `Native .so` | `v1.2.1` | `.spam`, `.stopspam` | Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении. |
 | **[stags](src/stags.cpp)** | `Native .so` | `v2.9.7` | `.stags`, `.stconfig`, `.sttwins` | Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3). |
 | **[sysinfo](src/sysinfo.cpp)** | `Native .so` | `v1.0.1` | `.sys`, `.sysinfo`, `.neofetch` | Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и красивый Neofetch. |

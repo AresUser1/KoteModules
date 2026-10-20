@@ -490,4 +490,3 @@ const koto_module* koto_module_register(void);
 }
 #endif
 #endif /* KOTO_MODULE_ABI_H */
-
