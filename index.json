@@ -482,28 +482,28 @@
       "name": "dox",
       "display_name": "Поиск данных (Dox)",
       "author": "Kote",
-      "description": "Интеграция с поисковыми Dox-ботами: автовыбор направления Telegram, сбор телефонов, истории имен и связей.",
-      "version": "1.0.8",
+      "description": "Интеграция с Dox-ботами: автовыбор Telegram и поиск номера телефона (1:1 порт dox.py).",
+      "version": "1.0.9",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "dox",
-          "doc": "Ищет информацию о пользователе через Dox-бота с автовыбором Telegram.",
-          "usage": "[@user/ID/номер]"
+          "doc": "Ищет информацию о пользователе (1:1 как в dox.py).",
+          "usage": "[@user/ID]"
         },
         {
           "name": "setdoxbot",
-          "doc": "Устанавливает персонального Dox-бота или текущий диалог.",
-          "usage": "[@bot]"
+          "doc": "Устанавливает вашего Dox-бота (1:1 как в dox.py).",
+          "usage": "<@username_бота>"
         }
       ],
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/dox.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 343408,
-      "sha256": "ec1a6995543149e2737420530a6e37e08af8f51329677765f391d9c9e67313ca"
+      "size": 469144,
+      "sha256": "94cf344e9f07d9f65403e544fec7294d3856759ba30b31636ba6a97745e7f555"
     },
     {
       "id": "id",
