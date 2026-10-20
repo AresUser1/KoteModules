@@ -7,7 +7,10 @@
 #include "nlohmann/json.hpp"
 #include <string>
 #include <vector>
+#include <set>
 #include <sstream>
+#include <cctype>
+#include <algorithm>
 
 namespace {
 
@@ -216,12 +219,68 @@ static void cmd_bots(koto_ctx* ctx, const koto_api* api) {
     std::string full_json = koto_utils::get_chat_full_json(api, ctx, cid);
 
     std::vector<long long> bots;
+    std::set<long long> seen_bots;
+
     try {
         if (!full_json.empty() && full_json != "{}") {
             auto j = nlohmann::json::parse(full_json);
             if (j.contains("bot_ids") && j["bot_ids"].is_array()) {
                 for (auto& item : j["bot_ids"]) {
-                    bots.push_back(item.get<long long>());
+                    long long bid = item.get<long long>();
+                    if (bid > 0 && seen_bots.insert(bid).second) {
+                        bots.push_back(bid);
+                    }
+                }
+            }
+
+            // Fallback: если bot_ids не было в json (например, старый кэш или старая версия ядра),
+            // перебираем участников participant_ids и администраторов admin_ids
+            if (bots.empty()) {
+                std::vector<long long> candidate_ids;
+                if (j.contains("participant_ids") && j["participant_ids"].is_array()) {
+                    for (auto& item : j["participant_ids"]) candidate_ids.push_back(item.get<long long>());
+                }
+                if (j.contains("admin_ids") && j["admin_ids"].is_array()) {
+                    for (auto& item : j["admin_ids"]) candidate_ids.push_back(item.get<long long>());
+                }
+
+                for (long long uid : candidate_ids) {
+                    if (uid <= 0 || seen_bots.find(uid) != seen_bots.end()) continue;
+
+                    bool is_bot = false;
+                    std::string ujson = koto_utils::get_user_full_json(api, ctx, uid);
+                    if (!ujson.empty() && ujson != "{}") {
+                        try {
+                            auto uj = nlohmann::json::parse(ujson);
+                            if (uj.value("is_bot", false)) {
+                                is_bot = true;
+                            } else {
+                                std::string uname = uj.value("username", "");
+                                if (!uname.empty()) {
+                                    std::string lk = uname;
+                                    for (char& c : lk) c = (char)tolower((unsigned char)c);
+                                    if (lk.size() >= 3 && lk.rfind("bot") == lk.size() - 3) {
+                                        is_bot = true;
+                                    }
+                                }
+                            }
+                        } catch (...) {}
+                    }
+                    if (!is_bot) {
+                        std::string uname = koto_utils::get_user_username(api, ctx, uid);
+                        if (!uname.empty()) {
+                            std::string lk = uname;
+                            for (char& c : lk) c = (char)tolower((unsigned char)c);
+                            if (lk.size() >= 3 && lk.rfind("bot") == lk.size() - 3) {
+                                is_bot = true;
+                            }
+                        }
+                    }
+
+                    if (is_bot) {
+                        seen_bots.insert(uid);
+                        bots.push_back(uid);
+                    }
                 }
             }
         }
@@ -232,14 +291,17 @@ static void cmd_bots(koto_ctx* ctx, const koto_api* api) {
     api->c_fmt(ctx, " Боты в чате:\n\n", KOTO_ENT_BOLD);
 
     if (bots.empty()) {
-        api->c_text(ctx, "Боты не обнаружены в кэше чата.");
+        api->c_text(ctx, "Боты в чате не найдены.");
     } else {
         api->c_fmt(ctx, "Всего ботов: ", KOTO_ENT_BOLD);
         api->c_fmt(ctx, (std::to_string(bots.size()) + "\n\n").c_str(), KOTO_ENT_CODE);
 
         for (long long uid : bots) {
             std::string fname = koto_utils::get_user_first_name(api, ctx, uid);
-            if (fname.empty()) fname = "Bot " + std::to_string(uid);
+            if (fname.empty()) {
+                std::string uname = koto_utils::get_user_username(api, ctx, uid);
+                fname = (!uname.empty()) ? ("@" + uname) : ("Bot " + std::to_string(uid));
+            }
 
             api->c_text(ctx, "• ");
             std::string url = "tg://user?id=" + std::to_string(uid);
@@ -302,7 +364,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "chat",
     "Управление чатами и получение информации об участниках/админах (C++ ABI 3).",
-    "1.0.4",
+    "1.0.5",
     26,
     0,
     COMMANDS,

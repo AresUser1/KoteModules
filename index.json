@@ -346,7 +346,7 @@
       "display_name": "Управление чатом (Chat)",
       "author": "Kote",
       "description": "Управление чатами, списки участников, администраторов и ботов, получение ID.",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -385,8 +385,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 243440,
-      "sha256": "ebb5e71ccf37696e77f1ca411bc732a458228feb3223b8cfe3ddbbba5b5dafc1"
+      "size": 278256,
+      "sha256": "aae64f046f05275c69ead1abb39c2ed46f0442cdd55a480a4eefa0142b3b9988"
     },
     {
       "id": "checkers",
