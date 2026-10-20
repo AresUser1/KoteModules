@@ -107,7 +107,7 @@
 ## 👨‍💻 Разработчикам модулей
 
 Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK (ABI 3)**:
-* 🧰 **[Скачать Kote Module SDK Kit (ZIP)](https://github.com/AresUser1/LoaderKote/releases/latest/download/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочным файлом `module_abi.h`, кроссплатформенными скриптами `build.sh` / `Makefile` / `CMakeLists.txt` и подробными руководствами по C и Lua.
+* 🧰 **[Скачать Kote Module SDK Kit (ZIP)](https://raw.githubusercontent.com/AresUser1/LoaderKote/2c1a9bcbcccdf1fd3e7987736643ea99951d47ba/dist/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочным файлом `module_abi.h`, кроссплатформенными скриптами `build.sh` / `Makefile` / `CMakeLists.txt` и подробными руководствами по C и Lua.
 * **Сборка под Android**: NDK Clang под `arm64-v8a` (или под локальный Linux через `./build.sh --host`).
 * **Инлайн-кнопки и колбэки**: универсальная поддержка интерактивных игр и кнопочных меню через `api->c_button()`, `on_callback`, `api->cb_answer()` и `api->c_edit_message()`.
 * **Готовый шаблон**: используйте `src/my_module.c` из архива SDK для быстрого старта.
