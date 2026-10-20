@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
   <img src="https://img.shields.io/badge/ABI-Native%20ABI%203-blue?style=for-the-badge" alt="ABI" />
-  <img src="https://img.shields.io/badge/Kotogram-v0.3.32+-orange?style=for-the-badge" alt="Kotogram Version" />
+  <img src="https://img.shields.io/badge/Kotogram-v0.3.35+-orange?style=for-the-badge" alt="Kotogram Version" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
@@ -19,13 +19,13 @@
 | **[administration](src/administration.cpp)** | `Native .so` | `v1.1.3` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки. |
 | **[afk](src/afk.cpp)** | `Native .so` | `v2.1.2` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[aniliberty](src/aniliberty.cpp)** | `Native .so` | `v1.0.7` | `.aniliberty`, `.arandom`, `.anilib_search` | AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах. |
-| **[auto_manager](src/auto_manager.cpp)** | `Native .so` | `v1.1.2` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и управление твинками. |
+| **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.2.0` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение чатов с очисткой упоминаний, автоодобрение заявок на вступление и надёжное управление твинками (pure C, zero crash). |
 | **[autolast](src/autolast.cpp)** | `Native .so` | `v1.7.1` | `.addlastchat`, `.rmlastchat`, `.addlastuser`, `.rmlastuser`, `.lastadmin`, `.lasthard`, `.listlast` | Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом. |
 | **[autoresponder](src/autoresponder.cpp)** | `Native .so` | `v2.4.2` | `.pm`, `.pmignore` | Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов. |
 | **[bakusearch](src/bakusearch.cpp)** | `Native .so` | `v1.0.4` | `.baku` | Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue). |
 | **[banall](src/banall.cpp)** | `Native .so` | `v1.0.0` | `.banall`, `.kickall` | Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя). |
 | **[calculator](src/calculator.cpp)** | `Native .so` | `v1.2.0` | `.calc` | Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями. |
-| **[chat](src/chat.cpp)** | `Native .so` | `v1.0.4` | `.userid`, `.chatid`, `.kickme`, `.users`, `.admins`, `.bots` | Управление чатами, списки участников, администраторов и ботов, получение ID. |
+| **[chat](src/chat.cpp)** | `Native .so` | `v1.0.5` | `.userid`, `.chatid`, `.kickme`, `.users`, `.admins`, `.bots` | Управление чатами, списки участников, администраторов и ботов чата (кэширование bot_ids, MTProto). |
 | **[checkers](src/checkers.c)** | `Native .so` | `v2.2.0` | `.checkers`, `.шашки`, `.checkersend` | Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья. |
 | **[copymessage](src/copymessage.c)** | `Native .so` | `v1.3.0` | `.copy`, `.hcopy` | Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy). |
 | **[dep](src/dep.cpp)** | `Native .so` | `v1.0.2` | `.депаю`, `.dep` | Эмуляция ставок и азартного броска в чате со слотами (🎰). |
