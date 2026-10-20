@@ -11,7 +11,10 @@
 
 namespace {
 
-static const std::string BASE_API_URL = "https://aniliberty.top/api/v1";
+static const std::vector<std::string> API_HOSTS = {
+    "https://aniliberty.top/api/v1",
+    "https://anilibria.top/api/v1"
+};
 
 static void send_result(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) {
@@ -21,18 +24,34 @@ static void send_result(koto_ctx* ctx, const koto_api* api) {
     }
 }
 
+static std::string api_get(const koto_api* api, koto_ctx* ctx, const std::string& path_and_query) {
+    static const std::vector<std::string> headers = {
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+        "Accept: application/json, text/plain, */*",
+        "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"
+    };
+    for (const auto& base : API_HOSTS) {
+        std::string url = base + path_and_query;
+        std::string res = koto_utils::http_get(api, ctx, url, headers, 8);
+        if (!res.empty()) {
+            return res;
+        }
+    }
+    return "";
+}
+
 // Получение JSON по ID релиза
 static std::string fetch_title_by_id(const koto_api* api, koto_ctx* ctx, long long release_id) {
-    std::string url = BASE_API_URL + "/anime/releases/" + std::to_string(release_id) +
+    std::string path = "/anime/releases/" + std::to_string(release_id) +
         "?include=id%2Cgenres.name%2Cname.main%2Cis_ongoing%2Ctype.description%2C"
         "description%2Cadded_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail";
-    return koto_utils::http_get(api, ctx, url);
+    return api_get(api, ctx, path);
 }
 
 // Получение случайного тайтла
 static std::string fetch_random_title(const koto_api* api, koto_ctx* ctx) {
-    std::string rand_url = BASE_API_URL + "/anime/releases/random?limit=1&include=id";
-    std::string rand_json = koto_utils::http_get(api, ctx, rand_url);
+    std::string path = "/anime/releases/random?limit=1&include=id";
+    std::string rand_json = api_get(api, ctx, path);
     if (rand_json.empty()) return "";
 
     try {
@@ -49,10 +68,10 @@ static std::string fetch_random_title(const koto_api* api, koto_ctx* ctx) {
 // Поиск тайтлов
 static std::string search_titles(const koto_api* api, koto_ctx* ctx, const std::string& query) {
     std::string enc = koto_utils::url_encode(query);
-    std::string url = BASE_API_URL + "/app/search/releases?query=" + enc +
+    std::string path = "/app/search/releases?query=" + enc +
         "&include=id%2Cname.main%2Cis_ongoing%2Ctype.description%2Cdescription%2C"
         "added_in_users_favorites%2Calias%2Cposter.preview%2Cposter.thumbnail";
-    return koto_utils::http_get(api, ctx, url);
+    return api_get(api, ctx, path);
 }
 
 // Отрисовка карточки аниме
@@ -108,7 +127,12 @@ static bool render_anime_card(koto_ctx* ctx, const koto_api* api, const std::str
         // Постер
         std::string poster_url;
         if (j.contains("poster") && j["poster"].contains("preview") && !j["poster"]["preview"].is_null()) {
-            poster_url = "https://aniliberty.top" + j["poster"]["preview"].get<std::string>();
+            std::string ppath = j["poster"]["preview"].get<std::string>();
+            if (ppath.rfind("http", 0) == 0) {
+                poster_url = ppath;
+            } else {
+                poster_url = "https://anilibria.top" + ppath;
+            }
         }
 
         // Ссылка на просмотр (alias или id)
@@ -181,7 +205,7 @@ static void cmd_arandom(koto_ctx* ctx, const koto_api* api) {
     std::string data = fetch_random_title(api, ctx);
     if (!render_anime_card(ctx, api, data)) {
         api->c_reset(ctx);
-        api->c_text(ctx, "❌ Ошибка API AniLiberty или тайтл не найден.");
+        api->c_text(ctx, "❌ Ошибка API AniLiberty: сервер недоступен или тайтл не найден.\n> Проверьте интернет / DNS / VPN на устройстве.");
     }
     send_result(ctx, api);
 }
@@ -225,7 +249,7 @@ static void cmd_anilib_search(koto_ctx* ctx, const koto_api* api) {
         api->c_reset(ctx);
         api->c_text(ctx, "❌ По запросу ");
         api->c_fmt(ctx, query.c_str(), KOTO_ENT_CODE);
-        api->c_text(ctx, " ничего не найдено.");
+        api->c_text(ctx, " ничего не найдено или сервер недоступен.");
     }
 
     send_result(ctx, api);
@@ -313,7 +337,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "aniliberty",
     "Поиск и выбор случайного аниме из базы AniLiberty с постерами (C++ ABI 3).",
-    "1.0.7",
+    "1.0.8",
     26,
     0,
     COMMANDS,
