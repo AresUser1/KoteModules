@@ -110,7 +110,7 @@
       "display_name": "AniLiberty (Аниме)",
       "author": "Kote",
       "description": "AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах.",
-      "version": "1.0.7",
+      "version": "1.0.8",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -134,8 +134,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 1589096,
-      "sha256": "ea6f5bd5b1615c3a97088b4a91d0d2a23559c3ed4df13168344750b67ad076ed"
+      "size": 265864,
+      "sha256": "0836c26866e5dad9d750ac7690a238315628d6d0a95729e71dd1cbf23245ae1c"
     },
     {
       "id": "auto_manager",
