@@ -1,194 +1,126 @@
-// banall.cpp — Модуль для массовой очистки чата (бан или кик всех участников) (C++ ABI 3).
-// Портирован из Python-модуля banall.py (v1.0.0).
-// Автор: Kote
-
+// Mass moderation through the host queue. No Telegram calls are made directly.
 #include "module_abi.h"
 #include "koto_utils.hpp"
-#include <string>
-#include <vector>
+#include "nlohmann/json.hpp"
+#include <limits>
 #include <set>
 #include <sstream>
-#include <unistd.h>
+#include <string>
+#include <vector>
 
 namespace {
-
-static void send_result(koto_ctx* ctx, const koto_api* api) {
-    if (api->is_outgoing(ctx)) {
-        api->c_edit(ctx, 0);
-    } else {
-        api->c_reply(ctx, 0);
-    }
+using nlohmann::json;
+void send_result(koto_ctx* ctx, const koto_api* api, const std::string& text) {
+    api->c_reset(ctx);
+    api->c_text(ctx, text.c_str());
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+    else api->c_reply(ctx, 0);
 }
-
-// Извлечение ID админов из chat_full_json
-std::set<long long> get_chat_admin_ids(const koto_api* api, koto_ctx* ctx, long long chat_id) {
-    std::set<long long> admin_ids;
-    std::string full_json = koto_utils::get_chat_full_json(api, ctx, chat_id);
-
-    // Поиск "admin_ids" или "creator_id" или участников с admin_rights
-    size_t creator_pos = full_json.find("\"creator_id\":");
-    if (creator_pos != std::string::npos) {
-        long long cid = strtoll(full_json.c_str() + creator_pos + 13, nullptr, 10);
-        if (cid > 0) admin_ids.insert(cid);
+long long positive_id(const json& value) {
+    if (value.is_number_unsigned()) {
+        auto n = value.get<unsigned long long>();
+        if (n <= static_cast<unsigned long long>(std::numeric_limits<long long>::max()))
+            return static_cast<long long>(n);
+    } else if (value.is_number_integer()) {
+        auto n = value.get<long long>();
+        if (n > 0) return n;
     }
-
-    size_t admins_pos = full_json.find("\"admin_ids\":");
-    if (admins_pos != std::string::npos) {
-        size_t b = full_json.find('[', admins_pos);
-        size_t e = (b != std::string::npos) ? full_json.find(']', b) : std::string::npos;
-        if (b != std::string::npos && e != std::string::npos) {
-            std::string sub = full_json.substr(b + 1, e - b - 1);
-            std::stringstream ss(sub);
-            std::string item;
-            while (std::getline(ss, item, ',')) {
-                long long id = strtoll(item.c_str(), nullptr, 10);
-                if (id > 0) admin_ids.insert(id);
-            }
-        }
-    }
-
-    return admin_ids;
+    return 0;
 }
-
-void cmd_banall(koto_ctx* ctx, const koto_api* api) {
+void clean_chat(koto_ctx* ctx, const koto_api* api, bool kick) {
     if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
-
-    long long chat_id = api->chat_id(ctx);
     int type = api->chat_type(ctx);
     if (type != KOTO_CHAT_GROUP && type != KOTO_CHAT_CHANNEL) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ Эта команда работает только в группах и каналах.");
-        send_result(ctx, api);
+        send_result(ctx, api, "❌ Эта команда работает только в группах и каналах.");
         return;
     }
-
-    api->c_reset(ctx);
-    api->c_text(ctx, "⌛ ");
-    api->c_fmt(ctx, "Начинаю сбор данных и бан участников...", KOTO_ENT_BOLD);
-    send_result(ctx, api);
-
-    std::vector<long long> participants = koto_utils::get_chat_participants(api, ctx, chat_id);
-    if (participants.empty()) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ Не удалось получить список участников или чат пуст.");
-        send_result(ctx, api);
-        return;
-    }
-
     long long my_id = api->get_me ? api->get_me(ctx) : 0;
-    std::set<long long> admin_ids = get_chat_admin_ids(api, ctx, chat_id);
-
-    int count = 0;
-    int errors = 0;
-
-    for (long long uid : participants) {
-        if (uid <= 0 || uid == my_id) continue;
-        if (admin_ids.count(uid)) continue;
-
-        if (api->ban_user) {
-            api->ban_user(ctx, chat_id, uid, 0);
-            count++;
-        } else {
-            errors++;
-        }
+    if (my_id <= 0) {
+        send_result(ctx, api, "❌ Ядро не вернуло ID текущего аккаунта. Нельзя исключить себя из очистки. Запросы не отправлены.");
+        return;
     }
-
-    api->c_reset(ctx);
-    api->c_text(ctx, "🎉 ");
-    api->c_fmt(ctx, "Запросы на очистку сформированы.\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, "Запросов на бан: ");
-    api->c_fmt(ctx, std::to_string(count).c_str(), KOTO_ENT_CODE);
-    api->c_text(ctx, "\n❌ Пропущено (админы/ошибки): ");
-    api->c_fmt(ctx, std::to_string(errors + (int)admin_ids.size()).c_str(), KOTO_ENT_CODE);
-    send_result(ctx, api);
-}
-
-void cmd_kickall(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
-
     long long chat_id = api->chat_id(ctx);
-    int type = api->chat_type(ctx);
-    if (type != KOTO_CHAT_GROUP && type != KOTO_CHAT_CHANNEL) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ Эта команда работает только в группах и каналах.");
-        send_result(ctx, api);
+    auto snapshot = json::parse(koto_utils::get_chat_full_json(api, ctx, chat_id), nullptr, false);
+    if (!snapshot.is_object() || !snapshot.contains("participant_ids") || !snapshot["participant_ids"].is_array()) {
+        send_result(ctx, api, "❌ Ядро не вернуло список participant_ids. Нельзя определить участников для очистки. Запросы не отправлены.\nПовторите команду после обновления сведений о группе.");
         return;
     }
-
-    api->c_reset(ctx);
-    api->c_text(ctx, "⌛ ");
-    api->c_fmt(ctx, "Начинаю сбор данных и кик участников...", KOTO_ENT_BOLD);
-    send_result(ctx, api);
-
-    std::vector<long long> participants = koto_utils::get_chat_participants(api, ctx, chat_id);
-    if (participants.empty()) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ Не удалось получить список участников или чат пуст.");
-        send_result(ctx, api);
+    if (!snapshot.contains("admin_ids") || !snapshot["admin_ids"].is_array()) {
+        send_result(ctx, api, "❌ Ядро не вернуло список admin_ids. Нельзя исключить администраторов из очистки. Запросы не отправлены.");
         return;
     }
-
-    long long my_id = api->get_me ? api->get_me(ctx) : 0;
-    std::set<long long> admin_ids = get_chat_admin_ids(api, ctx, chat_id);
-
-    int count = 0;
-    int errors = 0;
-
-    for (long long uid : participants) {
-        if (uid <= 0 || uid == my_id) continue;
-        if (admin_ids.count(uid)) continue;
-
-        if (api->kick_user) {
-            api->kick_user(ctx, chat_id, uid);
-            count++;
-        } else {
-            errors++;
+    std::set<long long> admins, seen;
+    for (const auto& entry : snapshot["admin_ids"]) {
+        if (auto id = positive_id(entry)) admins.insert(id);
+    }
+    if (snapshot.contains("creator_id")) {
+        if (auto id = positive_id(snapshot["creator_id"])) admins.insert(id);
+    }
+    std::vector<long long> targets;
+    std::vector<std::string> skipped;
+    size_t self_count = 0, admin_count = 0, invalid_count = 0, duplicates = 0;
+    for (const auto& entry : snapshot["participant_ids"]) {
+        auto uid = positive_id(entry);
+        if (uid <= 0) { ++invalid_count; continue; }
+        if (!seen.insert(uid).second) { ++duplicates; continue; }
+        if (uid == my_id) {
+            ++self_count;
+            skipped.push_back("ID " + std::to_string(uid) + " — текущий аккаунт");
+        } else if (admins.count(uid)) {
+            ++admin_count;
+            skipped.push_back("ID " + std::to_string(uid) + " — администратор или владелец");
+        } else targets.push_back(uid);
+    }
+    const bool available = kick ? api->kick_user != nullptr : api->ban_user != nullptr;
+    if (available) {
+        for (auto uid : targets) {
+            if (kick) api->kick_user(ctx, chat_id, uid);
+            else api->ban_user(ctx, chat_id, uid, 0);
         }
     }
-
-    api->c_reset(ctx);
-    api->c_text(ctx, "🎉 ");
-    api->c_fmt(ctx, "Запросы на очистку сформированы.\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, "👞 Кикнуто: ");
-    api->c_fmt(ctx, std::to_string(count).c_str(), KOTO_ENT_CODE);
-    api->c_text(ctx, "\n❌ Пропущено (админы/ошибки): ");
-    api->c_fmt(ctx, std::to_string(errors + (int)admin_ids.size()).c_str(), KOTO_ENT_CODE);
-    send_result(ctx, api);
+    std::ostringstream out;
+    if (!available) out << "❌ Очистка не началась: ядро не предоставляет " << (kick ? "kick_user" : "ban_user") << ".\n";
+    else if (targets.empty()) out << "ℹ️ Очистка не началась: в полученном списке нет подходящих участников.\n";
+    else out << "Очистка чата\n";
+    out << "ID чата: " << chat_id << "\n";
+    out << "Получено участников: " << seen.size() << "\n";
+    long long total = snapshot.contains("participants_count") ? positive_id(snapshot["participants_count"]) : 0;
+    if (total > 0) out << "Всего по сведениям группы: " << total << "\n";
+    out << (kick ? "Запросов на кик: " : "Запросов на бан: ") << (available ? targets.size() : 0) << "\n";
+    out << "Пропущен текущий аккаунт: " << self_count << "\n";
+    out << "Пропущены администраторы/владелец: " << admin_count << "\n";
+    if (invalid_count) out << "Некорректных ID в списке: " << invalid_count << "\n";
+    if (duplicates) out << "Повторных записей исключено: " << duplicates << "\n";
+    if (!available && !targets.empty()) out << "Не отправлены запросы для участников: " << targets.size() << "\n";
+    constexpr size_t detail_limit = 12;
+    if (!skipped.empty()) {
+        out << "\nКто пропущен:\n";
+        for (size_t i = 0; i < skipped.size() && i < detail_limit; ++i) out << "• " << skipped[i] << "\n";
+        if (skipped.size() > detail_limit) out << "… ещё " << skipped.size() - detail_limit << "\n";
+    }
+    if (!targets.empty()) {
+        out << (available ? "\nУчастники для запросов:\n" : "\nНе обработаны из-за отсутствия функции:\n");
+        for (size_t i = 0; i < targets.size() && i < detail_limit; ++i) out << "• ID " << targets[i] << "\n";
+        if (targets.size() > detail_limit) out << "… ещё " << targets.size() - detail_limit << "\n";
+    }
+    if (total > static_cast<long long>(seen.size()))
+        out << "\n⚠️ Список неполный: получено " << seen.size() << " из " << total << ". Остальные участники не обработаны.\n";
+    if (snapshot.value("participants_hidden", json(false)) == true || snapshot.value("can_view_participants", json(true)) == false)
+        out << "\n⚠️ Telegram ограничивает просмотр участников; список может быть неполным.\n";
+    if (targets.empty())
+        out << "\nЕсли участник вступил недавно, повторите команду через минуту: сведения об участниках могут обновляться с задержкой.\n";
+    send_result(ctx, api, out.str());
 }
-
+void cmd_banall(koto_ctx* ctx, const koto_api* api) { clean_chat(ctx, api, false); }
+void cmd_kickall(koto_ctx* ctx, const koto_api* api) { clean_chat(ctx, api, true); }
 const koto_command COMMANDS[] = {
-    {
-        "banall",
-        &cmd_banall,
-        KOTO_LEVEL_OWNER,
-        "Забанить всех обычных участников чата (кроме админов и себя).",
-        nullptr
-    },
-    {
-        "kickall",
-        &cmd_kickall,
-        KOTO_LEVEL_OWNER,
-        "Кикнуть всех обычных участников чата (кроме админов и себя).",
-        nullptr
-    }
+    {"banall", &cmd_banall, KOTO_LEVEL_OWNER, "Забанить обычных участников; показать причины пропусков.", nullptr},
+    {"kickall", &cmd_kickall, KOTO_LEVEL_OWNER, "Исключить обычных участников; показать причины пропусков.", nullptr}
 };
-
 const koto_module MODULE = {
-    KOTO_MODULE_ABI,
-    "banall",
-    "Массовая очистка чата: бан или кик всех участников (C++ ABI 3).",
-    "1.0.1", 60, // ban_user / kick_user доступны в versionCode 27+
-    0,
-    COMMANDS,
-    sizeof(COMMANDS) / sizeof(COMMANDS[0]),
-    nullptr, 0,
-    nullptr,
-    nullptr, 0,
-    nullptr
+    KOTO_MODULE_ABI, "banall", "Очистка чата с отчётом по участникам и причинам пропуска.",
+    "1.0.2", 60, 0, COMMANDS, sizeof(COMMANDS) / sizeof(COMMANDS[0]),
+    nullptr, 0, nullptr, nullptr, 0, nullptr
 };
-
-} // namespace
-
-extern "C" const koto_module* koto_module_register(void) {
-    return &MODULE;
 }
+extern "C" const koto_module* koto_module_register(void) { return &MODULE; }

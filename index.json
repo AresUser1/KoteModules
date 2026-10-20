@@ -294,19 +294,19 @@
       "name": "banall",
       "display_name": "Массовая очистка (BanAll)",
       "author": "Kote",
-      "description": "Массовая очистка чата: быстрый бан или кик всех участников (кроме админов и себя).",
-      "version": "1.0.1",
+      "description": "Бан или кик обычных участников с раздельными счётчиками и ID пропущенных; сообщает о неполном списке участников.",
+      "version": "1.0.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "banall",
-          "doc": "Забанить всех обычных участников чата.",
+          "doc": "Забанить обычных участников; показать причины пропусков.",
           "usage": ""
         },
         {
           "name": "kickall",
-          "doc": "Кикнуть всех обычных участников чата.",
+          "doc": "Исключить обычных участников; показать причины пропусков.",
           "usage": ""
         }
       ],
@@ -314,8 +314,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
       "license": "MIT",
       "min_host_version": 60,
-      "size": 75944,
-      "sha256": "c363db99b526e53dd127b81d1ac054325a7cb10017fb5e6b869bc35bd9a12928"
+      "size": 263008,
+      "sha256": "b0dfa340ee56135f1871a9a33b67677dd70290af63f0c134a9c0c652e37f850c"
     },
     {
       "id": "calculator",
