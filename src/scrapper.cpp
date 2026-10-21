@@ -165,10 +165,19 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
 
     long long target_cid = 0;
     if (!args.empty()) {
-        if (is_all_digits(args)) {
-            try { target_cid = std::stoll(args); } catch (...) { target_cid = 0; }
+        std::string clean_arg = args;
+        size_t tme_pos = clean_arg.find("t.me/");
+        if (tme_pos != std::string::npos) {
+            clean_arg = clean_arg.substr(tme_pos + 5);
+            size_t slash = clean_arg.find('/');
+            if (slash != std::string::npos) clean_arg = clean_arg.substr(0, slash);
+            size_t q = clean_arg.find('?');
+            if (q != std::string::npos) clean_arg = clean_arg.substr(0, q);
+        }
+        if (is_all_digits(clean_arg)) {
+            try { target_cid = std::stoll(clean_arg); } catch (...) { target_cid = 0; }
         } else {
-            std::string uname = args;
+            std::string uname = clean_arg;
             if (!uname.empty() && uname[0] == '@') uname = uname.substr(1);
             if (api->resolve) target_cid = api->resolve(ctx, uname.c_str());
         }
@@ -229,6 +238,7 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
 
     std::vector<std::string> dump_lines;
     int collected_count = 0;
+    bool fallback_to_main = false;
 
     if (cfg.method == "ACTIVITY") {
         // Режим активности по сообщениям (с поддержкой твинков и постраничной пагинацией)
@@ -244,7 +254,7 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             } else if (api->get_history_json) {
                 hn = api->get_history_json(ctx, target_cid, 0, chunk, offset, hbuf.data(), static_cast<int>(hbuf.size()) - 1);
             }
-            if (hn <= 0) break;
+            if (hn <= 2) break;
 
             int parsed_in_chunk = 0;
             try {
@@ -261,6 +271,34 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
                 break;
             }
             if (parsed_in_chunk == 0) break;
+        }
+
+        // Если выбранный твинк не вернул сообщений (например, не состоит в чате), пробуем основной аккаунт
+        if (worker_uid > 0 && user_msg_counts.empty() && api->get_history_json) {
+            for (int offset = 0; offset < limit_msgs; offset += 100) {
+                int chunk = std::min(100, limit_msgs - offset);
+                int hn = api->get_history_json(ctx, target_cid, 0, chunk, offset, hbuf.data(), static_cast<int>(hbuf.size()) - 1);
+                if (hn <= 2) break;
+
+                int parsed_in_chunk = 0;
+                try {
+                    auto hj = nlohmann::json::parse(std::string(hbuf.data(), static_cast<size_t>(hn)));
+                    if (hj.is_array()) {
+                        parsed_in_chunk = static_cast<int>(hj.size());
+                        for (const auto& m : hj) {
+                            long long from_id = m.value("sender_id", 0LL);
+                            if (from_id == 0) from_id = m.value("from_id", 0LL);
+                            if (from_id > 0) user_msg_counts[from_id]++;
+                        }
+                    }
+                } catch (...) {
+                    break;
+                }
+                if (parsed_in_chunk == 0) break;
+            }
+            if (!user_msg_counts.empty()) {
+                fallback_to_main = true;
+            }
         }
 
         std::vector<std::pair<long long, int>> sorted_act(user_msg_counts.begin(), user_msg_counts.end());
@@ -305,7 +343,13 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     if (dump_lines.empty()) {
         api->c_reset(ctx);
         api->c_text(ctx, "ℹ️ ");
-        api->c_fmt(ctx, "Участники не найдены или закрыты настройками приватности чата.", KOTO_ENT_BOLD);
+        if (worker_uid > 0 && !fallback_to_main) {
+            api->c_fmt(ctx, ("Воркер '" + worker_label + "' не имеет доступа к этому чату.\n").c_str(), KOTO_ENT_BOLD);
+            api->c_text(ctx, "💡 Добавьте твинк в чат или переключите воркер на MAIN: ");
+            api->c_fmt(ctx, ".scrapcfg worker MAIN", KOTO_ENT_CODE);
+        } else {
+            api->c_fmt(ctx, "Участники не найдены или закрыты настройками приватности чата.", KOTO_ENT_BOLD);
+        }
         send_result(ctx, api);
         return;
     }
@@ -317,6 +361,9 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     if (!chat_uname.empty()) ss << "USERNAME: @" << chat_uname << "\n";
     ss << "METHOD: " << cfg.method << "\n";
     ss << "WORKER: " << worker_label << (worker_uid > 0 ? (" (ID: " + std::to_string(worker_uid) + ")") : "") << "\n";
+    if (fallback_to_main) {
+        ss << "NOTE: Worker '" << worker_label << "' was not in chat; history was scraped via MAIN account.\n";
+    }
     ss << "TOTAL COLLECTED: " << collected_count << "\n";
     ss << "================================\n\n";
 
@@ -339,6 +386,10 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     api->c_reset(ctx);
     api->c_emoji(ctx, "✅", EMO_OK);
     api->c_fmt(ctx, " Сбор участников успешно завершён!\n\n", KOTO_ENT_BOLD);
+    if (fallback_to_main) {
+        api->c_text(ctx, "⚠️ ");
+        api->c_fmt(ctx, ("Воркер '" + worker_label + "' не в чате, сбор выполнен через MAIN.\n\n").c_str(), KOTO_ENT_ITALIC);
+    }
     api->c_text(ctx, "📂 "); api->c_fmt(ctx, "Чат: ", KOTO_ENT_BOLD); api->c_text(ctx, chat_title.c_str()); api->c_text(ctx, "\n");
     api->c_text(ctx, "⚙️ "); api->c_fmt(ctx, "Режим: ", KOTO_ENT_BOLD); api->c_fmt(ctx, cfg.method.c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");
     api->c_text(ctx, "👥 "); api->c_fmt(ctx, "Собрано: ", KOTO_ENT_BOLD); api->c_fmt(ctx, std::to_string(collected_count).c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");

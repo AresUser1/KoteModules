@@ -1201,8 +1201,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 291312,
-      "sha256": "b89b44e2f9c6a4f64310444587ec4db43d6d6229e370bbba76a9f7ad067f0e54"
+      "size": 312168,
+      "sha256": "ab954c0e3df179aeb5131408fa9f33e4b9719c4fe84ed2635acfe5e4e13108e0"
     },
     {
       "id": "spam_ban",
