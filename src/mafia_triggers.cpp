@@ -1,7 +1,8 @@
 // mafia_triggers.cpp — Триггеры для Мафии (Warn/Mute за AFK и выход из игры) (C++ ABI 3).
-// Портирован из Python-модуля mafia_triggers.py (v2.1.3) с полным сохранением логики:
+// Портирован из Python-модуля mafia_triggers.py (v2.2.0) с полным сохранением логики:
 // контекстная сегментация упоминаний (_entity_segments), наказание каждого нарушителя,
-// поддержка @username и tg://user?id=, авто-распознавание всех ботов Мафии (включая Mafia Baku Black).
+// поддержка @username и tg://user?id=, авто-распознавание всех ботов Мафии (включая Mafia Baku Black),
+// кастомизация длительности мута (.mtrtime / cfg_mute_time) и текста/пункта правил за AFK и выход.
 // Автор: Kote
 
 #include "module_abi.h"
@@ -180,7 +181,22 @@ static bool is_mafia_bot(koto_ctx* ctx, const koto_api* api, long long uid, cons
     return false;
 }
 
-// ── База данных и нормализация чатов ─────────────────────────────────────────
+// ── База данных и настройки ──────────────────────────────────────────────────
+
+static std::string get_cfg_str(const koto_api* api, koto_ctx* ctx, const char* key, const char* def) {
+    char buf[512] = {0};
+    if (api->db_get && api->db_get(ctx, key, buf, sizeof(buf) - 1) > 0) {
+        std::string val = koto_utils::trim(buf);
+        if (!val.empty()) return val;
+    }
+    return def ? def : "";
+}
+
+static void set_cfg_str(const koto_api* api, koto_ctx* ctx, const char* key, const std::string& val) {
+    if (api->db_set) {
+        api->db_set(ctx, key, val.c_str());
+    }
+}
 
 static bool chat_in_set(const std::set<long long>& s, long long cid) {
     if (s.empty() || cid == 0) return false;
@@ -207,7 +223,7 @@ static bool chat_in_set(const std::set<long long>& s, long long cid) {
 static std::set<long long> load_chat_set(const koto_api* api, koto_ctx* ctx, const char* key) {
     std::set<long long> s;
     char buf[16384] = {0};
-    int n = api->db_get(ctx, key, buf, sizeof(buf) - 1);
+    int n = api->db_get ? api->db_get(ctx, key, buf, sizeof(buf) - 1) : -1;
     if (n <= 0) return s;
     buf[n] = '\0';
 
@@ -223,6 +239,7 @@ static std::set<long long> load_chat_set(const koto_api* api, koto_ctx* ctx, con
 }
 
 static void save_chat_set(const koto_api* api, koto_ctx* ctx, const char* key, const std::set<long long>& s) {
+    if (!api->db_set) return;
     std::string out;
     for (long long id : s) {
         out += std::to_string(id) + "\n";
@@ -235,6 +252,67 @@ static void send_result(koto_ctx* ctx, const koto_api* api) {
         api->c_edit(ctx, 0);
     } else {
         api->c_reply(ctx, 0);
+    }
+}
+
+// ── Отрисовка интерактивной панели настроек ──────────────────────────────────
+
+static void render_settings_panel(koto_ctx* ctx, const koto_api* api, long long cid) {
+    std::set<long long> warn_chats = load_chat_set(api, ctx, "warn_chats");
+    std::set<long long> mute_chats = load_chat_set(api, ctx, "mute_chats");
+    bool has_warn = chat_in_set(warn_chats, cid);
+    bool has_mute = chat_in_set(mute_chats, cid);
+
+    std::string mute_time = get_cfg_str(api, ctx, "cfg_mute_time", "2h");
+    std::string afk_reason = get_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+    std::string leave_reason = get_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "⚙️ Панель настроек MafiaTriggers v2.2.0\n\n", KOTO_ENT_BOLD);
+
+    api->c_text(ctx, "• Мут в текущем чате: ");
+    api->c_fmt(ctx, has_mute ? "⚪️ Включен\n" : "⚫️ Выключен\n", KOTO_ENT_BOLD);
+
+    api->c_text(ctx, "• Варн в текущем чате: ");
+    api->c_fmt(ctx, has_warn ? "⚪️ Включен\n" : "⚫️ Выключен\n", KOTO_ENT_BOLD);
+
+    api->c_text(ctx, "• Длительность мута: ");
+    api->c_fmt(ctx, (mute_time + "\n").c_str(), KOTO_ENT_CODE);
+
+    api->c_text(ctx, "• Причина за AFK: ");
+    api->c_fmt(ctx, (afk_reason + "\n").c_str(), KOTO_ENT_CODE);
+
+    api->c_text(ctx, "• Причина за Выход: ");
+    api->c_fmt(ctx, (leave_reason + "\n\n").c_str(), KOTO_ENT_CODE);
+
+    api->c_fmt(ctx, "💡 Выберите настройку кнопками ниже:", KOTO_ENT_ITALIC);
+
+    if (api->c_button) {
+        // Ряд 1: Вкл/выкл триггеров
+        std::string mtr_btn = has_mute ? "⚫️ Выкл Mute" : "⚪️ Вкл Mute";
+        std::string wtr_btn = has_warn ? "⚫️ Выкл Warn" : "⚪️ Вкл Warn";
+        api->c_button(ctx, mtr_btn.c_str(), "mtr:togglemute", 1);
+        api->c_button(ctx, wtr_btn.c_str(), "mtr:togglewarn", 0);
+
+        // Ряд 2: Быстрый выбор длительности мута
+        api->c_button(ctx, (mute_time == "30m" ? "✅ 30м" : "⏱ 30м"), "mtr:time:30m", 1);
+        api->c_button(ctx, (mute_time == "1h"  ? "✅ 1ч"  : "⏱ 1ч"),  "mtr:time:1h",  0);
+        api->c_button(ctx, (mute_time == "2h"  ? "✅ 2ч"  : "⏱ 2ч"),  "mtr:time:2h",  0);
+        api->c_button(ctx, (mute_time == "4h"  ? "✅ 4ч"  : "⏱ 4ч"),  "mtr:time:4h",  0);
+        api->c_button(ctx, (mute_time == "1d"  ? "✅ 1д"  : "⏱ 1д"),  "mtr:time:1d",  0);
+
+        // Ряд 3: Быстрый выбор причины AFK
+        api->c_button(ctx, (afk_reason == "сон"     ? "✅ 'сон'"     : "💤 'сон'"),     "mtr:afk:сон",     1);
+        api->c_button(ctx, (afk_reason == "1.2 АФК" ? "✅ '1.2 АФК'" : "💤 '1.2 АФК'"), "mtr:afk:1.2 АФК", 0);
+        api->c_button(ctx, (afk_reason == "AFK"     ? "✅ 'AFK'"     : "💤 'AFK'"),     "mtr:afk:AFK",     0);
+
+        // Ряд 4: Причина выхода и Сброс
+        api->c_button(ctx, (leave_reason == "выход"   ? "✅ 'выход'"   : "🚪 'выход'"),   "mtr:leave:выход",   1);
+        api->c_button(ctx, (leave_reason == "1.3 Лив" ? "✅ '1.3 Лив'" : "🚪 '1.3 Лив'"), "mtr:leave:1.3 Лив", 0);
+        api->c_button(ctx, "🔄 Сброс", "mtr:reset", 0);
+
+        // Ряд 5: Закрыть
+        api->c_button(ctx, "❌ Закрыть", "mtr:close", 1);
     }
 }
 
@@ -310,6 +388,315 @@ static void cmd_mtr(koto_ctx* ctx, const koto_api* api) {
     send_result(ctx, api);
 }
 
+// ── .mtrcfg / .mtrset (Настройки модуля) ──────────────────────────────────────
+
+static void cmd_mtrcfg(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    std::string args;
+    if (api->cmd_args) {
+        const char* raw = api->cmd_args(ctx);
+        if (raw) args = koto_utils::trim(raw);
+    }
+    if (args.empty() && api->msg_text) {
+        std::string full = api->msg_text(ctx);
+        size_t sp = full.find(' ');
+        if (sp != std::string::npos) args = koto_utils::trim(full.substr(sp + 1));
+    }
+
+    long long cid = api->chat_id(ctx);
+
+    if (args.empty()) {
+        std::set<long long> warn_chats = load_chat_set(api, ctx, "warn_chats");
+        std::set<long long> mute_chats = load_chat_set(api, ctx, "mute_chats");
+        bool has_warn = chat_in_set(warn_chats, cid);
+        bool has_mute = chat_in_set(mute_chats, cid);
+
+        std::string mute_time = get_cfg_str(api, ctx, "cfg_mute_time", "2h");
+        std::string afk_reason = get_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+        std::string leave_reason = get_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "⚙️ Настройки MafiaTriggers v2.2.0\n\n", KOTO_ENT_BOLD);
+
+        api->c_text(ctx, "• Мут в текущем чате: ");
+        api->c_fmt(ctx, has_mute ? "⚪️ Включен\n" : "⚫️ Выключен\n", KOTO_ENT_BOLD);
+
+        api->c_text(ctx, "• Варн в текущем чате: ");
+        api->c_fmt(ctx, has_warn ? "⚪️ Включен\n" : "⚫️ Выключен\n", KOTO_ENT_BOLD);
+
+        api->c_text(ctx, "• Длительность мута: ");
+        api->c_fmt(ctx, (mute_time + "\n").c_str(), KOTO_ENT_CODE);
+
+        api->c_text(ctx, "• Причина за AFK: ");
+        api->c_fmt(ctx, (afk_reason + "\n").c_str(), KOTO_ENT_CODE);
+
+        api->c_text(ctx, "• Причина за Выход: ");
+        api->c_fmt(ctx, (leave_reason + "\n\n").c_str(), KOTO_ENT_CODE);
+
+        api->c_fmt(ctx, "💡 Команды управления:\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, ".mtrcfg time <30m|1h|2h|4h|1d>", KOTO_ENT_CODE);
+        api->c_text(ctx, " — время мута\n");
+        api->c_fmt(ctx, ".mtrcfg reason <причина>", KOTO_ENT_CODE);
+        api->c_text(ctx, " — причина/пункт правил за AFK (напр. 1.2 АФК)\n");
+        api->c_fmt(ctx, ".mtrcfg leave <причина>", KOTO_ENT_CODE);
+        api->c_text(ctx, " — причина за лив из игры (напр. 1.3 Лив)\n");
+        api->c_fmt(ctx, ".mtrcfg reset", KOTO_ENT_CODE);
+        api->c_text(ctx, " — сброс на умолчания (2h, сон, выход)\n");
+        api->c_fmt(ctx, ".mtrsettings", KOTO_ENT_CODE);
+        api->c_text(ctx, " — открыть интерактивную панель с кнопками");
+
+        send_result(ctx, api);
+        return;
+    }
+
+    std::string lower = utf8_to_lower(args);
+
+    if (lower == "reset") {
+        set_cfg_str(api, ctx, "cfg_mute_time", "2h");
+        set_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+        set_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+        api->c_reset(ctx);
+        api->c_text(ctx, "✅ ");
+        api->c_fmt(ctx, "Настройки сброшены: мут 2h, AFK 'сон', выход 'выход'", KOTO_ENT_BOLD);
+        send_result(ctx, api);
+        return;
+    }
+
+    if (lower.rfind("time ", 0) == 0 || lower.rfind("t ", 0) == 0) {
+        size_t sp = args.find(' ');
+        std::string val = koto_utils::trim(args.substr(sp + 1));
+        if (val.empty()) val = "2h";
+        set_cfg_str(api, ctx, "cfg_mute_time", val);
+        api->c_reset(ctx);
+        api->c_text(ctx, "✅ ");
+        api->c_fmt(ctx, "Длительность мута установлена: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, val.c_str(), KOTO_ENT_CODE);
+        send_result(ctx, api);
+        return;
+    }
+
+    if (lower.rfind("reason ", 0) == 0 || lower.rfind("afk ", 0) == 0 || lower.rfind("r ", 0) == 0) {
+        size_t sp = args.find(' ');
+        std::string val = koto_utils::trim(args.substr(sp + 1));
+        if (val.empty()) val = "сон";
+        set_cfg_str(api, ctx, "cfg_afk_reason", val);
+        api->c_reset(ctx);
+        api->c_text(ctx, "✅ ");
+        api->c_fmt(ctx, "Причина за AFK установлена: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, val.c_str(), KOTO_ENT_CODE);
+        send_result(ctx, api);
+        return;
+    }
+
+    if (lower.rfind("leave ", 0) == 0 || lower.rfind("l ", 0) == 0) {
+        size_t sp = args.find(' ');
+        std::string val = koto_utils::trim(args.substr(sp + 1));
+        if (val.empty()) val = "выход";
+        set_cfg_str(api, ctx, "cfg_leave_reason", val);
+        api->c_reset(ctx);
+        api->c_text(ctx, "✅ ");
+        api->c_fmt(ctx, "Причина за Выход установлена: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, val.c_str(), KOTO_ENT_CODE);
+        send_result(ctx, api);
+        return;
+    }
+
+    api->c_reset(ctx);
+    api->c_text(ctx, "ℹ️ ");
+    api->c_fmt(ctx, "Использование: .mtrcfg [time <время> | reason <причина> | leave <причина> | reset]", KOTO_ENT_BOLD);
+    send_result(ctx, api);
+}
+
+// ── .mtrtime <время> ─────────────────────────────────────────────────────────
+
+static void cmd_mtrtime(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    std::string args;
+    if (api->cmd_args) {
+        const char* raw = api->cmd_args(ctx);
+        if (raw) args = koto_utils::trim(raw);
+    }
+    if (args.empty() && api->msg_text) {
+        std::string full = api->msg_text(ctx);
+        size_t sp = full.find(' ');
+        if (sp != std::string::npos) args = koto_utils::trim(full.substr(sp + 1));
+    }
+
+    if (args.empty()) {
+        std::string cur = get_cfg_str(api, ctx, "cfg_mute_time", "2h");
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "⏱ Текущая длительность мута: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, cur.c_str(), KOTO_ENT_CODE);
+        api->c_text(ctx, "\nДля изменения: .mtrtime 30m / 1h / 2h / 4h / 1d");
+        send_result(ctx, api);
+        return;
+    }
+
+    set_cfg_str(api, ctx, "cfg_mute_time", args);
+    api->c_reset(ctx);
+    api->c_text(ctx, "✅ ");
+    api->c_fmt(ctx, "Длительность мута установлена: ", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, args.c_str(), KOTO_ENT_CODE);
+    send_result(ctx, api);
+}
+
+// ── .mtrreason <причина> ─────────────────────────────────────────────────────
+
+static void cmd_mtrreason(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    std::string args;
+    if (api->cmd_args) {
+        const char* raw = api->cmd_args(ctx);
+        if (raw) args = koto_utils::trim(raw);
+    }
+    if (args.empty() && api->msg_text) {
+        std::string full = api->msg_text(ctx);
+        size_t sp = full.find(' ');
+        if (sp != std::string::npos) args = koto_utils::trim(full.substr(sp + 1));
+    }
+
+    if (args.empty()) {
+        std::string cur = get_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "💤 Текущая причина за AFK: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, cur.c_str(), KOTO_ENT_CODE);
+        api->c_text(ctx, "\nДля изменения: .mtrreason 1.2 АФК или сон");
+        send_result(ctx, api);
+        return;
+    }
+
+    set_cfg_str(api, ctx, "cfg_afk_reason", args);
+    api->c_reset(ctx);
+    api->c_text(ctx, "✅ ");
+    api->c_fmt(ctx, "Причина за AFK установлена: ", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, args.c_str(), KOTO_ENT_CODE);
+    send_result(ctx, api);
+}
+
+// ── .mtrleave <причина> ──────────────────────────────────────────────────────
+
+static void cmd_mtrleave(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    std::string args;
+    if (api->cmd_args) {
+        const char* raw = api->cmd_args(ctx);
+        if (raw) args = koto_utils::trim(raw);
+    }
+    if (args.empty() && api->msg_text) {
+        std::string full = api->msg_text(ctx);
+        size_t sp = full.find(' ');
+        if (sp != std::string::npos) args = koto_utils::trim(full.substr(sp + 1));
+    }
+
+    if (args.empty()) {
+        std::string cur = get_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "🚪 Текущая причина за Выход: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, cur.c_str(), KOTO_ENT_CODE);
+        api->c_text(ctx, "\nДля изменения: .mtrleave 1.3 Лив или выход");
+        send_result(ctx, api);
+        return;
+    }
+
+    set_cfg_str(api, ctx, "cfg_leave_reason", args);
+    api->c_reset(ctx);
+    api->c_text(ctx, "✅ ");
+    api->c_fmt(ctx, "Причина за Выход установлена: ", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, args.c_str(), KOTO_ENT_CODE);
+    send_result(ctx, api);
+}
+
+// ── .mtrsettings (Интерактивная панель) ──────────────────────────────────────
+
+static void cmd_mtrsettings(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    long long cid = api->chat_id(ctx);
+    render_settings_panel(ctx, api, cid);
+    send_result(ctx, api);
+}
+
+// ── Inline Callback обработчик (on_callback) ─────────────────────────────────
+
+static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* data_raw = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!data_raw) return;
+    std::string data = data_raw;
+    if (data.rfind("mtr:", 0) != 0) return;
+
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
+        if (api->cb_answer) api->cb_answer(ctx, "Недостаточно прав", 1);
+        return;
+    }
+
+    long long cid = api->chat_id(ctx);
+
+    if (data == "mtr:close") {
+        if (api->cb_answer) api->cb_answer(ctx, "Закрыто", 0);
+        if (api->delete_msg) api->delete_msg(ctx);
+        return;
+    }
+
+    if (data == "mtr:togglemute") {
+        std::set<long long> chats = load_chat_set(api, ctx, "mute_chats");
+        if (chat_in_set(chats, cid)) {
+            chats.erase(cid);
+            chats.erase(-cid);
+            long long abs_id = (cid < 0) ? -cid : cid;
+            chats.erase(abs_id);
+            std::string s = std::to_string(cid);
+            if (s.rfind("-100", 0) == 0 && s.size() > 4) {
+                try { chats.erase(std::stoll(s.substr(4))); } catch (...) {}
+            }
+            if (api->cb_answer) api->cb_answer(ctx, "Mute выключен", 0);
+        } else {
+            chats.insert(cid);
+            if (api->cb_answer) api->cb_answer(ctx, "Mute включен", 0);
+        }
+        save_chat_set(api, ctx, "mute_chats", chats);
+    } else if (data == "mtr:togglewarn") {
+        std::set<long long> chats = load_chat_set(api, ctx, "warn_chats");
+        if (chat_in_set(chats, cid)) {
+            chats.erase(cid);
+            chats.erase(-cid);
+            long long abs_id = (cid < 0) ? -cid : cid;
+            chats.erase(abs_id);
+            std::string s = std::to_string(cid);
+            if (s.rfind("-100", 0) == 0 && s.size() > 4) {
+                try { chats.erase(std::stoll(s.substr(4))); } catch (...) {}
+            }
+            if (api->cb_answer) api->cb_answer(ctx, "Warn выключен", 0);
+        } else {
+            chats.insert(cid);
+            if (api->cb_answer) api->cb_answer(ctx, "Warn включен", 0);
+        }
+        save_chat_set(api, ctx, "warn_chats", chats);
+    } else if (data.rfind("mtr:time:", 0) == 0) {
+        std::string val = data.substr(9);
+        set_cfg_str(api, ctx, "cfg_mute_time", val);
+        if (api->cb_answer) api->cb_answer(ctx, ("Мут: " + val).c_str(), 0);
+    } else if (data.rfind("mtr:afk:", 0) == 0) {
+        std::string val = data.substr(8);
+        set_cfg_str(api, ctx, "cfg_afk_reason", val);
+        if (api->cb_answer) api->cb_answer(ctx, ("AFK: " + val).c_str(), 0);
+    } else if (data.rfind("mtr:leave:", 0) == 0) {
+        std::string val = data.substr(10);
+        set_cfg_str(api, ctx, "cfg_leave_reason", val);
+        if (api->cb_answer) api->cb_answer(ctx, ("Выход: " + val).c_str(), 0);
+    } else if (data == "mtr:reset") {
+        set_cfg_str(api, ctx, "cfg_mute_time", "2h");
+        set_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+        set_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+        if (api->cb_answer) api->cb_answer(ctx, "Настройки сброшены", 0);
+    }
+
+    render_settings_panel(ctx, api, cid);
+    if (api->c_edit) api->c_edit(ctx, 0);
+}
+
 // ── Вспомогательные структуры упоминаний ─────────────────────────────────────
 
 struct MentionEnt {
@@ -357,6 +744,11 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     }
     if (!has_any_trigger) return 0;
 
+    // Считываем пользовательские настройки длительности и причин наказания
+    std::string mute_time = get_cfg_str(api, ctx, "cfg_mute_time", "2h");
+    std::string afk_reason = get_cfg_str(api, ctx, "cfg_afk_reason", "сон");
+    std::string leave_reason = get_cfg_str(api, ctx, "cfg_leave_reason", "выход");
+
     // 4. Сбор сущностей упоминаний сообщения
     std::vector<uint16_t> u16 = utf8_to_utf16(text);
     std::vector<MentionEnt> mentions;
@@ -367,7 +759,6 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
             int type = 0, off = 0, len = 0;
             long long doc_id = 0;
             char url_buf[512] = {0};
-            // ИСПРАВЛЕНИЕ: api->msg_entity возвращает 1 при успехе (не 0!)
             if (api->msg_entity(ctx, i, &type, &off, &len, &doc_id, url_buf, sizeof(url_buf)) > 0) {
                 if (type == KOTO_ENT_URL) {
                     long long tid = 0;
@@ -445,7 +836,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         for (const char* w : TRIGGERS_AFK) {
             if (seg_lower.find(w) != std::string::npos) {
                 matched = true;
-                reason = "сон";
+                reason = afk_reason;
                 break;
             }
         }
@@ -453,7 +844,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
             for (const char* w : TRIGGERS_LEAVE) {
                 if (seg_lower.find(w) != std::string::npos) {
                     matched = true;
-                    reason = "выход";
+                    reason = leave_reason;
                     break;
                 }
             }
@@ -493,7 +884,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
         // Если включен Mute — отправляем !mute
         if (has_mute) {
-            std::string cmd = "!mute " + std::to_string(tid) + " 2h " + reason;
+            std::string cmd = "!mute " + std::to_string(tid) + " " + mute_time + " " + reason;
             api->c_reset(ctx);
             api->c_text(ctx, cmd.c_str());
             api->c_send(ctx, cid, 0);
@@ -517,23 +908,65 @@ const koto_command COMMANDS[] = {
         KOTO_LEVEL_TRUSTED,
         "Вкл/Выкл Mute-триггер для Мафии (мутит вышедших/afk).",
         nullptr
+    },
+    {
+        "mtrcfg",
+        &cmd_mtrcfg,
+        KOTO_LEVEL_TRUSTED,
+        "Настройки MafiaTriggers: время мута, причины AFK и лива.",
+        "[time <время> | reason <причина> | leave <причина> | reset]"
+    },
+    {
+        "mtrtime",
+        &cmd_mtrtime,
+        KOTO_LEVEL_TRUSTED,
+        "Установить длительность мута (напр. .mtrtime 30m / 1h / 2h / 1d).",
+        "<время>"
+    },
+    {
+        "mtrreason",
+        &cmd_mtrreason,
+        KOTO_LEVEL_TRUSTED,
+        "Установить причину/пункт правил за AFK (напр. .mtrreason 1.2 АФК).",
+        "<причина>"
+    },
+    {
+        "mtrleave",
+        &cmd_mtrleave,
+        KOTO_LEVEL_TRUSTED,
+        "Установить причину/пункт правил за выход (напр. .mtrleave 1.3 Лив).",
+        "<причина>"
+    },
+    {
+        "mtrsettings",
+        &cmd_mtrsettings,
+        KOTO_LEVEL_TRUSTED,
+        "Интерактивная панель настроек MafiaTriggers с кнопками.",
+        nullptr
     }
+};
+
+static const koto_setting_field SETTINGS[] = {
+    {"cfg_mute_time", "Длительность мута (напр. 30m, 1h, 2h, 1d)", KOTO_FIELD_STR, "2h", nullptr},
+    {"cfg_afk_reason", "Причина AFK (текст или пункт правил, напр. 1.2 АФК)", KOTO_FIELD_STR, "сон", nullptr},
+    {"cfg_leave_reason", "Причина Выхода (текст или пункт правил, напр. 1.3 Лив)", KOTO_FIELD_STR, "выход", nullptr}
 };
 
 const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mafia_triggers",
-    "Триггеры для Мафии: автоматический Warn/Mute за AFK и выход из игры (C++ ABI 3).",
-    "2.1.4",
+    "Триггеры для Мафии: авто-наказание (Warn/Mute) за AFK и лив с выбором времени и правил (C++ ABI 3).",
+    "2.2.0",
     26,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     &on_watch,
     KOTO_WATCH_INCOMING,
-    nullptr,
-    nullptr, 0,
-    nullptr
+    &on_callback,
+    SETTINGS,
+    sizeof(SETTINGS) / sizeof(SETTINGS[0]),
+    "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_triggers.so"
 };
 
 } // namespace
