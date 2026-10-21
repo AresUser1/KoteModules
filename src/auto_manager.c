@@ -202,6 +202,16 @@ static int get_all_twins(koto_ctx* ctx, const koto_api* api, TwinItem* out_twins
     return count;
 }
 
+// KOTO_MOD_TWINS enables watcher delivery AND command dispatch in the host.
+// AutoManager commands belong to the main account; twins only run the watcher.
+static int is_twin_account(koto_ctx* ctx, const koto_api* api) {
+    long long uid = api->get_me ? api->get_me(ctx) : 0;
+    TwinItem twins[32];
+    int count = get_all_twins(ctx, api, twins, 32);
+    for (int i = 0; i < count; ++i) if (uid > 0 && twins[i].uid == uid) return 1;
+    return 0;
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 // АВТОЧТЕНИЕ
 // ══════════════════════════════════════════════════════════════════════════════
@@ -226,6 +236,7 @@ static int parse_id(const char* text,long long* id) {
     *id=value;return 1;
 }
 static void cmd_autread(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx,KOTO_LEVEL_TRUSTED)) return;
     const char* raw=api->cmd_args(ctx);
     char args[256]={0};
@@ -289,6 +300,7 @@ static void print_chat_set(koto_ctx* ctx,const koto_api* api,const char* key) {
     if (count>25) {char text[64];snprintf(text,sizeof(text),"… ещё %d\n",count-25);api->c_text(ctx,text);}
 }
 static void cmd_autreadlist(koto_ctx* ctx,const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx,KOTO_LEVEL_TRUSTED)) return;
     api->c_reset(ctx);
     api->c_text(ctx,chat_set_has(ctx,api,"autoread_chats",0)?"Авточтение: все чаты, кроме исключений.\n":"Авточтение по умолчанию выключено.\n");
@@ -298,6 +310,7 @@ static void cmd_autreadlist(koto_ctx* ctx,const koto_api* api) {
 }
 
 static void cmd_autreadnow(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     long long cid = api->chat_id(ctx);
@@ -318,6 +331,7 @@ static void cmd_autreadnow(koto_ctx* ctx, const koto_api* api) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 static void cmd_autoapprove(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     char pbuf[32] = ".";
@@ -377,6 +391,7 @@ static void cmd_autoapprove(koto_ctx* ctx, const koto_api* api) {
 }
 
 static void cmd_autoapprovelist(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     char buf[8192] = {0};
@@ -459,6 +474,7 @@ static void render_amtwins_panel(koto_ctx* ctx, const koto_api* api) {
 }
 
 static void cmd_amtwins(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
     const char* args = api->cmd_args(ctx);
     while (args && isspace((unsigned char)*args)) ++args;
@@ -527,6 +543,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 // ── Коллбэки инлайн кнопок ───────────────────────────────────────────────────
 
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
         if (api->cb_answer) api->cb_answer(ctx, "❌ Нет доступа", 1);
         return;
@@ -621,7 +638,7 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.2.2",
+    .version          = "1.2.3",
     .min_host_version = 62,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
     .flags            = KOTO_MOD_TWINS,
