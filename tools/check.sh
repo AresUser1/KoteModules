@@ -12,6 +12,7 @@ done
 bash "$root/tests/run_chess.sh"
 bash "$root/tests/run_banall.sh"
 bash "$root/tests/run_automation.sh"
+bash "$root/tests/run_stags.sh"
 bash "$root/tests/run_sysinfo.sh"
 input_test="$(mktemp)"
 trap 'rm -f -- "$input_test"' EXIT
