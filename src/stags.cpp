@@ -87,6 +87,18 @@ static std::vector<Twin> list_twins(koto_ctx* ctx,const koto_api* api) {
     }
     return twins;
 }
+
+// KOTO_MOD_TWINS enables watcher delivery AND command dispatch in the host.
+// Silent Tags commands belong to the main account; twins only run the watcher.
+static bool is_twin_account(koto_ctx* ctx, const koto_api* api) {
+    long long uid = api->get_me ? api->get_me(ctx) : 0;
+    if (uid <= 0) return false;
+    for (const auto& twin : list_twins(ctx, api)) {
+        if (twin.uid == uid) return true;
+    }
+    return false;
+}
+
 static std::string ascii_lower(std::string value) {
     for(char& c:value) if(c>='A' && c<='Z') c=char(c-'A'+'a');
     return value;
@@ -384,7 +396,8 @@ static void build_sttwins_panel(koto_ctx* ctx, const koto_api* api) {
 
 // ── .stags <on/off> ─────────────────────────────────────────────────────────
 static void cmd_stags(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    if (is_twin_account(ctx, api)) return;
+    if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
 
     const char* raw = api->cmd_args(ctx);
     std::string arg = raw ? trim(raw) : "";
@@ -426,7 +439,8 @@ static void cmd_stags(koto_ctx* ctx, const koto_api* api) {
 
 // ── .stconfig ───────────────────────────────────────────────────────────────
 static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    if (is_twin_account(ctx, api)) return;
+    if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
 
     const char* raw = api->cmd_args(ctx);
     std::string args_str = raw ? trim(raw) : "";
@@ -771,7 +785,8 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
 
 // ── .sttwins ───────────────────────────────────────────────────────────────
 static void cmd_sttwins(koto_ctx* ctx, const koto_api* api) {
-    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    if (is_twin_account(ctx, api)) return;
+    if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) return;
     build_sttwins_panel(ctx, api);
     send_result(ctx, api);
 }
@@ -979,12 +994,14 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
 // ── Колбэки инлайн-панели (с защитой владельца) ─────────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    if (is_twin_account(ctx, api)) return;
+
     long long sender = api->sender_id ? api->sender_id(ctx) : 0;
     long long me = api->get_me ? api->get_me(ctx) : 0;
 
     bool allowed = (me != 0 && sender == me);
     if (!allowed && api->check_permission) {
-        allowed = (api->check_permission(ctx, KOTO_LEVEL_TRUSTED) != 0);
+        allowed = (api->check_permission(ctx, KOTO_LEVEL_OWNER) != 0);
     }
 
     if (!allowed) {
@@ -1040,21 +1057,21 @@ static const koto_command COMMANDS[] = {
     {
         "stags",
         &cmd_stags,
-        KOTO_LEVEL_TRUSTED,
+        KOTO_LEVEL_OWNER,
         "Включить или выключить модуль Silent Tags.",
         "<on/off>"
     },
     {
         "stconfig",
         &cmd_stconfig,
-        KOTO_LEVEL_TRUSTED,
+        KOTO_LEVEL_OWNER,
         "Просмотр и детальная настройка модуля Silent Tags.",
         "[help/key] [value]"
     },
     {
         "sttwins",
         &cmd_sttwins,
-        KOTO_LEVEL_TRUSTED,
+        KOTO_LEVEL_OWNER,
         "Инлайн-панель управления режимами твинков для Silent Tags.",
         nullptr
     }
@@ -1113,7 +1130,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.9.8", 60,
+    "2.9.9", 60,
     KOTO_MOD_TWINS,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
