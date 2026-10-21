@@ -1321,28 +1321,38 @@
       "name": "weather",
       "display_name": "Погода (Weather)",
       "author": "Kote",
-      "description": "Текущая погода и подробный прогноз через сервис wttr.in с эмодзи и параметрами.",
-      "version": "1.0.2",
+      "description": "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени.",
+      "version": "1.1.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
         {
           "name": "weather",
-          "doc": "Показывает текущую погоду и прогноз в указанном городе.",
-          "usage": "[город]"
+          "doc": "Показывает текущую погоду и прогноз наперёд в указанном городе.",
+          "usage": "<город>"
         },
         {
           "name": "w",
           "doc": "Погода (псевдоним weather).",
-          "usage": "[город]"
+          "usage": "<город>"
+        },
+        {
+          "name": "forecast",
+          "doc": "Подробный прогноз погоды на 3 или 7 дней наперёд.",
+          "usage": "<город> [7]"
+        },
+        {
+          "name": "fc",
+          "doc": "Прогноз погоды (псевдоним forecast).",
+          "usage": "<город> [7]"
         }
       ],
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/weather.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 265760,
-      "sha256": "85f8f4d9216cc439cd99309082eba7231e5d517bf4e626f4cda0a06387b20ffe"
+      "size": 360808,
+      "sha256": "8ec7bbf6a51e54bb2713d6957fff67d23d16cd101f253fddc702d450817ae210"
     }
   ]
 }
