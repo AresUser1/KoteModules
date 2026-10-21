@@ -424,6 +424,13 @@ typedef struct koto_api {
     int  (*chat_type)(koto_ctx*);
     void (*admin_action)(koto_ctx*, int operation, long long chat_id,
                          long long user_id, const char* rights_hash, const char* rank);
+    /* 33. Host process metrics, versionCode 63+. Append-only, read-only.
+       Returns JSON schema=1; missing/null counters are unavailable, never zero.
+       Android app_rx/tx_bytes are TrafficStats counters for the app UID since
+       device boot; process_* refers to the host, including in the sandbox.
+       Returns full JSON byte length (may exceed buflen), -1 if unavailable;
+       output is NUL-terminated when buflen>0. Requires min_host_version=63. */
+    int (*system_metrics_json)(koto_ctx*, char* buf, int buflen);
 } koto_api;
 /* ========================================================================== *
  *  Хэндлеры модуля. Все СИНХРОННЫЕ (как on_message в ABI 2): api передаётся    *
