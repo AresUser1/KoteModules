@@ -1177,8 +1177,8 @@
       "name": "sysinfo",
       "display_name": "Мониторинг сервера (SysInfo)",
       "author": "Kote",
-      "description": "Комплексный мониторинг сервера и устройства: реальные CPU, RAM, Disk, Uptime и красивый Neofetch.",
-      "version": "1.0.1",
+      "description": "Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно.",
+      "version": "1.1.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1201,9 +1201,9 @@
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
       "license": "MIT",
-      "min_host_version": 26,
-      "size": 121912,
-      "sha256": "ba36580a9e58f80bc351f8e33a365ddfa79349ad08e394ac7f83e0191a6ea7e3"
+      "min_host_version": 63,
+      "size": 320672,
+      "sha256": "742fbe0b9d9d6c4d69d9d987e988f45f6dc517e3ee609b3dd2fc664da5a63ea2"
     },
     {
       "id": "tagger",
