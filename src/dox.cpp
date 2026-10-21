@@ -52,22 +52,29 @@ static std::string utf8_tolower(const std::string& str) {
     return res;
 }
 
-// Точное извлечение номера телефона (1:1 алгоритм из dox.py)
+// Точное извлечение номера телефона (1:1 алгоритм из dox.py с устойчивостью к переносам и форматам)
 static std::string extract_phone(const std::string& text, long long target_id) {
     std::string phone_number;
     std::string target_id_str = std::to_string(target_id);
 
-    // 1. Поиск по ключевым словам (основной метод из dox.py)
+    // 1. Поиск по строкам с ключевыми словами
     std::istringstream iss(text);
     std::string line;
     while (std::getline(iss, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t')) {
+            line.pop_back();
+        }
         std::string llower = utf8_tolower(line);
 
         bool has_key = (
             llower.find("телефон") != std::string::npos ||
             llower.find("phone") != std::string::npos ||
-            llower.find("номер") != std::string::npos ||
-            line.find("📞") != std::string::npos
+            llower.find("тел:") != std::string::npos ||
+            llower.find("тел.") != std::string::npos ||
+            line.find("📞") != std::string::npos ||
+            line.find("📱") != std::string::npos ||
+            llower.find("номер телефона") != std::string::npos ||
+            (llower.find("номер") != std::string::npos && llower.find("запрос") == std::string::npos)
         );
 
         if (has_key) {
@@ -82,8 +89,13 @@ static std::string extract_phone(const std::string& text, long long target_id) {
             std::regex reg(R"((\+?\d{7,15}))");
             std::smatch m;
             if (std::regex_search(digits_only, m, reg)) {
-                phone_number = m[1].str();
-                break;
+                std::string cand = m[1].str();
+                std::string cand_digits;
+                for (char ch : cand) if (isdigit(static_cast<unsigned char>(ch))) cand_digits += ch;
+                if (cand_digits != target_id_str) {
+                    phone_number = cand;
+                    break;
+                }
             }
         }
     }
@@ -92,16 +104,18 @@ static std::string extract_phone(const std::string& text, long long target_id) {
     if (phone_number.empty()) {
         std::string clean_text;
         for (char c : text) {
-            if (c != ' ' && c != '-' && c != '(' && c != ')') {
+            if (c != ' ' && c != '-' && c != '(' && c != ')' && c != '\r' && c != '\t') {
                 clean_text += c;
             }
         }
-        std::regex reg_all(R"((\d{7,15}))");
+        std::regex reg_all(R"((\+?\d{7,15}))");
         auto words_begin = std::sregex_iterator(clean_text.begin(), clean_text.end(), reg_all);
         auto words_end = std::sregex_iterator();
         for (std::sregex_iterator i = words_begin; i != words_end; ++i) {
             std::string num = (*i)[1].str();
-            if (num != target_id_str) {
+            std::string num_digits;
+            for (char ch : num) if (isdigit(static_cast<unsigned char>(ch))) num_digits += ch;
+            if (num != target_id_str && num_digits != target_id_str) {
                 phone_number = num;
                 break;
             }
@@ -457,12 +471,20 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
     // Если номер не найден в результате поиска:
     // self._build_emoji("fail") + " Номер телефона не найден в результате поиска."
+    // Сообщение считается окончательным отрицательным ответом ТОЛЬКО при явных фразах отсутствия
+    // или при получении полного досье без телефона (не прерывать поиск на промежуточных статусах).
     bool is_conclusive = (
-        state == 2 ||
-        text.find("не найден") != std::string::npos ||
+        text_lower.find("не найден") != std::string::npos ||
+        text_lower.find("ничего не найден") != std::string::npos ||
+        text_lower.find("нет данных") != std::string::npos ||
+        text_lower.find("информация отсутствует") != std::string::npos ||
+        text_lower.find("не удалось найти") != std::string::npos ||
+        text_lower.find("пользователь не найден") != std::string::npos ||
+        text_lower.find("ничего нет") != std::string::npos ||
         text.find("История изменения") != std::string::npos ||
-        text.find("💬 ID:") != std::string::npos ||
-        text.find("Интересовались") != std::string::npos
+        text.find("Интересовались") != std::string::npos ||
+        text.find("Контактные связи") != std::string::npos ||
+        (text.find("💬 ID:") != std::string::npos && text.find("Телефон") == std::string::npos)
     );
 
     if (is_conclusive) {
@@ -479,6 +501,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         return 1;
     }
 
+    // Промежуточный ответ ("Поиск...", подтверждение кнопки и т.д.) — ждём досье дальше
     return 0;
 }
 
@@ -505,7 +528,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "dox",
     "Интеграция с Dox-ботами: автовыбор Telegram и поиск номера (C++ ABI 3).",
-    "1.0.9",
+    "1.0.10",
     28,
     0,
     COMMANDS,
