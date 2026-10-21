@@ -10,7 +10,8 @@
 struct Read {long long chat,id;int kind;};
 struct koto_ctx {
     std::map<std::string,std::string> db;
-    std::string args,text;
+    std::string args,text,twins,twins_json="[]",callback;
+    bool trusted=true;
     std::vector<Read> reads;
     long long chat=2486593427LL,me=1;
     int type=KOTO_CHAT_CHANNEL;
@@ -23,10 +24,11 @@ int main(int argc,char** argv) {
     auto second=dlopen(argv[2],RTLD_NOW|RTLD_LOCAL);CHECK(second);
     auto load=[](void* handle){auto fn=reinterpret_cast<const koto_module*(*)()>(dlsym(handle,"koto_module_register"));assert(fn);return fn();};
     auto manager=load(first);auto chat=load(second);
-    CHECK(std::string(manager->version)=="1.2.1" && manager->min_host_version==61);
+    CHECK(std::string(manager->version)=="1.2.2" && manager->min_host_version==62);
     CHECK(std::string(chat->version)=="1.0.6" && chat->min_host_version==61);
+    CHECK((manager->flags & KOTO_MOD_TWINS) != 0); // Android router requires this before calling the watcher.
     koto_api api{};
-    api.check_permission=[](koto_ctx*,int){return 1;};
+    api.check_permission=[](koto_ctx* c,int){return int(c->trusted);};
     api.is_outgoing=[](koto_ctx* c){return int(c->outgoing);};
     api.chat_id=[](koto_ctx* c){return c->chat;};api.get_me=[](koto_ctx* c){return c->me;};
     api.chat_type=[](koto_ctx* c){return c->type;};
@@ -40,6 +42,11 @@ int main(int argc,char** argv) {
     api.c_edit=[](koto_ctx*,int){};api.c_reply=[](koto_ctx*,int){};
     api.read_history=[](koto_ctx* c,long long cid,long long mid){c->reads.push_back({cid,mid,50});};
     api.read_mentions=[](koto_ctx* c,long long cid){c->reads.push_back({cid,0,51});};
+    api.twin_list=[](koto_ctx* c,char* b,int n){std::snprintf(b,n,"%s",c->twins.c_str());return int(c->twins.size());};
+    api.get_twins_json=[](koto_ctx* c,char* b,int n){std::snprintf(b,n,"%s",c->twins_json.c_str());return int(c->twins_json.size());};
+    api.c_button=[](koto_ctx*,const char*,const char*,int){};
+    api.cb_data=[](koto_ctx* c){return c->callback.c_str();};
+    api.cb_answer=[](koto_ctx*,const char*,int){};
     api.kick_user=[](koto_ctx* c,long long cid,long long uid){c->reads.push_back({cid,uid,42});};
     auto command=[&](const koto_module* module,koto_ctx& c,const char* name,const char* args=""){
         c.args=args;c.reads.clear();auto begin=module->commands,end=begin+module->command_count;
@@ -79,6 +86,38 @@ int main(int argc,char** argv) {
     }
     {
         koto_ctx c;command(manager,c,"autreadnow");CHECK(c.reads.size()==2 && c.reads[0].kind==50 && c.reads[1].kind==51);
+    }
+    {
+        koto_ctx c;c.twins="1877549535\tTwin\t+000\n";
+        command(manager,c,"amtwins");CHECK(c.text.find("1877549535")!=std::string::npos && c.text.find("❌ Twin")!=std::string::npos);
+        command(manager,c,"amtwins","on 1877549535");CHECK(c.db["twin_mode:1877549535"]=="1");
+        CHECK(c.text.find("✅ Twin")!=std::string::npos);
+        c.me=1877549535;watch(c);CHECK(c.reads.size()==2); // No global main-account mode required.
+        command(manager,c,"amtwins","off 1877549535");watch(c);CHECK(c.reads.empty());
+        c.db["autoread_chats"]="0\n";watch(c);CHECK(c.reads.empty()); // Disabled twin must not inherit main default.
+        command(manager,c,"amtwins","on 1877549535");
+        command(manager,c,"autread","off this");watch(c);CHECK(c.reads.empty());
+        command(manager,c,"autread","on this");watch(c);CHECK(c.reads.size()==2);
+        c.outgoing=true;watch(c);CHECK(c.reads.empty());c.outgoing=false;
+        c.me=1;watch(c);CHECK(c.reads.size()==2); // Return to main account.
+        c.db["autoread_chats"]="";c.me=555;
+        c.twins+="555\tAdded\t+000\n";c.db["twin_mode:555"]="1";
+        watch(c);CHECK(c.reads.size()==2); // New twin is recognized immediately.
+        c.twins="1877549535\tTwin\t+000\n";watch(c);CHECK(c.reads.empty());
+        for(const char* args:{"on 999","on -1","on 1877549535 extra","off nope","enable 1877549535","on"}) {
+            auto old=c.db;command(manager,c,"amtwins",args);CHECK(c.db==old);CHECK(c.text.find("❌")!=std::string::npos);
+        }
+        c.trusted=false;auto old=c.db;command(manager,c,"amtwins","off 1877549535");CHECK(c.db==old);
+        c.callback="amtwins_toggle:1877549535";manager->on_callback(&c,&api);CHECK(c.db==old);
+        c.trusted=true;c.callback="amtwins_toggle:999";manager->on_callback(&c,&api);CHECK(c.db==old);
+        c.callback="amtwins_toggle:1877549535bad";manager->on_callback(&c,&api);CHECK(c.db==old);
+        c.callback="amtwins_toggle:1877549535";manager->on_callback(&c,&api);CHECK(c.db["twin_mode:1877549535"]=="0");
+    }
+    {
+        koto_ctx c;c.me=1877549535;
+        c.twins_json="[{\"uid\":1,\"name\":\"Main\",\"is_main\":true},{\"uid\":1877549535,\"name\":\"Fallback\",\"is_main\":false}]";
+        c.db["twin_mode:1877549535"]="1";watch(c);CHECK(c.reads.size()==2);
+        command(manager,c,"amtwins");CHECK(c.text.find("Fallback")!=std::string::npos);
     }
     for(int type:{KOTO_CHAT_GROUP,KOTO_CHAT_CHANNEL}) {
         koto_ctx c;c.type=type;c.chat=type==KOTO_CHAT_GROUP?-5422122659LL:-1002486593427LL;

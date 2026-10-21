@@ -122,7 +122,7 @@ static int get_all_twins(koto_ctx* ctx, const koto_api* api, TwinItem* out_twins
         char tw_buf[4096] = {0};
         int tw_len = api->twin_list(ctx, tw_buf, sizeof(tw_buf) - 1);
         if (tw_len > 0) {
-            tw_buf[tw_len] = '\0';
+            tw_buf[tw_len < (int)sizeof(tw_buf) ? tw_len : (int)sizeof(tw_buf)-1] = '\0';
             char* saveptr = NULL;
             char* line = strtok_r(tw_buf, "\r\n", &saveptr);
             while (line && count < max_twins) {
@@ -149,7 +149,7 @@ static int get_all_twins(koto_ctx* ctx, const koto_api* api, TwinItem* out_twins
         char json_buf[16384] = {0};
         int jlen = api->get_twins_json(ctx, json_buf, sizeof(json_buf) - 1);
         if (jlen > 0) {
-            json_buf[jlen] = '\0';
+            json_buf[jlen < (int)sizeof(json_buf) ? jlen : (int)sizeof(json_buf)-1] = '\0';
             const char* p = json_buf;
             while (*p && count < max_twins) {
                 const char* obj_start = strchr(p, '{');
@@ -423,7 +423,8 @@ static void render_amtwins_panel(koto_ctx* ctx, const koto_api* api) {
     api->c_reset(ctx);
     api->c_fmt(ctx, "⚙️ AutoManager — Твинки (авточтение)\n\n", KOTO_ENT_BOLD);
     api->c_text(ctx, "• ❌ Выкл — твин не читает сообщения\n");
-    api->c_text(ctx, "• ✅ Вкл  — твин читает входящие чаты\n\n");
+    api->c_text(ctx, "• ✅ Вкл — твин читает новые входящие сообщения\n");
+    api->c_text(ctx, "Управление: .amtwins on ID или .amtwins off ID\nИсключения .autread off this действуют и для твинков.\n\n");
 
     TwinItem twins[32];
     int count = get_all_twins(ctx, api, twins, 32);
@@ -441,6 +442,10 @@ static void render_amtwins_panel(koto_ctx* ctx, const koto_api* api) {
         api->db_get(ctx, mode_key, mode_val, sizeof(mode_val) - 1);
         int mode = (atoi(mode_val) == 1);
 
+        char status[192];
+        snprintf(status, sizeof(status), "%s %s — ID %lld\n", mode ? "✅" : "❌", twins[i].name, twins[i].uid);
+        api->c_text(ctx, status);
+
         char btn_label[128];
         snprintf(btn_label, sizeof(btn_label), "👤 %s [%s]", twins[i].name, mode ? "✅ Вкл" : "❌ Выкл");
         api->c_button(ctx, btn_label, "am_noop", 1);
@@ -455,6 +460,23 @@ static void render_amtwins_panel(koto_ctx* ctx, const koto_api* api) {
 
 static void cmd_amtwins(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    const char* args = api->cmd_args(ctx);
+    while (args && isspace((unsigned char)*args)) ++args;
+    if (args && *args && strcmp(args, "list") != 0) {
+        char mode[8], id_text[32], extra[2];
+        long long uid=0;
+        if (sscanf(args, "%7s %31s %1s", mode, id_text, extra) != 2 ||
+            (strcmp(mode,"on") && strcmp(mode,"off")) || !parse_id(id_text,&uid) || uid<=0) {
+            api->c_reset(ctx);api->c_text(ctx,"❌ Использование: .amtwins [list|on ID|off ID]");send_result(ctx,api);return;
+        }
+        TwinItem twins[32];int count=get_all_twins(ctx,api,twins,32), found=0;
+        for(int i=0;i<count;++i) if(twins[i].uid==uid) found=1;
+        if(!found) {
+            api->c_reset(ctx);api->c_text(ctx,"❌ Такой твин не добавлен. Список: .amtwins");send_result(ctx,api);return;
+        }
+        char key[64];snprintf(key,sizeof(key),"twin_mode:%lld",uid);
+        api->db_set(ctx,key,strcmp(mode,"on")==0?"1":"0");
+    }
     render_amtwins_panel(ctx, api);
     send_result(ctx, api);
 }
@@ -472,30 +494,12 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long my_id = api->get_me ? api->get_me(ctx) : 0;
     long long mid = api->msg_id ? api->msg_id(ctx) : 0;
 
-    static long long s_twins[32];
-    static int s_twin_count = 0;
-    static long long s_last_check = 0;
-
-    long long now_sec = api->uptime_sec ? api->uptime_sec(ctx) : 0;
-    if (s_twin_count == 0 || (now_sec - s_last_check > 15)) {
-        s_last_check = now_sec;
-        TwinItem items[32];
-        s_twin_count = get_all_twins(ctx, api, items, 32);
-        for (int i = 0; i < s_twin_count; ++i) {
-            s_twins[i] = items[i].uid;
-        }
-    }
-
-    // 1. Проверяем: выполняется ли watcher на твинке?
+    // Read the current registry for every event. Added/removed accounts and
+    // isolated module processes must not share a stale process-global cache.
+    TwinItem twins[32];
+    int count = get_all_twins(ctx, api, twins, 32);
     int is_twin = 0;
-    if (my_id > 0) {
-        for (int i = 0; i < s_twin_count; ++i) {
-            if (s_twins[i] == my_id) {
-                is_twin = 1;
-                break;
-            }
-        }
-    }
+    for (int i=0; i<count; ++i) if (my_id>0 && twins[i].uid==my_id) {is_twin=1;break;}
 
     if (is_twin) {
         char mode_key[64];
@@ -543,8 +547,11 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
     }
 
     if (strncmp(data, "amtwins_toggle:", 15) == 0) {
-        long long tw_id = strtoll(data + 15, NULL, 10);
-        if (tw_id > 0) {
+        long long tw_id = 0;
+        TwinItem twins[32];int count=get_all_twins(ctx,api,twins,32), found=0;
+        if (parse_id(data+15,&tw_id) && tw_id>0)
+            for(int i=0;i<count;++i) if(twins[i].uid==tw_id) found=1;
+        if (found) {
             char mode_key[64];
             snprintf(mode_key, sizeof(mode_key), "twin_mode:%lld", tw_id);
             char mode_val[32] = {0};
@@ -605,8 +612,8 @@ static const koto_command COMMANDS[] = {
         "amtwins",
         &cmd_amtwins,
         KOTO_LEVEL_TRUSTED,
-        "Инлайн-панель управления авточтением твинков.",
-        ""
+        "Список и управление авточтением твинков.",
+        "[list|on ID|off ID]"
     }
 };
 
@@ -614,10 +621,10 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.2.1",
-    .min_host_version = 61,
+    .version          = "1.2.2",
+    .min_host_version = 62,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
-    .flags            = 0,
+    .flags            = KOTO_MOD_TWINS,
     .commands         = COMMANDS,
     .command_count    = sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     .settings         = NULL,
