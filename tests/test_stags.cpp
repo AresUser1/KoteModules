@@ -24,8 +24,11 @@ static int write(const std::string& value,char* buf,int cap){if(cap>0){auto n=st
 int main(int argc,char** argv){
     CHECK(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);CHECK(lib);
     auto load=reinterpret_cast<const koto_module*(*)()>(dlsym(lib,"koto_module_register"));CHECK(load);auto mod=load();
-    CHECK(std::string(mod->version)=="2.9.8" && mod->min_host_version==60);
+    CHECK(std::string(mod->version)=="2.9.9" && mod->min_host_version==60);
     CHECK(mod->flags & KOTO_MOD_TWINS);CHECK(mod->watch_flags & KOTO_WATCH_INCOMING);
+    for(int i=0;i<mod->command_count;++i) {
+        CHECK(mod->commands[i].min_level == KOTO_LEVEL_OWNER);
+    }
     koto_api api{};
     api.chat_id=[](koto_ctx*c){return c->chat;};api.chat_type=[](koto_ctx*c){return c->type;};
     api.sender_id=[](koto_ctx*c){return c->sender;};api.get_me=[](koto_ctx*c){return c->me;};api.msg_id=[](koto_ctx*)->long long{return 42;};
@@ -82,5 +85,23 @@ int main(int argc,char** argv){
     {koto_ctx c;cmd(c,"stconfig","silent ON");CHECK(c.cfg["silent"]=="1");cmd(c,"stconfig","silent OFF");CHECK(c.cfg["silent"]=="0");}
     for(const char* callback:{"sttwins_set:123:nope","sttwins_set:999:all","sttwins_set:123bad:all"}){koto_ctx c;c.twins="[{\"uid\":123,\"is_main\":false}]";c.callback=callback;auto before=c.db;mod->on_callback(&c,&api);CHECK(c.db==before);}
     {koto_ctx c;c.twins="[{\"uid\":123,\"is_main\":false}]";c.callback="sttwins_set:123:all";mod->on_callback(&c,&api);CHECK(c.db["twin_modes"]=="123\tall\n");}
+    {
+        koto_ctx c;
+        c.me=123;
+        c.twins="[{\"uid\":123,\"is_main\":false}]";
+        c.out=false;
+        c.permission=true;
+        auto cfg_before=c.cfg;
+        auto db_before=c.db;
+        cmd(c,"stags","on");
+        CHECK(c.outputs==0 && c.sent.empty() && c.cfg==cfg_before && c.db==db_before);
+        cmd(c,"stconfig","silent on");
+        CHECK(c.outputs==0 && c.sent.empty() && c.cfg==cfg_before && c.db==db_before);
+        cmd(c,"sttwins","");
+        CHECK(c.outputs==0 && c.sent.empty() && c.cfg==cfg_before && c.db==db_before);
+        c.callback="sttwins_set:123:all";
+        mod->on_callback(&c,&api);
+        CHECK(c.outputs==0 && c.sent.empty() && c.cfg==cfg_before && c.db==db_before);
+    }
     std::printf("Silent Tags: %d checks passed\n",checks);
 }
