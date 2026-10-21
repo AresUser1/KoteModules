@@ -54,8 +54,8 @@
           "usage": ""
         }
       ],
-      "size": 384088,
-      "sha256": "a728f4715037809429f6d5a436a7ad1ae5819212427875cf51ad22573b5b207e",
+      "size": 384104,
+      "sha256": "4350cb15630f9aff45406d5807f76775bbb3aeb60df67248e6d1ba6cf37b1cb6",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
@@ -134,8 +134,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 271200,
-      "sha256": "803319ecc12b3abddd49cc020080f905be35453e5bfdfe389f06707b353b41ef"
+      "size": 271216,
+      "sha256": "c309e2b42c9769755cc7575250f3f914486cf7cba5afde7b0891772679ce57d7"
     },
     {
       "id": "auto_manager",
@@ -314,8 +314,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
       "license": "MIT",
       "min_host_version": 60,
-      "size": 263008,
-      "sha256": "b0dfa340ee56135f1871a9a33b67677dd70290af63f0c134a9c0c652e37f850c"
+      "size": 263024,
+      "sha256": "c28227b9123b5780b6f25364c96f0890ca8da8db1de8944f5ec6d4f0e1efc5b4"
     },
     {
       "id": "calculator",
@@ -385,8 +385,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
       "license": "MIT",
       "min_host_version": 61,
-      "size": 278560,
-      "sha256": "2096266a25ac8c2ef39afe02c0539d34ebb03090b0f45ef65a66748444031f19"
+      "size": 278728,
+      "sha256": "ba3d71d47f89e2fec104dd3aa8a927da62c3ab5b85e357a9f33402b72170accc"
     },
     {
       "id": "checkers",
@@ -760,8 +760,8 @@
       "name": "mafia_triggers",
       "display_name": "Триггеры Мафии (MafiaTriggers)",
       "author": "Kote",
-      "description": "Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков, выходящих или афкашащих.",
-      "version": "2.1.4",
+      "description": "Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков с настройкой длительности и пунктов правил.",
+      "version": "2.2.0",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -774,14 +774,39 @@
           "name": "mtr",
           "doc": "Вкл/Выкл Mute-триггер для Мафии (мутит вышедших/afk).",
           "usage": ""
+        },
+        {
+          "name": "mtrcfg",
+          "doc": "Настройки MafiaTriggers: время мута, причины AFK и лива.",
+          "usage": "[time <время> | reason <причина> | leave <причина> | reset]"
+        },
+        {
+          "name": "mtrtime",
+          "doc": "Установить длительность мута (напр. .mtrtime 30m / 1h / 2h / 1d).",
+          "usage": "<время>"
+        },
+        {
+          "name": "mtrreason",
+          "doc": "Установить причину/пункт правил за AFK (напр. .mtrreason 1.2 АФК).",
+          "usage": "<причина>"
+        },
+        {
+          "name": "mtrleave",
+          "doc": "Установить причину/пункт правил за выход (напр. .mtrleave 1.3 Лив).",
+          "usage": "<причина>"
+        },
+        {
+          "name": "mtrsettings",
+          "doc": "Интерактивная панель настроек MafiaTriggers с кнопками.",
+          "usage": ""
         }
       ],
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_triggers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_triggers.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 102576,
-      "sha256": "de5d557fbb703fd427b569109eef0af94168d0ade58fe81e521668454df65d76"
+      "size": 128232,
+      "sha256": "3460fb0231029e2698029abfadfefe61f2357efce91ba42c3233e1886cdacdaa"
     },
     {
       "id": "mass_notifier",
@@ -1165,8 +1190,8 @@
           "usage": ""
         }
       ],
-      "size": 317960,
-      "sha256": "bc301774788056feedf45ccbc3badd713c8c6368c33a532e59c2c4ebd280fe12",
+      "size": 318040,
+      "sha256": "b1cc60456338e029b6b08e7552ef384124dde4882be1197c5dec76b041e9fabc",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -1202,8 +1227,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
       "license": "MIT",
       "min_host_version": 63,
-      "size": 320672,
-      "sha256": "742fbe0b9d9d6c4d69d9d987e988f45f6dc517e3ee609b3dd2fc664da5a63ea2"
+      "size": 320752,
+      "sha256": "5795c99ffef299c53b4583dec11c464ac0ca5cec8d37f0682ac87d8b0c8d6e99"
     },
     {
       "id": "tagger",
@@ -1322,7 +1347,7 @@
       "display_name": "Погода (Weather)",
       "author": "Kote",
       "description": "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1351,8 +1376,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 360808,
-      "sha256": "8ec7bbf6a51e54bb2713d6957fff67d23d16cd101f253fddc702d450817ae210"
+      "size": 376440,
+      "sha256": "e0fbf5fb4399dc3908fae933c4e6d8d6f2130de26d166919fa53eeb84f4a4b67"
     }
   ]
 }

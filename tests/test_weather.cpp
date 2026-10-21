@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "weather");
-    CHECK(std::string(mod->version) == "1.1.0");
+    CHECK(std::string(mod->version) == "1.1.1");
     CHECK(mod->command_count == 4);
     CHECK(std::string(mod->commands[0].name) == "weather");
     CHECK(std::string(mod->commands[1].name) == "w");
@@ -162,6 +162,45 @@ int main(int argc, char** argv) {
     mod->commands[1].handler(&ctx, &api); // w
     CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
     CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
+
+    // 5. Проверка автоматического fallback на Open-Meteo при сбое wttr.in
+    api.http_get = [](koto_ctx*, const char* url, unsigned char* buf, int buflen) -> long long {
+        std::string s_url = url ? url : "";
+        if (s_url.find("wttr.in") != std::string::npos) {
+            std::string err = "<html>503 Service Unavailable</html>";
+            if (buf && buflen > 0) {
+                int to_copy = std::min((int)err.size(), buflen);
+                std::memcpy(buf, err.data(), to_copy);
+                return to_copy;
+            }
+            return (long long)err.size();
+        }
+        if (s_url.find("geocoding-api.open-meteo.com") != std::string::npos) {
+            std::string res = "{\"results\":[{\"name\":\"Москва\",\"country\":\"Россия\",\"latitude\":55.75,\"longitude\":37.61}]}";
+            if (buf && buflen > 0) {
+                int to_copy = std::min((int)res.size(), buflen);
+                std::memcpy(buf, res.data(), to_copy);
+                return to_copy;
+            }
+        }
+        if (s_url.find("api.open-meteo.com") != std::string::npos) {
+            std::string res = "{\"current\":{\"temperature_2m\":10.5,\"apparent_temperature\":9.2,\"relative_humidity_2m\":45.0,\"wind_speed_10m\":12.0,\"weather_code\":1},"
+                              "\"daily\":{\"time\":[\"2026-10-21\",\"2026-10-22\"],\"temperature_2m_max\":[12.0,11.0],\"temperature_2m_min\":[6.0,5.0],\"weather_code\":[1,2],\"precipitation_probability_max\":[10,20]}}";
+            if (buf && buflen > 0) {
+                int to_copy = std::min((int)res.size(), buflen);
+                std::memcpy(buf, res.data(), to_copy);
+                return to_copy;
+            }
+        }
+        return 0;
+    };
+    ctx.args = "Москва";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api); // w
+    CHECK(ctx.composed.find("Погода в: Москва, Россия") != std::string::npos);
+    CHECK(ctx.composed.find("Температура:") != std::string::npos);
+    CHECK(ctx.composed.find("+11°C") != std::string::npos);
+    CHECK(ctx.composed.find("Прогноз на 3 дня:") != std::string::npos);
 
     dlclose(lib);
     std::printf("Weather tests: %d checks passed successfully!\n", checks);

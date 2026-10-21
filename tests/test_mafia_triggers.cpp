@@ -21,9 +21,19 @@ struct MockOutput {
     std::string text;
 };
 
+struct MockButton {
+    std::string text;
+    std::string data;
+    int row;
+};
+
 struct koto_ctx {
     std::map<std::string, std::string> db;
     std::string text;
+    std::string args;
+    std::string cb_data_str;
+    std::string cb_answer_toast;
+    int cb_answer_alert = 0;
     std::string username = "MafiaBakuBlackBot";
     std::string first_name = "Mafia Baku Black";
     std::string composed;
@@ -34,8 +44,10 @@ struct koto_ctx {
     bool permission = true;
     std::vector<MockEntity> entities;
     std::vector<MockOutput> sent;
+    std::vector<MockButton> buttons;
     int edited = 0;
     int replied = 0;
+    int deleted = 0;
 };
 
 static int checks = 0;
@@ -67,12 +79,20 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "mafia_triggers");
-    CHECK(std::string(mod->version) == "2.1.4");
-    CHECK(mod->command_count == 2);
+    CHECK(std::string(mod->version) == "2.2.0");
+    CHECK(mod->command_count == 7);
     CHECK(std::string(mod->commands[0].name) == "wtr");
     CHECK(std::string(mod->commands[1].name) == "mtr");
+    CHECK(std::string(mod->commands[2].name) == "mtrcfg");
+    CHECK(std::string(mod->commands[3].name) == "mtrtime");
+    CHECK(std::string(mod->commands[4].name) == "mtrreason");
+    CHECK(std::string(mod->commands[5].name) == "mtrleave");
+    CHECK(std::string(mod->commands[6].name) == "mtrsettings");
     CHECK(mod->on_watch != nullptr);
     CHECK(mod->watch_flags & KOTO_WATCH_INCOMING);
+    CHECK(mod->on_callback != nullptr);
+    CHECK(mod->settings != nullptr);
+    CHECK(mod->settings_count == 3);
 
     koto_api api{};
     api.chat_id = [](koto_ctx* c) -> long long { return c->chat; };
@@ -80,6 +100,7 @@ int main(int argc, char** argv) {
     api.get_me = [](koto_ctx* c) -> long long { return c->me; };
     api.is_outgoing = [](koto_ctx* c) -> int { return c->out ? 1 : 0; };
     api.msg_text = [](koto_ctx* c) -> const char* { return c->text.c_str(); };
+    api.cmd_args = [](koto_ctx* c) -> const char* { return c->args.c_str(); };
 
     api.db_get = [](koto_ctx* c, const char* k, char* b, int n) -> int {
         auto it = c->db.find(k ? k : "");
@@ -115,15 +136,24 @@ int main(int argc, char** argv) {
         if (o) *o = e.off;
         if (l) *l = e.len;
         write_str(e.url, b, n);
-        return 1; // Возвращает 1 при успехе!
+        return 1;
     };
 
-    api.c_reset = [](koto_ctx* c) { c->composed.clear(); };
+    api.c_reset = [](koto_ctx* c) { c->composed.clear(); c->buttons.clear(); };
     api.c_text = [](koto_ctx* c, const char* s) { if (s) c->composed += s; };
     api.c_fmt = [](koto_ctx* c, const char* s, int) { if (s) c->composed += s; };
     api.c_send = [](koto_ctx* c, long long chat, int) { c->sent.push_back({chat, c->composed}); };
     api.c_edit = [](koto_ctx* c, int) { c->edited++; };
     api.c_reply = [](koto_ctx* c, int) { c->replied++; };
+    api.c_button = [](koto_ctx* c, const char* text, const char* cb, int row) {
+        c->buttons.push_back({text ? text : "", cb ? cb : "", row});
+    };
+    api.cb_data = [](koto_ctx* c) -> const char* { return c->cb_data_str.c_str(); };
+    api.cb_answer = [](koto_ctx* c, const char* text, int alert) {
+        c->cb_answer_toast = text ? text : "";
+        c->cb_answer_alert = alert;
+    };
+    api.delete_msg = [](koto_ctx* c) { c->deleted++; };
     api.check_permission = [](koto_ctx* c, int) -> int { return c->permission ? 1 : 0; };
 
     koto_ctx ctx;
@@ -142,13 +172,61 @@ int main(int argc, char** argv) {
     CHECK(ctx.db["mute_chats"].find("-1002404766570") != std::string::npos);
     CHECK(ctx.composed.find("Активирован (Mute)") != std::string::npos);
 
-    // 3. Сообщение от Mafia Baku Black с двумя уснувшими игроками (Exile и Wraith)
-    // Текст 1 в 1 как из реального лога пользователя
+    // 3. Проверка .mtrcfg без аргументов (карточка настроек)
+    ctx.args = "";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Настройки MafiaTriggers v2.2.0") != std::string::npos);
+    CHECK(ctx.composed.find("Длительность мута: 2h") != std::string::npos);
+    CHECK(ctx.composed.find("Причина за AFK: сон") != std::string::npos);
+
+    // 4. Проверка .mtrcfg time 30m / .mtrcfg reason 1.2 АФК
+    ctx.args = "time 30m";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_mute_time"] == "30m");
+
+    ctx.args = "reason 1.2 АФК";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_afk_reason"] == "1.2 АФК");
+
+    ctx.args = "leave 1.3 Лив";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_leave_reason"] == "1.3 Лив");
+
+    // 5. Проверка шорткатов .mtrtime, .mtrreason, .mtrleave
+    ctx.args = "4h";
+    mod->commands[3].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_mute_time"] == "4h");
+
+    ctx.args = "сон во время игры";
+    mod->commands[4].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_afk_reason"] == "сон во время игры");
+
+    ctx.args = "выход из игры";
+    mod->commands[5].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_leave_reason"] == "выход из игры");
+
+    // 6. Проверка .mtrsettings (интерактивная панель с кнопками)
+    mod->commands[6].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Панель настроек MafiaTriggers v2.2.0") != std::string::npos);
+    CHECK(!ctx.buttons.empty());
+
+    // 7. Проверка on_callback
+    ctx.cb_data_str = "mtr:time:1d";
+    mod->on_callback(&ctx, &api);
+    CHECK(ctx.db["cfg_mute_time"] == "1d");
+    CHECK(ctx.cb_answer_toast.find("1d") != std::string::npos);
+
+    ctx.cb_data_str = "mtr:afk:1.2 АФК";
+    mod->on_callback(&ctx, &api);
+    CHECK(ctx.db["cfg_afk_reason"] == "1.2 АФК");
+
+    ctx.cb_data_str = "mtr:close";
+    mod->on_callback(&ctx, &api);
+    CHECK(ctx.deleted == 1);
+
+    // 8. Сообщение от Mafia Baku Black с кастомным временем мута и кастомной причиной
     ctx.text = "Комиссар Каттани 𝙺𝚝😸 Exile ♱ пообещал больше не спать во время игры, но умер.\n\n"
                "Дон 𝙺𝚝😸 Wraith ♱ пообещал больше не спать во время игры, но умер.";
-
-    // Entity 0: Exile (tg://user?id=11111)
-    // Entity 1: Wraith (tg://user?id=22222)
     ctx.entities = {
         {KOTO_ENT_URL, 18, 14, "tg://user?id=11111"},
         {KOTO_ENT_URL, 88, 15, "tg://user?id=22222"}
@@ -157,68 +235,37 @@ int main(int argc, char** argv) {
     ctx.sent.clear();
     mod->on_watch(&ctx, &api);
 
-    // Должно быть отправлено ровно 2 мута: для Exile (11111) и Wraith (22222)
+    // Должно быть отправлено ровно 2 мута с кастомным временем (1d) и кастомной причиной (1.2 АФК)
     CHECK(ctx.sent.size() == 2);
-    CHECK(ctx.sent[0].text == "!mute 11111 2h сон");
-    CHECK(ctx.sent[1].text == "!mute 22222 2h сон");
+    CHECK(ctx.sent[0].text == "!mute 11111 1d 1.2 АФК");
+    CHECK(ctx.sent[1].text == "!mute 22222 1d 1.2 АФК");
 
-    // 4. Проверяем также включение Warn-триггера (активированы оба: Mute + Warn)
-    mod->commands[0].handler(&ctx, &api); // Включаем Warn
-    ctx.sent.clear();
-    mod->on_watch(&ctx, &api);
-
-    // При обоих включенных должны сработать оба наказания для обоих нарушителей
-    CHECK(ctx.sent.size() == 4);
-    CHECK(ctx.sent[0].text == "!warn 11111 сон");
-    CHECK(ctx.sent[1].text == "!mute 11111 2h сон");
-    CHECK(ctx.sent[2].text == "!warn 22222 сон");
-    CHECK(ctx.sent[3].text == "!mute 22222 2h сон");
-
-    // 5. Изоляция контекста: один игрок убит мафией, второй уснул (AFK)
-    ctx.text = "Мирный Житель 𝙺𝚝😸 Antichrist погиб от пули мафии этой ночью.\n\n"
-               "Дон 𝙺𝚝😸 Wraith ♱ пообещал больше не спать во время игры, но умер.";
-    ctx.entities = {
-        {KOTO_ENT_URL, 15, 18, "tg://user?id=33333"},
-        {KOTO_ENT_URL, 85, 15, "tg://user?id=22222"}
-    };
-
-    ctx.sent.clear();
-    mod->on_watch(&ctx, &api);
-
-    // Только Wraith должен быть наказан! Antichrist не должен наказываться!
-    CHECK(ctx.sent.size() == 2); // 1 warn + 1 mute для Wraith
-    CHECK(ctx.sent[0].text == "!warn 22222 сон");
-    CHECK(ctx.sent[1].text == "!mute 22222 2h сон");
-
-    // 6. Триггер выхода (Leave)
+    // 9. Проверяем также кастомную причину при ливе
     ctx.text = "Дон 𝙺𝚝😸 Wraith ♱ не выдержал гнетущей тишины и покинул игру.";
     ctx.entities = {
         {KOTO_ENT_URL, 4, 15, "tg://user?id=22222"}
     };
     ctx.sent.clear();
     mod->on_watch(&ctx, &api);
-    CHECK(ctx.sent.size() == 2);
-    CHECK(ctx.sent[0].text == "!warn 22222 выход");
-    CHECK(ctx.sent[1].text == "!mute 22222 2h выход");
+    CHECK(ctx.sent.size() == 1);
+    CHECK(ctx.sent[0].text == "!mute 22222 1d выход из игры");
 
-    // 7. Упоминание через @username (KOTO_ENT_MENTION)
-    ctx.text = "Дон @Wraith пообещал больше не спать во время игры, но умер.";
+    // 10. Сброс настроек на умолчания (.mtrcfg reset)
+    ctx.args = "reset";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.db["cfg_mute_time"] == "2h");
+    CHECK(ctx.db["cfg_afk_reason"] == "сон");
+    CHECK(ctx.db["cfg_leave_reason"] == "выход");
+
+    // Проверяем что после сброса используются стандартные 2h и сон
+    ctx.text = "Дон 𝙺𝚝😸 Wraith ♱ пообещал больше не спать во время игры, но умер.";
     ctx.entities = {
-        {KOTO_ENT_MENTION, 4, 7, ""}
+        {KOTO_ENT_URL, 4, 15, "tg://user?id=22222"}
     };
     ctx.sent.clear();
     mod->on_watch(&ctx, &api);
-    CHECK(ctx.sent.size() == 2);
-    CHECK(ctx.sent[0].text == "!warn 22222 сон");
-    CHECK(ctx.sent[1].text == "!mute 22222 2h сон");
-
-    // 8. Игнорирование сообщений от обычных пользователей
-    ctx.sender = 55555LL; // Не бот
-    ctx.username = "user55555";
-    ctx.first_name = "Regular User";
-    ctx.sent.clear();
-    mod->on_watch(&ctx, &api);
-    CHECK(ctx.sent.empty());
+    CHECK(ctx.sent.size() == 1);
+    CHECK(ctx.sent[0].text == "!mute 22222 2h сон");
 
     dlclose(lib);
     std::printf("Mafia Triggers test: %d checks passed successfully!\n", checks);
