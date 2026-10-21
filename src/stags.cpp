@@ -916,10 +916,6 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if(api->read_mentions) api->read_mentions(ctx,cid);
         if(api->read_history) api->read_history(ctx,cid,mid);
     };
-    // Original Python twin watcher only acknowledges reads; no chat messages
-    // or logs from twin accounts, which may not belong to the log group.
-    if(is_twin) {queue_reads();return 0;}
-
     // 4. Обработка уведомления (если не silent)
     if (!cfg.silent) {
         api->c_reset(ctx);
