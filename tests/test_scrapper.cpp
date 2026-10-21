@@ -143,10 +143,63 @@ int main(int argc, char** argv) {
     CHECK(ctx.sent_file_content.find("111") == std::string::npos); // админ пропущен
     CHECK(ctx.sent_file_content.find("222") == std::string::npos); // бот пропущен
 
+    api.get_twins_json = [](koto_ctx*, char* buf, int buflen) -> int {
+        std::string j = "[{\"uid\":7767394972,\"name\":\"Umbra\",\"is_main\":false,\"online\":true}]";
+        int to_copy = std::min((int)j.size(), buflen - 1);
+        std::memcpy(buf, j.data(), to_copy);
+        buf[to_copy] = '\0';
+        return to_copy;
+    };
+
+    api.twin_get_history_json = [](koto_ctx*, long long twin_uid, long long, int, int, int offset, char* buf, int buflen) -> int {
+        if (twin_uid == 7767394972LL && offset == 0) {
+            std::string j = "[{\"id\":1001,\"sender_id\":333,\"text\":\"hi\"},"
+                            "{\"id\":1002,\"sender_id\":333,\"text\":\"msg2\"},"
+                            "{\"id\":1003,\"sender_id\":444,\"text\":\"msg3\"}]";
+            int to_copy = std::min((int)j.size(), buflen - 1);
+            std::memcpy(buf, j.data(), to_copy);
+            buf[to_copy] = '\0';
+            return to_copy;
+        }
+        std::string empty = "[]";
+        int to_copy = std::min((int)empty.size(), buflen - 1);
+        std::memcpy(buf, empty.data(), to_copy);
+        buf[to_copy] = '\0';
+        return to_copy;
+    };
+
     // 4. Проверка .stopscrap
     ctx.composed.clear();
     mod->commands[3].handler(&ctx, &api);
     CHECK(ctx.composed.find("остановлен") != std::string::npos);
+
+    // 5. Проверка ACTIVITY mode с воркером Umbra
+    ctx.args = "method activity";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("ACTIVITY") != std::string::npos);
+
+    ctx.args = "worker Umbra";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Umbra") != std::string::npos);
+
+    ctx.args = "";
+    ctx.composed.clear();
+    ctx.sent_file_name.clear();
+    ctx.sent_file_content.clear();
+    mod->commands[0].handler(&ctx, &api); // scrap
+    CHECK(ctx.composed.find("Сбор участников успешно завершён") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("WORKER: Umbra (ID: 7767394972)") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("@user333 | Сообщений: 2") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("@user444 | Сообщений: 1") != std::string::npos);
+
+    // 6. Проверка неизвестного воркера
+    ctx.args = "worker UnknownTwin";
+    mod->commands[2].handler(&ctx, &api);
+
+    ctx.args = "";
+    ctx.composed.clear();
+    mod->commands[0].handler(&ctx, &api);
+    CHECK(ctx.composed.find("не найден или не активен") != std::string::npos);
 
     std::printf("Scrapper tests: %d checks passed successfully!\n", checks);
     return 0;

@@ -645,7 +645,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 315664,
-      "sha256": "45433feb1687f15fd3aeab142449cfce4db7629af98dbd8da9e23c9f1b47fe43"
+      "sha256": "ce10fd79f252c53a90d3974f6e119257c6ff5004360a9868685c20955a4afce6"
     },
     {
       "id": "kotserv",
@@ -1202,7 +1202,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 291312,
-      "sha256": "2513fc1d3240582d4869b84f8eb0c0cb99a6bf4c727f8b3f9d7e6018da5e4301"
+      "sha256": "b89b44e2f9c6a4f64310444587ec4db43d6d6229e370bbba76a9f7ad067f0e54"
     },
     {
       "id": "spam_ban",

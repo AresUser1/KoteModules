@@ -54,6 +54,11 @@ static std::string sanitize_filename(const std::string& title) {
     return clean;
 }
 
+static std::string to_lower_str(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+    return s;
+}
+
 // ── Чтение и запись конфигурации через DB API ───────────────────────────────
 
 struct ScrapperConfig {
@@ -61,7 +66,7 @@ struct ScrapperConfig {
     int limit = 0;                  // 0 = без лимита
     bool skip_admins = true;
     bool skip_bots = true;
-    std::string worker = "MAIN";    // MAIN или UID твинка
+    std::string worker = "MAIN";    // MAIN или UID/имя твинка
 };
 
 static ScrapperConfig load_config(koto_ctx* ctx, const koto_api* api) {
@@ -81,6 +86,73 @@ static void save_config(koto_ctx* ctx, const koto_api* api, const ScrapperConfig
     api->db_set_int(ctx, "skip_admins", cfg.skip_admins ? 1 : 0);
     api->db_set_int(ctx, "skip_bots", cfg.skip_bots ? 1 : 0);
     api->db_set(ctx, "worker", cfg.worker.c_str());
+}
+
+// Поиск UID воркера (0 = MAIN; > 0 = twin UID; -1 = указанный твинк не найден)
+static long long resolve_worker(koto_ctx* ctx, const koto_api* api, const std::string& worker_str, std::string& out_label) {
+    std::string w = koto_utils::trim(worker_str);
+    if (w.empty() || to_lower_str(w) == "main") {
+        out_label = "MAIN";
+        return 0;
+    }
+
+    if (is_all_digits(w)) {
+        try {
+            long long id = std::stoll(w);
+            out_label = std::to_string(id);
+            return id;
+        } catch (...) {}
+    }
+
+    std::string w_lower = to_lower_str(w);
+
+    // 1. Поиск через get_twins_json
+    if (api->get_twins_json) {
+        char tbuf[16384] = {0};
+        int tlen = api->get_twins_json(ctx, tbuf, sizeof(tbuf) - 1);
+        if (tlen > 0) {
+            try {
+                auto tj = nlohmann::json::parse(std::string(tbuf, tlen));
+                if (tj.is_array()) {
+                    for (const auto& item : tj) {
+                        std::string tname = item.value("name", "");
+                        std::string tname_l = to_lower_str(tname);
+                        long long tuid = item.value("uid", 0LL);
+                        if (tuid <= 0) tuid = item.value("id", 0LL);
+                        if (tname_l == w_lower || (!w_lower.empty() && tname_l.find(w_lower) != std::string::npos)) {
+                            out_label = tname.empty() ? std::to_string(tuid) : tname;
+                            return tuid;
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    // 2. Поиск через twin_list (uid\tname\tphone)
+    if (api->twin_list) {
+        char tbuf[16384] = {0};
+        int tlen = api->twin_list(ctx, tbuf, sizeof(tbuf) - 1);
+        if (tlen > 0) {
+            std::istringstream tss(std::string(tbuf, tlen));
+            std::string line;
+            while (std::getline(tss, line)) {
+                if (line.empty()) continue;
+                size_t t1 = line.find('\t');
+                if (t1 == std::string::npos) continue;
+                std::string tuid_str = line.substr(0, t1);
+                size_t t2 = line.find('\t', t1 + 1);
+                std::string tname = (t2 == std::string::npos) ? line.substr(t1 + 1) : line.substr(t1 + 1, t2 - (t1 + 1));
+                std::string tname_l = to_lower_str(tname);
+                if (tname_l == w_lower || (!w_lower.empty() && tname_l.find(w_lower) != std::string::npos)) {
+                    out_label = tname.empty() ? tuid_str : tname;
+                    try { return std::stoll(tuid_str); } catch (...) { return -1; }
+                }
+            }
+        }
+    }
+
+    return -1; // Не найден
 }
 
 // ── Обработчик команды .scrap ───────────────────────────────────────────────
@@ -116,6 +188,18 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
 
     ScrapperConfig cfg = load_config(ctx, api);
 
+    std::string worker_label = cfg.worker;
+    long long worker_uid = resolve_worker(ctx, api, cfg.worker, worker_label);
+    if (worker_uid < 0) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ ");
+        api->c_fmt(ctx, ("Твинк '" + cfg.worker + "' не найден или не активен.\n").c_str(), KOTO_ENT_BOLD);
+        api->c_text(ctx, "Проверьте список подключённых твинков: ");
+        api->c_fmt(ctx, ".twins", KOTO_ENT_CODE);
+        send_result(ctx, api);
+        return;
+    }
+
     std::string chat_title = "Чат " + std::to_string(target_cid);
     std::string chat_uname = "";
     std::unordered_set<long long> admin_set;
@@ -146,22 +230,37 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     std::vector<std::string> dump_lines;
     int collected_count = 0;
 
-    if (cfg.method == "ACTIVITY" && api->get_history_json) {
-        // Режим активности по сообщениям
+    if (cfg.method == "ACTIVITY") {
+        // Режим активности по сообщениям (с поддержкой твинков и постраничной пагинацией)
         std::vector<char> hbuf(131072, 0);
-        int limit = cfg.limit > 0 ? cfg.limit : 1000;
-        int hn = api->get_history_json(ctx, target_cid, 0, limit, 0, hbuf.data(), static_cast<int>(hbuf.size()));
+        int limit_msgs = cfg.limit > 0 ? cfg.limit : 1000;
         std::unordered_map<long long, int> user_msg_counts;
-        if (hn > 0) {
+
+        for (int offset = 0; offset < limit_msgs; offset += 100) {
+            int chunk = std::min(100, limit_msgs - offset);
+            int hn = 0;
+            if (worker_uid > 0 && api->twin_get_history_json) {
+                hn = api->twin_get_history_json(ctx, worker_uid, target_cid, 0, chunk, offset, hbuf.data(), static_cast<int>(hbuf.size()) - 1);
+            } else if (api->get_history_json) {
+                hn = api->get_history_json(ctx, target_cid, 0, chunk, offset, hbuf.data(), static_cast<int>(hbuf.size()) - 1);
+            }
+            if (hn <= 0) break;
+
+            int parsed_in_chunk = 0;
             try {
                 auto hj = nlohmann::json::parse(std::string(hbuf.data(), static_cast<size_t>(hn)));
                 if (hj.is_array()) {
+                    parsed_in_chunk = static_cast<int>(hj.size());
                     for (const auto& m : hj) {
-                        long long from_id = m.value("from_id", 0LL);
+                        long long from_id = m.value("sender_id", 0LL);
+                        if (from_id == 0) from_id = m.value("from_id", 0LL);
                         if (from_id > 0) user_msg_counts[from_id]++;
                     }
                 }
-            } catch (...) {}
+            } catch (...) {
+                break;
+            }
+            if (parsed_in_chunk == 0) break;
         }
 
         std::vector<std::pair<long long, int>> sorted_act(user_msg_counts.begin(), user_msg_counts.end());
@@ -217,7 +316,7 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     ss << "CHAT: " << chat_title << " (" << target_cid << ")\n";
     if (!chat_uname.empty()) ss << "USERNAME: @" << chat_uname << "\n";
     ss << "METHOD: " << cfg.method << "\n";
-    ss << "WORKER: " << cfg.worker << "\n";
+    ss << "WORKER: " << worker_label << (worker_uid > 0 ? (" (ID: " + std::to_string(worker_uid) + ")") : "") << "\n";
     ss << "TOTAL COLLECTED: " << collected_count << "\n";
     ss << "================================\n\n";
 

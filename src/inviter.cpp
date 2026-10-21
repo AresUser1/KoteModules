@@ -78,6 +78,76 @@ static void save_config(koto_ctx* ctx, const koto_api* api, const InviterConfig&
     api->db_set(ctx, "msg_template", cfg.message_template.c_str());
 }
 
+static std::string to_lower_str(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+    return s;
+}
+
+// Поиск UID воркера (0 = MAIN; > 0 = twin UID; -1 = указанный твинк не найден)
+static long long resolve_worker(koto_ctx* ctx, const koto_api* api, const std::string& worker_str, std::string& out_label) {
+    std::string w = koto_utils::trim(worker_str);
+    if (w.empty() || to_lower_str(w) == "main") {
+        out_label = "MAIN";
+        return 0;
+    }
+
+    if (is_all_digits(w)) {
+        try {
+            long long id = std::stoll(w);
+            out_label = std::to_string(id);
+            return id;
+        } catch (...) {}
+    }
+
+    std::string w_lower = to_lower_str(w);
+
+    if (api->get_twins_json) {
+        char tbuf[16384] = {0};
+        int tlen = api->get_twins_json(ctx, tbuf, sizeof(tbuf) - 1);
+        if (tlen > 0) {
+            try {
+                auto tj = nlohmann::json::parse(std::string(tbuf, tlen));
+                if (tj.is_array()) {
+                    for (const auto& item : tj) {
+                        std::string tname = item.value("name", "");
+                        std::string tname_l = to_lower_str(tname);
+                        long long tuid = item.value("uid", 0LL);
+                        if (tuid <= 0) tuid = item.value("id", 0LL);
+                        if (tname_l == w_lower || (!w_lower.empty() && tname_l.find(w_lower) != std::string::npos)) {
+                            out_label = tname.empty() ? std::to_string(tuid) : tname;
+                            return tuid;
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    if (api->twin_list) {
+        char tbuf[16384] = {0};
+        int tlen = api->twin_list(ctx, tbuf, sizeof(tbuf) - 1);
+        if (tlen > 0) {
+            std::istringstream tss(std::string(tbuf, tlen));
+            std::string line;
+            while (std::getline(tss, line)) {
+                if (line.empty()) continue;
+                size_t t1 = line.find('\t');
+                if (t1 == std::string::npos) continue;
+                std::string tuid_str = line.substr(0, t1);
+                size_t t2 = line.find('\t', t1 + 1);
+                std::string tname = (t2 == std::string::npos) ? line.substr(t1 + 1) : line.substr(t1 + 1, t2 - (t1 + 1));
+                std::string tname_l = to_lower_str(tname);
+                if (tname_l == w_lower || (!w_lower.empty() && tname_l.find(w_lower) != std::string::npos)) {
+                    out_label = tname.empty() ? tuid_str : tname;
+                    try { return std::stoll(tuid_str); } catch (...) { return -1; }
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
 // ── Очередь пользователей в DB ──────────────────────────────────────────────
 
 static std::vector<long long> load_queue(koto_ctx* ctx, const koto_api* api) {
@@ -178,17 +248,28 @@ static void cmd_invite(koto_ctx* ctx, const koto_api* api) {
         added_count++;
     }
 
+    std::string worker_label = cfg.worker;
+    long long worker_uid = resolve_worker(ctx, api, cfg.worker, worker_label);
+    if (worker_uid < 0) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ ");
+        api->c_fmt(ctx, ("Твинк '" + cfg.worker + "' не найден или не активен.\n").c_str(), KOTO_ENT_BOLD);
+        api->c_text(ctx, "Проверьте список подключённых твинков: ");
+        api->c_fmt(ctx, ".twins", KOTO_ENT_CODE);
+        send_result(ctx, api);
+        return;
+    }
+
     save_queue(ctx, api, existing_queue);
 
-    // Если указан воркер-твинк и в очереди есть пользователи, инициируем отправку первому получателю
+    // Если в очереди есть пользователи, инициируем отправку первому получателю
     int sent_now = 0;
     if (!existing_queue.empty()) {
         long long first_target = existing_queue.front();
-        if (cfg.worker != "MAIN" && is_all_digits(cfg.worker) && api->twin_send) {
-            long long twin_uid = std::stoll(cfg.worker);
-            api->twin_send(ctx, twin_uid, first_target, cfg.message_template.c_str());
+        if (worker_uid > 0 && api->twin_send) {
+            api->twin_send(ctx, worker_uid, first_target, cfg.message_template.c_str());
             sent_now = 1;
-        } else if (cfg.worker == "MAIN" && api->c_send) {
+        } else if (worker_uid == 0 && api->c_send) {
             api->c_reset(ctx);
             api->c_text(ctx, cfg.message_template.c_str());
             api->c_send(ctx, first_target, 0);
