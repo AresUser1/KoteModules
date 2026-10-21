@@ -638,8 +638,8 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.2.3",
-    .min_host_version = 62,
+    .version          = "1.2.4",
+    .min_host_version = 64,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
     .flags            = KOTO_MOD_TWINS,
     .commands         = COMMANDS,
@@ -648,7 +648,7 @@ static const koto_module MODULE = {
     .settings_count   = 0,
     .on_watch         = &on_watch,
     .on_callback      = &on_callback,
-    .watch_flags      = KOTO_WATCH_ALL,
+    .watch_flags      = KOTO_WATCH_INCOMING | KOTO_WATCH_UNREAD_SYNC,
 };
 
 const koto_module* koto_module_register(void) {
