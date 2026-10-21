@@ -11,6 +11,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <charconv>
+#include <limits>
+#include "nlohmann/json.hpp"
 
 // ── Кастомные премиум-эмодзи ──────────────────────────────────────────────────
 static constexpr long long SUCCESS_EMOJI_ID = 5774022692642492953LL; // ✅
@@ -32,6 +35,98 @@ static std::string trim(const std::string& s) {
     if (first == std::string::npos) return "";
     size_t last = s.find_last_not_of(" \t\r\n");
     return s.substr(first, (last - first + 1));
+}
+
+// APIs return the full required length, even when the supplied buffer is small.
+// Retry bounded reads rather than indexing a fixed array with that full length.
+template<class Get> static std::string read_api_string(Get get) {
+    std::vector<char> buffer(512,0);
+    for (int attempt=0;attempt<4;++attempt) {
+        int length=get(buffer.data(),static_cast<int>(buffer.size()));
+        if (length<=0) return {};
+        if (length<static_cast<int>(buffer.size())) return std::string(buffer.data(),length);
+        if (length>1024*1024) return {};
+        buffer.assign(static_cast<size_t>(length)+1,0);
+    }
+    return {};
+}
+static std::string db_string(koto_ctx* ctx,const koto_api* api,const char* key) {
+    return read_api_string([&](char* buf,int size){return api->db_get(ctx,key,buf,size);});
+}
+static bool parse_id(const std::string& text,long long& id) {
+    auto value=trim(text);
+    auto parsed=std::from_chars(value.data(),value.data()+value.size(),id);
+    return parsed.ec==std::errc{} && parsed.ptr==value.data()+value.size() && id!=0 && id!=std::numeric_limits<long long>::min();
+}
+struct Twin {long long uid;std::string name;};
+static std::vector<Twin> list_twins(koto_ctx* ctx,const koto_api* api) {
+    std::vector<Twin> twins;
+    if (api->get_twins_json) {
+        auto raw=read_api_string([&](char* buf,int size){return api->get_twins_json(ctx,buf,size);});
+        auto json=nlohmann::json::parse(raw,nullptr,false);
+        if (json.is_array()) {
+            for (const auto& obj:json) {
+                if (!obj.is_object()) continue;
+                auto uid=obj.find("uid"),main=obj.find("is_main"),name=obj.find("name");
+                if (uid==obj.end() || !uid->is_number_integer() || (main!=obj.end() && main->is_boolean() && main->get<bool>())) continue;
+                long long id=uid->get<long long>();if(id<=0) continue;
+                twins.push_back({id,name!=obj.end() && name->is_string()?name->get<std::string>():"Twin "+std::to_string(id)});
+            }
+            return twins;
+        }
+    }
+    if (api->twin_list) {
+        auto raw=read_api_string([&](char* buf,int size){return api->twin_list(ctx,buf,size);});
+        std::istringstream lines(raw);std::string line;
+        while(std::getline(lines,line)) {
+            auto tab=line.find('\t');if(tab==std::string::npos) continue;
+            long long id=0;if(!parse_id(line.substr(0,tab),id) || id<=0) continue;
+            auto end=line.find('\t',tab+1);
+            twins.push_back({id,line.substr(tab+1,end==std::string::npos?end:end-tab-1)});
+        }
+    }
+    return twins;
+}
+static std::string ascii_lower(std::string value) {
+    for(char& c:value) if(c>='A' && c<='Z') c=char(c-'A'+'a');
+    return value;
+}
+static bool username_char(unsigned char c) {
+    return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_';
+}
+static bool mentions_username(const std::string& text,const std::string& username) {
+    if(username.empty()) return false;
+    auto lower=ascii_lower(text),target="@"+ascii_lower(username);
+    for(size_t at=lower.find(target);at!=std::string::npos;at=lower.find(target,at+1)) {
+        auto end=at+target.size();
+        if((at==0 || (!username_char(lower[at-1]) && lower[at-1]!='@')) &&
+           (end==lower.size() || !username_char(lower[end]))) return true;
+    }
+    return false;
+}
+static bool mentions_user_link(const std::string& url,long long me) {
+    auto lower=ascii_lower(url);const std::string prefix="tg://user?id=";
+    if(lower.rfind(prefix,0)!=0) return false;
+    auto end=lower.find('&',prefix.size());long long id=0;
+    return parse_id(lower.substr(prefix.size(),end==std::string::npos?end:end-prefix.size()),id) && id==me;
+}
+static std::string preview(const std::string& text) {
+    if(text.size()<=500) return text;
+    size_t end=500;
+    while(end && (static_cast<unsigned char>(text[end])&0xc0)==0x80) --end;
+    return text.substr(0,end)+"...";
+}
+static long long canonical_chat(long long cid,int type) {
+    if(!cid || cid==std::numeric_limits<long long>::min()) return 0;
+    auto bare=cid<0?-cid:cid;
+    if(type==KOTO_CHAT_PRIVATE) return bare;
+    if(type==KOTO_CHAT_GROUP) return -bare;
+    if(type==KOTO_CHAT_CHANNEL) {
+        if(bare>1000000000000LL) bare-=1000000000000LL;
+        if(bare>=1000000000000LL) return 0;
+        return -1000000000000LL-bare;
+    }
+    return 0;
 }
 
 // ── Конфигурация модуля ───────────────────────────────────────────────────────
@@ -133,16 +228,11 @@ static void save_id_set(koto_ctx* ctx, const koto_api* api, const char* key, con
 
 static std::set<long long> load_id_set(koto_ctx* ctx, const koto_api* api, const char* key) {
     std::set<long long> out;
-    char buf[16384];
-    int len = api->db_get(ctx, key, buf, sizeof(buf) - 1);
-    if (len <= 0) return out;
-    buf[len] = '\0';
-
-    std::istringstream iss(buf);
+    std::istringstream iss(db_string(ctx,api,key));
     std::string token;
     while (iss >> token) {
-        long long val = strtoll(token.c_str(), nullptr, 10);
-        if (val != 0) out.insert(val);
+        long long val=0;
+        if (parse_id(token,val)) out.insert(val);
     }
 
     // Если это ignore_users, автоматически исключаем свой ID (me), если он там был
@@ -162,12 +252,7 @@ static std::set<long long> load_id_set(koto_ctx* ctx, const koto_api* api, const
 // Режимы: "off", "semi", "all"
 static std::map<std::string, std::string> load_twin_modes(koto_ctx* ctx, const koto_api* api) {
     std::map<std::string, std::string> out;
-    char buf[16384];
-    int len = api->db_get(ctx, "twin_modes", buf, sizeof(buf) - 1);
-    if (len <= 0) return out;
-    buf[len] = '\0';
-
-    std::istringstream iss(buf);
+    std::istringstream iss(db_string(ctx,api,"twin_modes"));
     std::string line;
     while (std::getline(iss, line)) {
         line = trim(line);
@@ -197,25 +282,21 @@ static std::string get_twin_mode_label(const std::string& mode) {
 // ── Получение имен пользователя и чата ────────────────────────────────────────
 static std::string get_user_name_str(koto_ctx* ctx, const koto_api* api, long long uid) {
     if (!api) return "Пользователь " + std::to_string(uid);
-    char name_buf[256] = {0};
-    if (api->user_first_name && api->user_first_name(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
-        char last_buf[256] = {0};
-        if (api->user_last_name && api->user_last_name(ctx, uid, last_buf, sizeof(last_buf)) > 0 && last_buf[0]) {
-            return std::string(name_buf) + " " + std::string(last_buf);
+    auto read_name=[&](auto get){return read_api_string([&](char* buf,int size){return get(ctx,uid,buf,size);});};
+    if(api->user_first_name) {
+        auto first=read_name(api->user_first_name);
+        if(!first.empty()) {
+            auto last=api->user_last_name?read_name(api->user_last_name):std::string{};
+            return first+(last.empty()?std::string{}:" "+last);
         }
-        return name_buf;
     }
-    if (api->user_name && api->user_name(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
-        return name_buf;
-    }
-    if (api->user_username && api->user_username(ctx, uid, name_buf, sizeof(name_buf)) > 0 && name_buf[0]) {
-        return "@" + std::string(name_buf);
-    }
-    return "Пользователь " + std::to_string(uid);
+    if(api->user_name) {auto name=read_name(api->user_name);if(!name.empty()) return name;}
+    if(api->user_username) {auto name=read_name(api->user_username);if(!name.empty()) return "@"+name;}
+    return "Пользователь "+std::to_string(uid);
 }
 
 static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long long cid) {
-    if (!api || !api->chat_full_json) return "Чат " + std::to_string(cid);
+    if (!api || !api->chat_full_json || cid==std::numeric_limits<long long>::min()) return "Чат " + std::to_string(cid);
 
     long long candidates[] = {
         cid,
@@ -226,24 +307,11 @@ static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long l
 
     for (long long c : candidates) {
         if (c == 0) continue;
-        char buf[4096] = {0};
-        int len = api->chat_full_json(ctx, c, buf, sizeof(buf) - 1);
-        if (len > 2) {
-            buf[len] = '\0';
-            std::string j(buf);
-            size_t pos = j.find("\"title\":\"");
-            if (pos != std::string::npos) {
-                size_t start = pos + 9;
-                size_t end = start;
-                while (end < j.size()) {
-                    if (j[end] == '"' && (end == start || j[end - 1] != '\\')) break;
-                    ++end;
-                }
-                if (end < j.size()) {
-                    std::string t = j.substr(start, end - start);
-                    if (!t.empty()) return t;
-                }
-            }
+        auto raw=read_api_string([&](char* buf,int size){return api->chat_full_json(ctx,c,buf,size);});
+        auto json=nlohmann::json::parse(raw,nullptr,false);
+        if(json.is_object()) {
+            auto title=json.find("title");
+            if(title!=json.end() && title->is_string() && !title->get_ref<const std::string&>().empty()) return title->get<std::string>();
         }
     }
     return "Чат " + std::to_string(cid);
@@ -251,12 +319,9 @@ static std::string get_chat_title_str(koto_ctx* ctx, const koto_api* api, long l
 
 // ── Построение ссылки на сообщение в чате ─────────────────────────────────────
 static std::string build_chat_message_link(long long chat_id, long long msg_id) {
-    std::string cid_str = std::to_string(std::abs(chat_id));
-    std::string link_cid = cid_str;
-    if (cid_str.rfind("100", 0) == 0 && cid_str.size() > 3) {
-        link_cid = cid_str.substr(3);
-    }
-    return "https://t.me/c/" + link_cid + "/" + std::to_string(msg_id);
+    auto bare=chat_id<0?-chat_id:chat_id;
+    if(bare>1000000000000LL) bare-=1000000000000LL;
+    return "https://t.me/c/"+std::to_string(bare)+"/"+std::to_string(msg_id);
 }
 
 // ── Построение панели твинков (.sttwins) ──────────────────────────────────────
@@ -269,37 +334,7 @@ static void build_sttwins_panel(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, "Выберите режим для каждого твинка:\n• ❌ Выкл — не участвует\n• 🔁 Semi — копирует настройки основы\n• 🌐 All — читает теги во всех чатах\n\n");
 
     // Получаем список твинков из хоста
-    std::vector<std::pair<long long, std::string>> twins;
-    if (api->get_twins_json) {
-        char buf[16384];
-        int len = api->get_twins_json(ctx, buf, sizeof(buf) - 1);
-        if (len > 0) {
-            buf[len] = '\0';
-            std::string j(buf);
-            size_t p = 0;
-            while ((p = j.find('{', p)) != std::string::npos) {
-                size_t end_p = j.find('}', p);
-                if (end_p == std::string::npos) break;
-                std::string obj = j.substr(p, end_p - p + 1);
-
-                size_t uid_pos = obj.find("\"uid\":");
-                size_t name_pos = obj.find("\"name\":\"");
-                size_t is_main_pos = obj.find("\"is_main\":true");
-
-                if (uid_pos != std::string::npos && is_main_pos == std::string::npos) {
-                    long long uid = strtoll(obj.c_str() + uid_pos + 6, nullptr, 10);
-                    std::string tname = "Twin " + std::to_string(uid);
-                    if (name_pos != std::string::npos) {
-                        size_t n_start = name_pos + 8;
-                        size_t n_end = obj.find('"', n_start);
-                        if (n_end != std::string::npos) tname = obj.substr(n_start, n_end - n_start);
-                    }
-                    if (uid != 0) twins.push_back({uid, tname});
-                }
-                p = end_p + 1;
-            }
-        }
-    }
+    auto twins=list_twins(ctx,api);
 
     if (twins.empty()) {
         api->c_fmt(ctx, "Нет добавленных твинков.\n", KOTO_ENT_ITALIC);
@@ -312,11 +347,11 @@ static void build_sttwins_panel(koto_ctx* ctx, const koto_api* api) {
     }
 
     for (const auto& tw : twins) {
-        std::string tw_key = std::to_string(tw.first);
+        std::string tw_key = std::to_string(tw.uid);
         std::string cur_mode = "off";
         if (modes.find(tw_key) != modes.end()) cur_mode = modes[tw_key];
 
-        std::string header_btn = "👤 " + tw.second + " [" + get_twin_mode_label(cur_mode) + "]";
+        std::string header_btn = "👤 " + tw.name + " [" + get_twin_mode_label(cur_mode) + "]";
         if (api->c_button_ex) {
             api->c_button_ex(ctx, header_btn.c_str(), "sttwins_noop", 1, KOTO_BTN_DEFAULT, 0);
         } else {
@@ -492,7 +527,11 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
             send_result(ctx, api);
             return;
         }
-        bool b_val = (val == "on" || val == "true" || val == "1");
+        auto boolean=ascii_lower(val);
+        if(boolean!="on" && boolean!="off" && boolean!="true" && boolean!="false" && boolean!="1" && boolean!="0") {
+            api->c_reset(ctx);api->c_text(ctx,"❌ Укажите on или off.");send_result(ctx,api);return;
+        }
+        bool b_val = (boolean == "on" || boolean == "true" || boolean == "1");
         if (key == "silent") cfg.silent = b_val;
         else if (key == "process_bots") cfg.process_bots = b_val;
         else if (key == "process_pm") cfg.process_pm = b_val;
@@ -579,13 +618,13 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
         long long target_id = 0;
         if (!target_str.empty()) {
             if (target_str == "this" && key == "ignore_chats") {
-                target_id = api->chat_id(ctx);
+                target_id = canonical_chat(api->chat_id(ctx),api->chat_type(ctx));
             } else {
-                target_id = strtoll(target_str.c_str(), nullptr, 10);
+                if(!parse_id(target_str,target_id)) target_id=0;
             }
         } else {
             if (key == "ignore_chats") {
-                target_id = api->chat_id(ctx);
+                target_id = canonical_chat(api->chat_id(ctx),api->chat_type(ctx));
             } else {
                 target_id = api->reply_sender_id ? api->reply_sender_id(ctx) : 0;
             }
@@ -641,6 +680,10 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
             send_result(ctx, api);
             return;
         } else if (action == "del") {
+            if(key=="ignore_chats" && (target_str.empty() || target_str=="this")) {
+                auto raw=api->chat_id(ctx);
+                current_set.erase(raw);current_set.erase(-raw);
+            }
             current_set.erase(target_id);
             current_set.erase(-target_id);
             current_set.erase(std::abs(target_id));
@@ -674,11 +717,13 @@ static void cmd_stconfig(koto_ctx* ctx, const koto_api* api) {
 
     // set_log_group
     if (key == "set_log_group") {
-        long long gid = api->chat_id(ctx);
+        long long gid = canonical_chat(api->chat_id(ctx),api->chat_type(ctx));
         if (!val.empty()) {
-            char* end = nullptr;
-            long long maybe_id = strtoll(val.c_str(), &end, 10);
-            if (maybe_id != 0) gid = maybe_id;
+            long long maybe_id=0;
+            if(!parse_id(val,maybe_id)) {
+                api->c_reset(ctx);api->c_text(ctx,"❌ Укажите корректный ID группы логов.");send_result(ctx,api);return;
+            }
+            gid=maybe_id;
         }
         cfg.log_group_id = gid;
         save_stags_config(ctx, api, cfg);
@@ -743,35 +788,12 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long me = api->get_me ? api->get_me(ctx) : 0;
     if (sid == me) return 0;
 
-    // Определение: является ли текущий аккаунт твинком
-    bool is_twin = false;
-    std::string twin_name;
-    if (api->get_twins_json) {
-        char buf[16384];
-        int len = api->get_twins_json(ctx, buf, sizeof(buf) - 1);
-        if (len > 0) {
-            buf[len] = '\0';
-            std::string j(buf);
-            std::string uid_needle = "\"uid\":" + std::to_string(me);
-            size_t pos = j.find(uid_needle);
-            if (pos != std::string::npos) {
-                size_t obj_start = j.rfind('{', pos);
-                size_t obj_end = j.find('}', pos);
-                if (obj_start != std::string::npos && obj_end != std::string::npos) {
-                    std::string obj = j.substr(obj_start, obj_end - obj_start + 1);
-                    if (obj.find("\"is_main\":true") == std::string::npos) {
-                        is_twin = true;
-                        size_t name_pos = obj.find("\"name\":\"");
-                        if (name_pos != std::string::npos) {
-                            size_t n_start = name_pos + 8;
-                            size_t n_end = obj.find('"', n_start);
-                            if (n_end != std::string::npos) twin_name = obj.substr(n_start, n_end - n_start);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Match the complete numeric UID, independent of JSON whitespace/key order.
+    if(me<=0) return 0;
+    auto twins=list_twins(ctx,api);
+    auto twin=std::find_if(twins.begin(),twins.end(),[&](const Twin& item){return item.uid==me;});
+    bool is_twin=twin!=twins.end();
+    std::string twin_name=is_twin?twin->name:std::string{};
 
     std::string tw_mode = "off";
     if (is_twin) {
@@ -779,7 +801,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         auto it = modes.find(std::to_string(me));
         if (it != modes.end()) tw_mode = it->second;
         // Если твинк выключен в Silent Tags — не обрабатываем:
-        if (tw_mode == "off") return 0;
+        if (tw_mode != "semi" && tw_mode != "all") return 0;
     }
 
     int type = api->chat_type(ctx);
@@ -825,8 +847,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
             char url[512] = {0};
             if (api->msg_entity(ctx, i, &etype, &eoff, &elen, &docid, url, sizeof(url))) {
                 if (etype == KOTO_ENT_URL && url[0]) {
-                    std::string needle = "tg://user?id=" + std::to_string(me);
-                    if (strstr(url, needle.c_str()) != nullptr) {
+                    if (mentions_user_link(url,me)) {
                         is_mention_of_me = true;
                         break;
                     }
@@ -841,8 +862,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if (api->user_username(ctx, me, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
             const char* txt = api->msg_text(ctx);
             if (txt) {
-                std::string target = "@" + std::string(un_buf);
-                if (strstr(txt, target.c_str()) != nullptr) {
+                if (mentions_username(txt,un_buf)) {
                     is_mention_of_me = true;
                 }
             }
@@ -858,13 +878,13 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
             ignore_users.find(std::abs(sid)) != ignore_users.end()) return 0;
     }
 
-    bool is_bot = false;
-    if (api->user_full_json) {
-        char ubuf[2048] = {0};
-        int ulen = api->user_full_json(ctx, sid, ubuf, sizeof(ubuf) - 1);
-        if (ulen > 0) {
-            ubuf[ulen] = '\0';
-            if (strstr(ubuf, "\"is_bot\":true") != nullptr) is_bot = true;
+    bool is_bot=false;
+    if(api->user_full_json && sid>0) {
+        auto raw=read_api_string([&](char* buf,int size){return api->user_full_json(ctx,sid,buf,size);});
+        auto json=nlohmann::json::parse(raw,nullptr,false);
+        if(json.is_object()) {
+            auto bot=json.find("is_bot");
+            if(bot!=json.end() && bot->is_boolean()) is_bot=bot->get<bool>();
         }
     }
 
@@ -872,17 +892,13 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     if (is_bot && !cfg.process_bots) return 0;
 
     auto ignore_chats = load_id_set(ctx, api, "ignore_chats");
-    long long abs_cid = std::abs(cid);
-    long long norm_cid = abs_cid;
-    std::string abs_str = std::to_string(abs_cid);
-    if (abs_str.rfind("100", 0) == 0 && abs_str.size() > 3) {
-        norm_cid = strtoll(abs_str.substr(3).c_str(), nullptr, 10);
+    auto canonical=canonical_chat(cid,type);
+    bool chat_ignored=ignore_chats.count(canonical) || ignore_chats.count(cid);
+    // Preserve legacy positive raw IDs, without stripping a textual 100 prefix.
+    if(canonical && type!=KOTO_CHAT_PRIVATE) {
+        auto bare=type==KOTO_CHAT_CHANNEL?-canonical-1000000000000LL:-canonical;
+        chat_ignored |= ignore_chats.count(bare)!=0;
     }
-    bool chat_ignored = (ignore_chats.find(cid) != ignore_chats.end() ||
-                         ignore_chats.find(-cid) != ignore_chats.end() ||
-                         ignore_chats.find(abs_cid) != ignore_chats.end() ||
-                         ignore_chats.find(norm_cid) != ignore_chats.end() ||
-                         ignore_chats.find(-1000000000000LL - norm_cid) != ignore_chats.end());
     if (chat_ignored) {
         // Твинк в режиме "all" игнорирует список ignore_chats и читает ВСЕ чаты!
         if (is_twin && tw_mode == "all") {
@@ -895,14 +911,14 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    // 3. Отметка о прочтении упоминания и сообщения (Silent Tags)
-    long long mid = api->msg_id ? api->msg_id(ctx) : 0;
-    if (api->read_mentions) {
-        api->read_mentions(ctx, cid);
-    }
-    if (api->read_history) {
-        api->read_history(ctx, cid, mid);
-    }
+    auto queue_reads=[&] {
+        long long mid=api->msg_id?api->msg_id(ctx):0;
+        if(api->read_mentions) api->read_mentions(ctx,cid);
+        if(api->read_history) api->read_history(ctx,cid,mid);
+    };
+    // Original Python twin watcher only acknowledges reads; no chat messages
+    // or logs from twin accounts, which may not belong to the log group.
+    if(is_twin) {queue_reads();return 0;}
 
     // 4. Обработка уведомления (если не silent)
     if (!cfg.silent) {
@@ -946,8 +962,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->c_text(ctx, "\n\n");
 
         const char* raw_txt = api->msg_text ? api->msg_text(ctx) : "";
-        std::string preview_text = raw_txt ? raw_txt : "";
-        if (preview_text.size() > 500) preview_text = preview_text.substr(0, 500) + "...";
+        std::string preview_text = preview(raw_txt ? raw_txt : "");
 
         int qmark = api->c_mark(ctx);
         api->c_fmt(ctx, "Сообщение:", KOTO_ENT_BOLD);
@@ -960,6 +975,9 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->c_send(ctx, cfg.log_group_id, 0);
     }
 
+    // The host may stop processing later intents after a failed read RPC.
+    // Queue the independent log first so that failure cannot discard it.
+    queue_reads();
     return 0;
 }
 
@@ -1003,8 +1021,14 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
             std::string tw_key = payload.substr(0, colon);
             std::string new_mode = payload.substr(colon + 1);
 
+            long long uid=0;auto twins=list_twins(ctx,api);
+            bool known=parse_id(tw_key,uid) && std::any_of(twins.begin(),twins.end(),[&](const Twin& item){return item.uid==uid;});
+            if(!known || (new_mode!="off" && new_mode!="semi" && new_mode!="all")) {
+                if(api->cb_answer) api->cb_answer(ctx,"❌ Твин или режим не найден.",1);
+                return;
+            }
             auto modes = load_twin_modes(ctx, api);
-            modes[tw_key] = new_mode;
+            modes[std::to_string(uid)] = new_mode;
             save_twin_modes(ctx, api, modes);
 
             build_sttwins_panel(ctx, api);
@@ -1093,7 +1117,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.9.7", 60,
+    "2.9.8", 60,
     KOTO_MOD_TWINS,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
