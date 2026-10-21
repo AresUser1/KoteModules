@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "weather");
-    CHECK(std::string(mod->version) == "1.1.1");
+    CHECK(std::string(mod->version) == "1.1.2");
     CHECK(mod->command_count == 4);
     CHECK(std::string(mod->commands[0].name) == "weather");
     CHECK(std::string(mod->commands[1].name) == "w");
@@ -162,6 +162,20 @@ int main(int argc, char** argv) {
     mod->commands[1].handler(&ctx, &api); // w
     CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
     CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
+
+    // 4b. Проверка в нижнем регистре кириллицы (москва завтра)
+    ctx.args = "москва завтра";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
+    CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
+
+    // 4c. Проверка запроса на неделю (.w Москва 7)
+    ctx.args = "Москва 7";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    // Open-Meteo or fallback wttr.in
+    CHECK(!ctx.composed.empty());
 
     // 5. Проверка автоматического fallback на Open-Meteo при сбое wttr.in
     api.http_get = [](koto_ctx*, const char* url, unsigned char* buf, int buflen) -> long long {
