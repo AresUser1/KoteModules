@@ -101,7 +101,11 @@ enum {
 enum {
     KOTO_WATCH_OUTGOING = 1 << 0,  /* наши исходящие (twins-логин, .resetprefix) */
     KOTO_WATCH_INCOMING = 1 << 1,
-    KOTO_WATCH_ALL      = KOTO_WATCH_OUTGOING | KOTO_WATCH_INCOMING
+    KOTO_WATCH_ALL      = KOTO_WATCH_OUTGOING | KOTO_WATCH_INCOMING,
+    /* Host >=64: read-only watcher, runs before consuming watchers and on
+       periodic unread dialog snapshots. Only read_history/read_mentions intents
+       execute in this mode; no commands, replies or other side effects. */
+    KOTO_WATCH_UNREAD_SYNC = 1 << 2
 };
 
 /* Непрозрачный контекст одного вызова (сообщение + БД модуля + сервисы хоста). */
