@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "inviter");
-    CHECK(std::string(mod->version) == "1.0.0");
+    CHECK(std::string(mod->version) == "1.0.1");
     CHECK(mod->command_count == 7);
     CHECK(std::string(mod->commands[0].name) == "invite");
     CHECK(std::string(mod->commands[1].name) == "inviter");

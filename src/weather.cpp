@@ -1,8 +1,8 @@
 // weather.cpp — Модуль текущей погоды и прогноза наперёд (C++ ABI 3).
 // Использует wttr.in (текущая погода + прогноз на 3 дня с разбивкой по времени)
-// и Open-Meteo (расширенный прогноз на 7 дней).
+// и Open-Meteo (расширенный прогноз на 7 дней и отказоустойчивый fallback).
 // Команды: .weather / .w (текущая + прогноз), .forecast / .fc (подробный прогноз наперёд).
-// Поддержка параметров: .w Москва, .w Москва завтра, .w Москва 7, .fc Москва 7.
+// Поддержка параметров: .w Москва, .w Москва завтра, .w погода на завтра, .w Москва 7, .w set <город>.
 // Автор: Kote
 
 #include "module_abi.h"
@@ -12,6 +12,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include <unordered_set>
 #include <algorithm>
 #include <cctype>
 
@@ -235,6 +236,96 @@ static bool fetch_open_meteo_7days(koto_ctx* ctx, const koto_api* api, const std
     }
 }
 
+// ── Прогноз на завтра через Open-Meteo (отказоустойчивый fallback) ─────────────
+
+static bool fetch_open_meteo_tomorrow(koto_ctx* ctx, const koto_api* api, const std::string& location) {
+    std::string geo_url = "https://geocoding-api.open-meteo.com/v1/search?name=" +
+                          koto_utils::url_encode(location) + "&count=1&language=ru";
+    std::string geo_json = koto_utils::http_get(api, ctx, geo_url);
+    if (geo_json.empty()) return false;
+
+    try {
+        auto gj = nlohmann::json::parse(geo_json);
+        if (!gj.contains("results") || gj["results"].empty()) return false;
+
+        const auto& res = gj["results"][0];
+        double lat = res.value("latitude", 0.0);
+        double lon = res.value("longitude", 0.0);
+        std::string city_name = res.value("name", location);
+        std::string country = res.value("country", "");
+
+        char coord_buf[128];
+        snprintf(coord_buf, sizeof(coord_buf), "%.4f&longitude=%.4f", lat, lon);
+
+        std::string fc_url = "https://api.open-meteo.com/v1/forecast?latitude=" + std::string(coord_buf) +
+                             "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max&timezone=auto";
+        std::string fc_json = koto_utils::http_get(api, ctx, fc_url);
+        if (fc_json.empty()) return false;
+
+        auto fj = nlohmann::json::parse(fc_json);
+        if (!fj.contains("daily")) return false;
+
+        const auto& daily = fj["daily"];
+        auto times = daily.value("time", std::vector<std::string>{});
+        auto mins = daily.value("temperature_2m_min", std::vector<double>{});
+        auto maxs = daily.value("temperature_2m_max", std::vector<double>{});
+        std::vector<int> codes;
+        if (daily.contains("weathercode")) codes = daily.value("weathercode", std::vector<int>{});
+        else if (daily.contains("weather_code")) codes = daily.value("weather_code", std::vector<int>{});
+        auto rains = daily.value("precipitation_probability_max", std::vector<int>{});
+        auto winds = daily.value("windspeed_10m_max", std::vector<double>{});
+
+        if (times.size() < 2) return false;
+
+        std::string date_label = format_date_label(1, times[1]);
+        int code = codes.size() > 1 ? codes[1] : 0;
+        auto [emoji, desc] = wmo_code_info(code);
+        std::string min_t = format_temp_double(mins.size() > 1 ? mins[1] : 0.0);
+        std::string max_t = format_temp_double(maxs.size() > 1 ? maxs[1] : 0.0);
+        int rain = rains.size() > 1 ? rains[1] : 0;
+        int wind = winds.size() > 1 ? static_cast<int>(std::round(winds[1])) : 0;
+
+        api->c_reset(ctx);
+        api->c_emoji(ctx, "📍", EMO_LOC);
+        api->c_fmt(ctx, " Прогноз на завтра: ", KOTO_ENT_BOLD);
+        std::string loc_header = city_name + (!country.empty() ? ", " + country : "") + "\n\n";
+        api->c_fmt(ctx, loc_header.c_str(), KOTO_ENT_CODE);
+
+        api->c_text(ctx, (emoji + " ").c_str());
+        api->c_fmt(ctx, (desc + "\n\n").c_str(), KOTO_ENT_BOLD);
+
+        api->c_emoji(ctx, "📅", EMO_CALENDAR);
+        api->c_fmt(ctx, (" " + date_label + ":\n").c_str(), KOTO_ENT_BOLD);
+
+        api->c_text(ctx, "  ");
+        api->c_emoji(ctx, "☀️", EMO_SUN);
+        api->c_fmt(ctx, " Днём: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, max_t.c_str(), KOTO_ENT_CODE);
+        if (rain > 15) {
+            api->c_text(ctx, (" · 🌧️ " + std::to_string(rain) + "%").c_str());
+        }
+        api->c_text(ctx, "\n");
+
+        api->c_text(ctx, "  ");
+        api->c_emoji(ctx, "🌙", EMO_MOON);
+        api->c_fmt(ctx, " Ночью: ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, min_t.c_str(), KOTO_ENT_CODE);
+        if (wind > 0) {
+            api->c_text(ctx, (" · 💨 до " + std::to_string(wind) + " км/ч\n\n").c_str());
+        } else {
+            api->c_text(ctx, "\n\n");
+        }
+
+        api->c_fmt(ctx, "💡 Прогноз на 7 дней: ", KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, (".w " + city_name + " 7\n").c_str(), KOTO_ENT_CODE);
+
+        send_result(ctx, api);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
 // ── Текущая погода и прогноз на 3 дня через Open-Meteo (отказоустойчивый fallback) ──
 
 static bool fetch_open_meteo_current(koto_ctx* ctx, const koto_api* api, const std::string& location) {
@@ -394,8 +485,6 @@ static void show_detailed_forecast(koto_ctx* ctx, const koto_api* api, const nlo
                     else if (noon["weatherCode"].is_string()) noon_code = std::atoi(noon["weatherCode"].get<std::string>().c_str());
                 }
                 std::string noon_emoji = get_condition_emoji(noon_code);
-                std::string noon_temp = format_temp(noon.value("tempC", "0"));
-                std::string noon_feels = format_temp(noon.value("FeelsLikeC", "0"));
                 std::string noon_rain = noon.value("chanceofrain", "0");
 
                 const auto& night = hourly[0];
@@ -411,7 +500,6 @@ static void show_detailed_forecast(koto_ctx* ctx, const koto_api* api, const nlo
                     else if (night["weatherCode"].is_string()) night_code = std::atoi(night["weatherCode"].get<std::string>().c_str());
                 }
                 std::string night_emoji = get_condition_emoji(night_code);
-                std::string night_temp = format_temp(night.value("tempC", "0"));
                 std::string wind_speed = noon.value("windspeedKmph", "0");
                 std::string wind_dir = noon.value("winddir16Point", "");
                 std::string humidity = noon.value("humidity", "0");
@@ -437,12 +525,100 @@ static void show_detailed_forecast(koto_ctx* ctx, const koto_api* api, const nlo
         }
     }
 
-    if (single_day < 0) {
-        api->c_fmt(ctx, "💡 Прогноз на 7 дней: ", KOTO_ENT_ITALIC);
-        api->c_fmt(ctx, (".w " + area_name + " 7\n").c_str(), KOTO_ENT_CODE);
-    }
+    api->c_fmt(ctx, "💡 Прогноз на 7 дней: ", KOTO_ENT_ITALIC);
+    api->c_fmt(ctx, (".w " + area_name + " 7\n").c_str(), KOTO_ENT_CODE);
 
     send_result(ctx, api);
+}
+
+// ── Разбор аргументов с поддержкой флагов завтра/7 дней/прогноз и очисткой города ──
+
+struct WeatherQuery {
+    std::string location;
+    bool is_set_command = false;
+    std::string set_location;
+    bool want_tomorrow = false;
+    bool want_forecast = false;
+    int want_days = 3;
+};
+
+static WeatherQuery parse_weather_query(koto_ctx* ctx, const koto_api* api, const std::string& raw_args) {
+    WeatherQuery q;
+    std::string trimmed = koto_utils::trim(raw_args);
+
+    if (trimmed.empty()) {
+        char def_city[256] = {0};
+        if (api->db_get && api->db_get(ctx, "default_city", def_city, sizeof(def_city)) > 0 && def_city[0] != '\0') {
+            q.location = def_city;
+        }
+        return q;
+    }
+
+    std::string low_full = utf8_tolower(trimmed);
+
+    // Проверка команды установки города: .w set <город> или .w город <город>
+    if (low_full.rfind("set ", 0) == 0 || low_full.rfind("город ", 0) == 0) {
+        size_t sp = trimmed.find(' ');
+        q.is_set_command = true;
+        q.set_location = koto_utils::trim(trimmed.substr(sp + 1));
+        return q;
+    }
+
+    // Распознаём намерения пользователя
+    if (low_full.find(" 7") != std::string::npos || low_full.find("7 дней") != std::string::npos ||
+        low_full.find("7дней") != std::string::npos || low_full.find("недел") != std::string::npos ||
+        low_full.find("week") != std::string::npos) {
+        q.want_days = 7;
+        q.want_forecast = true;
+    } else if (low_full.find("завтра") != std::string::npos || low_full.find("tomorrow") != std::string::npos ||
+               low_full.find("+1") != std::string::npos) {
+        q.want_tomorrow = true;
+    } else if (low_full.find("прогноз") != std::string::npos || low_full.find("forecast") != std::string::npos ||
+               low_full.find(" 3") != std::string::npos || low_full.find("3 дня") != std::string::npos) {
+        q.want_forecast = true;
+    }
+
+    // Очищаем токенами от служебных слов и предлогов
+    std::istringstream iss(trimmed);
+    std::string token;
+    std::vector<std::string> clean_tokens;
+
+    static const std::unordered_set<std::string> stop_words = {
+        "погода", "погоду", "погоде", "прогноз", "прогноза", "weather", "forecast",
+        "завтра", "tomorrow", "+1",
+        "7", "7дней", "неделя", "недели", "неделю", "week",
+        "3", "3дня",
+        "на", "в", "во", "для", "по"
+    };
+
+    while (iss >> token) {
+        std::string low_token = utf8_tolower(token);
+        while (!low_token.empty() && (low_token.back() == ',' || low_token.back() == '.' || low_token.back() == ':')) {
+            low_token.pop_back();
+        }
+        if (stop_words.count(low_token) == 0) {
+            clean_tokens.push_back(token);
+        }
+    }
+
+    std::string loc;
+    for (size_t i = 0; i < clean_tokens.size(); ++i) {
+        if (i > 0) loc += " ";
+        loc += clean_tokens[i];
+    }
+    loc = koto_utils::trim(loc);
+
+    if (loc.empty()) {
+        char def_city[256] = {0};
+        if (api->db_get && api->db_get(ctx, "default_city", def_city, sizeof(def_city)) > 0 && def_city[0] != '\0') {
+            loc = def_city;
+        } else if (q.want_tomorrow || q.want_forecast) {
+            loc = "Москва";
+        }
+    }
+
+    q.location = loc;
+    return q;
 }
 
 // ── Основной обработчик погоды ───────────────────────────────────────────────
@@ -451,9 +627,27 @@ static void cmd_weather(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     const char* raw = api->cmd_args(ctx);
-    std::string args = raw ? koto_utils::trim(raw) : "";
+    std::string args = raw ? raw : "";
 
-    if (args.empty()) {
+    WeatherQuery q = parse_weather_query(ctx, api, args);
+
+    if (q.is_set_command) {
+        if (q.set_location.empty()) {
+            api->c_reset(ctx);
+            api->c_text(ctx, "❌ ");
+            api->c_fmt(ctx, "Укажите город для сохранения: .w set Москва", KOTO_ENT_BOLD);
+        } else {
+            api->db_set(ctx, "default_city", q.set_location.c_str());
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "✅", EMO_LOC);
+            api->c_fmt(ctx, " Город по умолчанию сохранён: ", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, q.set_location.c_str(), KOTO_ENT_CODE);
+        }
+        send_result(ctx, api);
+        return;
+    }
+
+    if (q.location.empty()) {
         char pbuf[32] = ".";
         api->setting_get(ctx, "prefix", pbuf, sizeof(pbuf));
         std::string p = pbuf;
@@ -466,57 +660,31 @@ static void cmd_weather(koto_ctx* ctx, const koto_api* api) {
         api->c_text(ctx, "\n• "); api->c_fmt(ctx, (p + "w Москва завтра").c_str(), KOTO_ENT_CODE); api->c_text(ctx, " — прогноз на завтра");
         api->c_text(ctx, "\n• "); api->c_fmt(ctx, (p + "fc Москва").c_str(), KOTO_ENT_CODE); api->c_text(ctx, " — подробный прогноз на 3 дня");
         api->c_text(ctx, "\n• "); api->c_fmt(ctx, (p + "w Москва 7").c_str(), KOTO_ENT_CODE); api->c_text(ctx, " — прогноз на неделю");
+        api->c_text(ctx, "\n• "); api->c_fmt(ctx, (p + "w set Москва").c_str(), KOTO_ENT_CODE); api->c_text(ctx, " — сохранить город по умолчанию");
         send_result(ctx, api);
         return;
     }
 
-    std::string lower = utf8_tolower(args);
-    bool want_forecast_only = false;
-    bool want_tomorrow_only = false;
-    int want_days = 3;
-
-    if (lower.find(" 7") != std::string::npos || lower.find("7 дней") != std::string::npos ||
-        lower.find("недел") != std::string::npos || lower.find("week") != std::string::npos) {
-        want_days = 7;
-        want_forecast_only = true;
-    } else if (lower.find("завтра") != std::string::npos || lower.find("tomorrow") != std::string::npos ||
-               lower.find("+1") != std::string::npos) {
-        want_tomorrow_only = true;
-    } else if (lower.find("прогноз") != std::string::npos || lower.find("forecast") != std::string::npos ||
-               lower.find(" 3") != std::string::npos) {
-        want_forecast_only = true;
-    }
-
-    // Чистим город от маркеров
-    static const std::vector<std::string> markers = {
-        "7 дней", "7дней", " 7", "неделя", "недели", "неделю", "week",
-        "завтра", "tomorrow", "+1", "прогноз", "forecast", " 3"
-    };
-    std::string location = args;
-    for (const auto& m : markers) {
-        std::string m_low = utf8_tolower(m);
-        size_t pos;
-        while ((pos = utf8_tolower(location).find(m_low)) != std::string::npos) {
-            location.erase(pos, m.size());
-        }
-    }
-    location = koto_utils::trim(location);
-    if (location.empty()) location = args;
-
     // Прогноз на 7 дней
-    if (want_days == 7) {
-        if (fetch_open_meteo_7days(ctx, api, location)) {
+    if (q.want_days == 7) {
+        if (fetch_open_meteo_7days(ctx, api, q.location)) {
             return;
         }
     }
 
     // Запрос через wttr.in
-    std::string encoded_loc = koto_utils::url_encode(location);
+    std::string encoded_loc = koto_utils::url_encode(q.location);
     std::string url = "https://wttr.in/" + encoded_loc + "?format=j1&lang=ru";
     std::string json_str = koto_utils::http_get(api, ctx, url);
 
     if (json_str.empty()) {
-        if (fetch_open_meteo_current(ctx, api, location)) {
+        if (q.want_tomorrow) {
+            if (fetch_open_meteo_tomorrow(ctx, api, q.location)) return;
+        }
+        if (q.want_forecast) {
+            if (fetch_open_meteo_7days(ctx, api, q.location)) return;
+        }
+        if (fetch_open_meteo_current(ctx, api, q.location)) {
             return;
         }
         api->c_reset(ctx);
@@ -529,24 +697,24 @@ static void cmd_weather(koto_ctx* ctx, const koto_api* api) {
     try {
         auto j = nlohmann::json::parse(json_str);
 
-        if (want_forecast_only) {
+        if (q.want_forecast) {
             show_detailed_forecast(ctx, api, j);
             return;
         }
-        if (want_tomorrow_only) {
+        if (q.want_tomorrow) {
             show_detailed_forecast(ctx, api, j, 1);
             return;
         }
 
         if (!j.contains("current_condition") || j["current_condition"].empty() ||
             !j.contains("nearest_area") || j["nearest_area"].empty()) {
-            if (fetch_open_meteo_current(ctx, api, location)) return;
+            if (fetch_open_meteo_current(ctx, api, q.location)) return;
         }
 
         auto current = j["current_condition"][0];
         auto nearest = j["nearest_area"][0];
 
-        std::string area_name = nearest["areaName"][0].value("value", location);
+        std::string area_name = nearest["areaName"][0].value("value", q.location);
         std::string country = nearest["country"][0].value("value", "");
 
         std::string desc_text = "Ясно";
@@ -648,7 +816,13 @@ static void cmd_weather(koto_ctx* ctx, const koto_api* api) {
 
         send_result(ctx, api);
     } catch (const std::exception& e) {
-        if (fetch_open_meteo_current(ctx, api, location)) {
+        if (q.want_tomorrow) {
+            if (fetch_open_meteo_tomorrow(ctx, api, q.location)) return;
+        }
+        if (q.want_forecast) {
+            if (fetch_open_meteo_7days(ctx, api, q.location)) return;
+        }
+        if (fetch_open_meteo_current(ctx, api, q.location)) {
             return;
         }
         api->c_reset(ctx);
@@ -663,9 +837,11 @@ static void cmd_forecast(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     const char* raw = api->cmd_args(ctx);
-    std::string args = raw ? koto_utils::trim(raw) : "";
+    std::string args = raw ? raw : "";
 
-    if (args.empty()) {
+    WeatherQuery q = parse_weather_query(ctx, api, args);
+
+    if (q.location.empty()) {
         char pbuf[32] = ".";
         api->setting_get(ctx, "prefix", pbuf, sizeof(pbuf));
         std::string p = pbuf;
@@ -681,23 +857,16 @@ static void cmd_forecast(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    std::string lower = utf8_tolower(args);
-    if (lower.find(" 7") != std::string::npos || lower.find("недел") != std::string::npos) {
-        std::string loc = args;
-        size_t p = lower.rfind(" 7");
-        if (p == std::string::npos) p = lower.rfind("недел");
-        if (p != std::string::npos) loc = koto_utils::trim(loc.substr(0, p));
-        if (loc.empty()) loc = args;
-
-        if (fetch_open_meteo_7days(ctx, api, loc)) return;
+    if (q.want_days == 7) {
+        if (fetch_open_meteo_7days(ctx, api, q.location)) return;
     }
 
-    std::string encoded_loc = koto_utils::url_encode(args);
+    std::string encoded_loc = koto_utils::url_encode(q.location);
     std::string url = "https://wttr.in/" + encoded_loc + "?format=j1&lang=ru";
     std::string json_str = koto_utils::http_get(api, ctx, url);
 
     if (json_str.empty()) {
-        if (fetch_open_meteo_7days(ctx, api, args)) return;
+        if (fetch_open_meteo_7days(ctx, api, q.location)) return;
         api->c_reset(ctx);
         api->c_text(ctx, "❌ ");
         api->c_fmt(ctx, "Ошибка получения данных о прогнозе погоды. Проверьте город или сеть.", KOTO_ENT_BOLD);
@@ -709,7 +878,7 @@ static void cmd_forecast(koto_ctx* ctx, const koto_api* api) {
         auto j = nlohmann::json::parse(json_str);
         show_detailed_forecast(ctx, api, j);
     } catch (const std::exception& e) {
-        if (fetch_open_meteo_7days(ctx, api, args)) return;
+        if (fetch_open_meteo_7days(ctx, api, q.location)) return;
         api->c_reset(ctx);
         api->c_text(ctx, "❌ ");
         api->c_fmt(ctx, "Ошибка получения прогноза: ", KOTO_ENT_BOLD);
@@ -723,7 +892,7 @@ const koto_command COMMANDS[] = {
         "weather",
         &cmd_weather,
         KOTO_LEVEL_TRUSTED,
-        "Текущая погода и прогноз наперёд (поддерживает: <город>, <город> 7, <город> завтра).",
+        "Текущая погода и прогноз наперёд (поддерживает: <город>, <город> 7, <город> завтра, set <город>).",
         "<город>"
     },
     {
@@ -753,7 +922,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "weather",
     "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo (C++ ABI 3).",
-    "1.1.2",
+    "1.1.3",
     26,
     0,
     COMMANDS,

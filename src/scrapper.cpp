@@ -182,7 +182,11 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             if (api->resolve) target_cid = api->resolve(ctx, uname.c_str());
         }
     } else {
-        if (api->chat_id) target_cid = api->chat_id(ctx);
+        if (api->reply_sender_id) {
+            long long r_id = api->reply_sender_id(ctx);
+            if (r_id < 0) target_cid = r_id;
+        }
+        if (target_cid == 0 && api->chat_id) target_cid = api->chat_id(ctx);
     }
 
     if (target_cid == 0) {
@@ -311,11 +315,11 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             if (cfg.skip_bots && bot_set.count(uid)) continue;
 
             std::string line = std::to_string(uid);
-            if (api->user_username) {
-                char ubuf[128] = {0};
-                if (api->user_username(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
-                    line = "@" + std::string(ubuf);
-                }
+            char ubuf[128] = {0};
+            if (api->user_username && api->user_username(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
+                line = "@" + std::string(ubuf);
+            } else if (api->user_name && api->user_name(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
+                line = std::to_string(uid) + " (" + std::string(ubuf) + ")";
             }
             dump_lines.push_back(line + " | Сообщений: " + std::to_string(cnt));
             collected_count++;
@@ -328,11 +332,11 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             if (cfg.skip_bots && bot_set.count(uid)) continue;
 
             std::string line = std::to_string(uid);
-            if (api->user_username) {
-                char ubuf[128] = {0};
-                if (api->user_username(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
-                    line = "@" + std::string(ubuf);
-                }
+            char ubuf[128] = {0};
+            if (api->user_username && api->user_username(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
+                line = "@" + std::string(ubuf);
+            } else if (api->user_name && api->user_name(ctx, uid, ubuf, sizeof(ubuf)) && ubuf[0] != '\0') {
+                line = std::to_string(uid) + " (" + std::string(ubuf) + ")";
             }
             dump_lines.push_back(line);
             collected_count++;
@@ -348,7 +352,13 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             api->c_text(ctx, "💡 Добавьте твинк в чат или переключите воркер на MAIN: ");
             api->c_fmt(ctx, ".scrapcfg worker MAIN", KOTO_ENT_CODE);
         } else {
-            api->c_fmt(ctx, "Участники не найдены или закрыты настройками приватности чата.", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, "Не удалось собрать участников или историю сообщений.\n\n", KOTO_ENT_BOLD);
+            api->c_text(ctx, "Возможные причины:\n");
+            api->c_text(ctx, "• Чат приватный, и аккаунт/воркер не состоит в нём\n");
+            api->c_text(ctx, "• Чат указан по ID без предварительного открытия (для публичных чатов используйте @username или ссылку t.me/...)\n");
+            api->c_text(ctx, "• Участники скрыты приватностью чата\n\n");
+            api->c_text(ctx, "💡 Если участники скрыты, попробуйте режим сбора по сообщениям: ");
+            api->c_fmt(ctx, ".scrapcfg method activity", KOTO_ENT_CODE);
         }
         send_result(ctx, api);
         return;
@@ -547,7 +557,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "scrapper",
     "Сбор участников и активности чатов в файл с поддержкой твинков (C++ ABI 3).",
-    "1.0.0",
+    "1.0.2",
     26,
     0,
     COMMANDS,

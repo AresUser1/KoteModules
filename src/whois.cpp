@@ -1,7 +1,7 @@
 // whois.cpp — Модуль подробной информации о пользователе и анализа чата (C++ ABI 3).
-// Портирован из Python-модуля whois.py (v1.2.0) с расширением анализа чатов.
+// Портирован из Python-модуля whois.py (v1.2.0) с расширением глубокого анализа чатов.
 // Команды, конфликтующие с системными (info, profile, user), удалены.
-// Доступные команды: .whois, .whoischat, .chatanalysis.
+// Доступные команды: .whois, .whoischat, .chatanalysis, .chatinfo.
 // Автор: Kote
 
 #include "module_abi.h"
@@ -41,6 +41,9 @@ static bool is_all_digits(const std::string& s) {
     return true;
 }
 
+// Предварительное объявление анализа чата
+static void cmd_chat_analysis(koto_ctx* ctx, const koto_api* api);
+
 // ── Обработчик информации о пользователе (.whois) ───────────────────────────
 
 static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
@@ -49,13 +52,29 @@ static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
     const char* raw = api->cmd_args(ctx);
     std::string args = raw ? koto_utils::trim(raw) : "";
 
+    // Если аргумент указывает на чат (начинается с '-' или -100...), перенаправляем на анализ чата
+    if (!args.empty() && args[0] == '-' && is_all_digits(args)) {
+        cmd_chat_analysis(ctx, api);
+        return;
+    }
+
     long long target_uid = 0;
 
     if (!args.empty()) {
-        if (is_all_digits(args)) {
-            try { target_uid = std::stoll(args); } catch (...) { target_uid = 0; }
+        std::string clean_arg = args;
+        size_t tme_pos = clean_arg.find("t.me/");
+        if (tme_pos != std::string::npos) {
+            clean_arg = clean_arg.substr(tme_pos + 5);
+            size_t slash = clean_arg.find('/');
+            if (slash != std::string::npos) clean_arg = clean_arg.substr(0, slash);
+            size_t q = clean_arg.find('?');
+            if (q != std::string::npos) clean_arg = clean_arg.substr(0, q);
+        }
+
+        if (is_all_digits(clean_arg)) {
+            try { target_uid = std::stoll(clean_arg); } catch (...) { target_uid = 0; }
         } else {
-            std::string uname = args;
+            std::string uname = clean_arg;
             if (!uname.empty() && uname[0] == '@') uname = uname.substr(1);
             if (api->resolve) {
                 target_uid = api->resolve(ctx, uname.c_str());
@@ -71,6 +90,12 @@ static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
         if (target_uid == 0 && api->get_me) {
             target_uid = api->get_me(ctx);
         }
+    }
+
+    // Если цель является чатом/каналом, автоматически перенаправляем в анализатор чата
+    if (target_uid < 0) {
+        cmd_chat_analysis(ctx, api);
+        return;
     }
 
     if (target_uid == 0) {
@@ -218,7 +243,7 @@ static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
     send_result(ctx, api);
 }
 
-// ── Обработчик анализа чата (.whoischat / .chatanalysis) ─────────────────────
+// ── Обработчик анализа чата (.whoischat / .chatanalysis / .chatinfo) ─────────
 
 static void cmd_chat_analysis(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -229,10 +254,20 @@ static void cmd_chat_analysis(koto_ctx* ctx, const koto_api* api) {
     long long target_cid = 0;
 
     if (!args.empty()) {
-        if (is_all_digits(args)) {
-            try { target_cid = std::stoll(args); } catch (...) { target_cid = 0; }
+        std::string clean_arg = args;
+        size_t tme_pos = clean_arg.find("t.me/");
+        if (tme_pos != std::string::npos) {
+            clean_arg = clean_arg.substr(tme_pos + 5);
+            size_t slash = clean_arg.find('/');
+            if (slash != std::string::npos) clean_arg = clean_arg.substr(0, slash);
+            size_t q = clean_arg.find('?');
+            if (q != std::string::npos) clean_arg = clean_arg.substr(0, q);
+        }
+
+        if (is_all_digits(clean_arg)) {
+            try { target_cid = std::stoll(clean_arg); } catch (...) { target_cid = 0; }
         } else {
-            std::string uname = args;
+            std::string uname = clean_arg;
             if (!uname.empty() && uname[0] == '@') uname = uname.substr(1);
             if (api->resolve) {
                 target_cid = api->resolve(ctx, uname.c_str());
@@ -397,7 +432,7 @@ const koto_command COMMANDS[] = {
         "whois",
         &cmd_whois,
         KOTO_LEVEL_TRUSTED,
-        "Подробная информация о пользователе (по reply, ID, @username или о себе).",
+        "Подробная информация о пользователе или чате (по reply, ID, @username или о себе).",
         "[id|@username]"
     },
     {
@@ -413,6 +448,13 @@ const koto_command COMMANDS[] = {
         KOTO_LEVEL_TRUSTED,
         "Анализ текущего или указанного чата (псевдоним whoischat).",
         "[chat_id|@username]"
+    },
+    {
+        "chatinfo",
+        &cmd_chat_analysis,
+        KOTO_LEVEL_TRUSTED,
+        "Информация и статистика чата (псевдоним whoischat).",
+        "[chat_id|@username]"
     }
 };
 
@@ -420,7 +462,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "whois",
     "Подробная информация о пользователях и глубокий анализ чатов (C++ ABI 3).",
-    "1.0.0",
+    "1.0.1",
     26,
     0,
     COMMANDS,

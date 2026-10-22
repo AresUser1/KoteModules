@@ -38,11 +38,12 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "whois");
-    CHECK(std::string(mod->version) == "1.0.0");
-    CHECK(mod->command_count == 3);
+    CHECK(std::string(mod->version) == "1.0.1");
+    CHECK(mod->command_count == 4);
     CHECK(std::string(mod->commands[0].name) == "whois");
     CHECK(std::string(mod->commands[1].name) == "whoischat");
     CHECK(std::string(mod->commands[2].name) == "chatanalysis");
+    CHECK(std::string(mod->commands[3].name) == "chatinfo");
 
     koto_api api{};
     api.cmd_args = [](koto_ctx* c) -> const char* { return c->args.c_str(); };
@@ -107,7 +108,14 @@ int main(int argc, char** argv) {
     CHECK(ctx.composed.find("Official service notifications") != std::string::npos);
     CHECK(ctx.composed.find("tg://user?id=777000") != std::string::npos);
 
-    // 2. Проверка .whoischat для текущего чата
+    // 2. Проверка .whois с ID чата -> автоматическая переадресация на анализ чата
+    ctx.args = "-100123456789";
+    ctx.composed.clear();
+    mod->commands[0].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Анализ чата") != std::string::npos);
+    CHECK(ctx.composed.find("Kotogram Dev Chat") != std::string::npos);
+
+    // 3. Проверка .whoischat для текущего чата
     ctx.args = "";
     ctx.composed.clear();
     mod->commands[1].handler(&ctx, &api);
@@ -121,12 +129,19 @@ int main(int argc, char** argv) {
     CHECK(ctx.composed.find("#42") != std::string::npos); // pinned
     CHECK(ctx.composed.find("Открыт") != std::string::npos);
 
-    // 3. Проверка .chatanalysis (псевдоним)
+    // 4. Проверка .chatanalysis (псевдоним)
     ctx.args = "-100123456789";
     ctx.composed.clear();
     mod->commands[2].handler(&ctx, &api);
     CHECK(ctx.composed.find("Kotogram Dev Chat") != std::string::npos);
 
+    // 5. Проверка .chatinfo (псевдоним)
+    ctx.args = "";
+    ctx.composed.clear();
+    mod->commands[3].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Kotogram Dev Chat") != std::string::npos);
+
+    dlclose(lib);
     std::printf("Whois tests: %d checks passed successfully!\n", checks);
     return 0;
 }

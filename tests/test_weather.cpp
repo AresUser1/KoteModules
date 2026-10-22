@@ -14,6 +14,7 @@ struct koto_ctx {
     std::string composed;
     std::string mock_http_url;
     std::string mock_http_resp;
+    std::map<std::string, std::string> db;
     int edited = 0;
     int replied = 0;
 };
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "weather");
-    CHECK(std::string(mod->version) == "1.1.2");
+    CHECK(std::string(mod->version) == "1.1.3");
     CHECK(mod->command_count == 4);
     CHECK(std::string(mod->commands[0].name) == "weather");
     CHECK(std::string(mod->commands[1].name) == "w");
@@ -59,6 +60,18 @@ int main(int argc, char** argv) {
     api.is_outgoing = [](koto_ctx*) -> int { return 1; };
     api.check_permission = [](koto_ctx*, int) -> int { return 1; };
     api.setting_get = [](koto_ctx*, const char*, char* b, int n) -> int { return write_str(".", b, n); };
+
+    api.db_get = [](koto_ctx* c, const char* k, char* buf, int buflen) -> int {
+        auto it = c->db.find(k ? k : "");
+        if (it == c->db.end()) return 0;
+        int to_copy = std::min((int)it->second.size(), buflen - 1);
+        std::memcpy(buf, it->second.data(), to_copy);
+        buf[to_copy] = '\0';
+        return to_copy;
+    };
+    api.db_set = [](koto_ctx* c, const char* k, const char* val) {
+        c->db[k ? k : ""] = val ? val : "";
+    };
 
     api.c_reset = [](koto_ctx* c) { c->composed.clear(); };
     api.c_text = [](koto_ctx* c, const char* s) { if (s) c->composed += s; };
@@ -77,7 +90,7 @@ int main(int argc, char** argv) {
 
     koto_ctx ctx;
 
-    // 1. Пустые аргументы
+    // 1. Пустые аргументы без default_city
     ctx.args = "";
     mod->commands[0].handler(&ctx, &api);
     CHECK(ctx.composed.find("Укажите город") != std::string::npos);
@@ -170,12 +183,32 @@ int main(int argc, char** argv) {
     CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
     CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
 
-    // 4c. Проверка запроса на неделю (.w Москва 7)
+    // 4c. Проверка фразы "Москва на завтра"
+    ctx.args = "Москва на завтра";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
+    CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
+
+    // 4d. Проверка фразы "погода на завтра" (без указания города — автоподстановка Москвы)
+    ctx.args = "погода на завтра";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
+    CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
+
+    // 4e. Проверка запроса на неделю (.w Москва 7)
     ctx.args = "Москва 7";
     ctx.composed.clear();
     mod->commands[1].handler(&ctx, &api);
-    // Open-Meteo or fallback wttr.in
     CHECK(!ctx.composed.empty());
+
+    // 4f. Проверка сохранения города по умолчанию (.w set Воронеж)
+    ctx.args = "set Воронеж";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Город по умолчанию сохранён: Воронеж") != std::string::npos);
+    CHECK(ctx.db["default_city"] == "Воронеж");
 
     // 5. Проверка автоматического fallback на Open-Meteo при сбое wttr.in
     api.http_get = [](koto_ctx*, const char* url, unsigned char* buf, int buflen) -> long long {
@@ -215,6 +248,13 @@ int main(int argc, char** argv) {
     CHECK(ctx.composed.find("Температура:") != std::string::npos);
     CHECK(ctx.composed.find("+11°C") != std::string::npos);
     CHECK(ctx.composed.find("Прогноз на 3 дня:") != std::string::npos);
+
+    // 5b. Fallback на Open-Meteo для прогноза на завтра
+    ctx.args = "Москва завтра";
+    ctx.composed.clear();
+    mod->commands[1].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Прогноз на завтра: Москва, Россия") != std::string::npos);
+    CHECK(ctx.composed.find("Завтра (22.10, Чт):") != std::string::npos);
 
     dlclose(lib);
     std::printf("Weather tests: %d checks passed successfully!\n", checks);

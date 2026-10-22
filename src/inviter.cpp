@@ -181,15 +181,28 @@ static void cmd_invite(koto_ctx* ctx, const koto_api* api) {
 
     long long target_cid = 0;
     if (!args.empty()) {
-        if (is_all_digits(args)) {
-            try { target_cid = std::stoll(args); } catch (...) { target_cid = 0; }
+        std::string clean_arg = args;
+        size_t tme_pos = clean_arg.find("t.me/");
+        if (tme_pos != std::string::npos) {
+            clean_arg = clean_arg.substr(tme_pos + 5);
+            size_t slash = clean_arg.find('/');
+            if (slash != std::string::npos) clean_arg = clean_arg.substr(0, slash);
+            size_t q = clean_arg.find('?');
+            if (q != std::string::npos) clean_arg = clean_arg.substr(0, q);
+        }
+        if (is_all_digits(clean_arg)) {
+            try { target_cid = std::stoll(clean_arg); } catch (...) { target_cid = 0; }
         } else {
-            std::string uname = args;
+            std::string uname = clean_arg;
             if (!uname.empty() && uname[0] == '@') uname = uname.substr(1);
             if (api->resolve) target_cid = api->resolve(ctx, uname.c_str());
         }
     } else {
-        if (api->chat_id) target_cid = api->chat_id(ctx);
+        if (api->reply_sender_id) {
+            long long r_id = api->reply_sender_id(ctx);
+            if (r_id < 0) target_cid = r_id;
+        }
+        if (target_cid == 0 && api->chat_id) target_cid = api->chat_id(ctx);
     }
 
     if (target_cid == 0) {
@@ -530,7 +543,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "inviter",
     "Массовая рассылка и инвайтинг с поддержкой твинков и фильтров (C++ ABI 3).",
-    "1.0.0",
+    "1.0.1",
     26,
     0,
     COMMANDS,

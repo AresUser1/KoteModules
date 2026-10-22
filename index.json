@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
   "version": "1.5.0",
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "modules": [
     {
       "id": "administration",
@@ -55,7 +55,7 @@
         }
       ],
       "size": 384104,
-      "sha256": "4350cb15630f9aff45406d5807f76775bbb3aeb60df67248e6d1ba6cf37b1cb6",
+      "sha256": "bcc3de063971aada8e162155b026e419669b007ea14d7e2273984961c3367b57",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
@@ -134,8 +134,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 271216,
-      "sha256": "c309e2b42c9769755cc7575250f3f914486cf7cba5afde7b0891772679ce57d7"
+      "size": 271232,
+      "sha256": "aee258c597999be7a9eb3ec3af282571e1825317c6669321920f332b384909c3"
     },
     {
       "id": "auto_manager",
@@ -315,7 +315,7 @@
       "license": "MIT",
       "min_host_version": 60,
       "size": 263024,
-      "sha256": "c28227b9123b5780b6f25364c96f0890ca8da8db1de8944f5ec6d4f0e1efc5b4"
+      "sha256": "4461cbb199c1f5cc0067a56f652eae511be47d00378437d3ad4fe8463184e33f"
     },
     {
       "id": "calculator",
@@ -385,8 +385,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
       "license": "MIT",
       "min_host_version": 61,
-      "size": 278728,
-      "sha256": "ba3d71d47f89e2fec104dd3aa8a927da62c3ab5b85e357a9f33402b72170accc"
+      "size": 278656,
+      "sha256": "d37e11ac7fd3b55b2176363c25ea77a95b22c4ec340c1f4014d19f3c66599f97"
     },
     {
       "id": "checkers",
@@ -540,8 +540,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
       "license": "MIT",
       "min_host_version": 28,
-      "size": 470904,
-      "sha256": "b4062c222934402928122dde4852d2143cdccd130f714ce1d274b5af66f556d4"
+      "size": 470920,
+      "sha256": "0e6a6191bd376341767cfbcbba7bbc532f7addf4266a128d22ae2bbc27df0367"
     },
     {
       "id": "id",
@@ -600,7 +600,7 @@
       "display_name": "Инвайтер и рассылка (Inviter)",
       "author": "Kote",
       "description": "Массовая рассылка и инвайтинг с поддержкой твинков, настраиваемых задержек и фильтров.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -644,8 +644,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/inviter.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 315664,
-      "sha256": "ce10fd79f252c53a90d3974f6e119257c6ff5004360a9868685c20955a4afce6"
+      "size": 331832,
+      "sha256": "79011bdefde70ed07845a2352dca239982abcb788371dd43a9dbb929c565c8d5"
     },
     {
       "id": "kotserv",
@@ -1167,7 +1167,7 @@
       "display_name": "Сбор участников (Scrapper)",
       "author": "Kote",
       "description": "Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации.",
-      "version": "1.0.0",
+      "version": "1.0.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1201,8 +1201,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 312168,
-      "sha256": "ab954c0e3df179aeb5131408fa9f33e4b9719c4fe84ed2635acfe5e4e13108e0"
+      "size": 314504,
+      "sha256": "bc5754ffa44f2effdef25ee6ec190833aafb00288eb3fc4b55a3fdfe1f6c939f"
     },
     {
       "id": "spam_ban",
@@ -1286,8 +1286,8 @@
           "usage": ""
         }
       ],
-      "size": 318040,
-      "sha256": "b1cc60456338e029b6b08e7552ef384124dde4882be1197c5dec76b041e9fabc",
+      "size": 318056,
+      "sha256": "90935b3fb0a541c7be47dbe76760a63d472c91154a5a06f975f90feaef705e5d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -1324,7 +1324,7 @@
       "license": "MIT",
       "min_host_version": 63,
       "size": 320752,
-      "sha256": "5795c99ffef299c53b4583dec11c464ac0ca5cec8d37f0682ac87d8b0c8d6e99"
+      "sha256": "087b90b9dd7d4d1400f001f97f85673de9c0dc1967552fb4a19f54bead7eae02"
     },
     {
       "id": "tagger",
@@ -1443,7 +1443,7 @@
       "display_name": "Погода (Weather)",
       "author": "Kote",
       "description": "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени.",
-      "version": "1.1.2",
+      "version": "1.1.3",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1472,8 +1472,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 385464,
-      "sha256": "94c343dbe6877bdd598590a0f44efe4fa4db7941ad69c3a55f2d9409e6b8c51f"
+      "size": 408152,
+      "sha256": "779056ebc1562c1e17c6e98c9d8c108ecfd569de3042120b034353dc7c504ab9"
     },
     {
       "id": "whois",
@@ -1481,7 +1481,7 @@
       "display_name": "Информация и анализ (WhoIs)",
       "author": "Kote",
       "description": "Подробная информация о пользователях (профиль, ID, bio, dc, premium) и глубокий анализ чатов (участники, админы, боты).",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1505,8 +1505,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/whois.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 276944,
-      "sha256": "1e0a6ea9c53ee130139ec5827b8001e038fe3a08740918a301a9c07c04d9d5e6"
+      "size": 279616,
+      "sha256": "d9929cd3ef0af6a8995a7970c8a51675a4ee725ebba85af0cebaa6b5fe11effb"
     }
   ]
 }
