@@ -289,6 +289,9 @@ static void cmd_delava(koto_ctx* ctx, const koto_api* api) {
 // ─── ИНЛАЙН / КОЛБЭКИ ───────────────────────────────────────────────────────
 
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* data = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!data || (strncmp(data, "setname:", 8) != 0 && strcmp(data, "close_panel") != 0)) return;
+
     long long sender = api->sender_id ? api->sender_id(ctx) : 0;
     long long me = api->get_me ? api->get_me(ctx) : 0;
 
@@ -301,9 +304,6 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
         return;
     }
-
-    const char* data = api->cb_data(ctx);
-    if (!data) return;
 
     if (strcmp(data, "close_panel") == 0) {
         api->c_reset(ctx);

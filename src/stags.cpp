@@ -995,6 +995,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 // ── Колбэки инлайн-панели (с защитой владельца) ─────────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
     if (is_twin_account(ctx, api)) return;
+    const char* raw_data = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!raw_data || (strncmp(raw_data, "sttwins_", 8) != 0 && strncmp(raw_data, "stag_", 5) != 0 && strcmp(raw_data, "close_panel") != 0)) return;
 
     long long sender = api->sender_id ? api->sender_id(ctx) : 0;
     long long me = api->get_me ? api->get_me(ctx) : 0;
@@ -1009,8 +1011,6 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    const char* raw_data = api->cb_data ? api->cb_data(ctx) : nullptr;
-    if (!raw_data) return;
     std::string data(raw_data);
 
     if (data == "close_panel") {

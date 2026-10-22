@@ -544,13 +544,13 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
     if (is_twin_account(ctx, api)) return;
+    const char* data = api->cb_data ? api->cb_data(ctx) : NULL;
+    if (!data || (strncmp(data, "am_", 3) != 0 && strncmp(data, "amtwins_", 8) != 0)) return;
+
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
         if (api->cb_answer) api->cb_answer(ctx, "❌ Нет доступа", 1);
         return;
     }
-
-    const char* data = api->cb_data ? api->cb_data(ctx) : NULL;
-    if (!data) return;
 
     if (strcmp(data, "am_noop") == 0) {
         if (api->cb_answer) api->cb_answer(ctx, "", 0);

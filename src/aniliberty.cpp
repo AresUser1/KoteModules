@@ -271,13 +271,13 @@ static void cmd_aniliberty(koto_ctx* ctx, const koto_api* api) {
 // ── Инлайн коллбэки ───────────────────────────────────────────────────────────
 
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* data = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!data || strncmp(data, "anilib_", 7) != 0) return;
+
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) {
         if (api->cb_answer) api->cb_answer(ctx, "❌ Нет доступа", 1);
         return;
     }
-
-    const char* data = api->cb_data(ctx);
-    if (!data) return;
     std::string d = data;
 
     if (d == "anilib_close") {

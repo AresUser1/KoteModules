@@ -55,7 +55,7 @@
         }
       ],
       "size": 384104,
-      "sha256": "4350cb15630f9aff45406d5807f76775bbb3aeb60df67248e6d1ba6cf37b1cb6",
+      "sha256": "0cb37cb5c12194a376b9e92513cd2a2e0eafe4c4694594783a699ecca450890e",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
@@ -98,7 +98,7 @@
         }
       ],
       "size": 93448,
-      "sha256": "7bf9b123a4e6f69b0dc7a9bdd09053437937c4ade6d31612ff97b32c36dd348a",
+      "sha256": "a7463fd609e2b3da0246d3cc082202df31fe9086ecacc0e21ed429a67f21f598",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/afk.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
       "license": "MIT",
@@ -134,8 +134,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 271216,
-      "sha256": "c309e2b42c9769755cc7575250f3f914486cf7cba5afde7b0891772679ce57d7"
+      "size": 271384,
+      "sha256": "4d388528b583db33d6e80683d2fe6e73e53ea5c39e3d3deaaf1de7e2ec96f61d"
     },
     {
       "id": "auto_manager",
@@ -183,7 +183,7 @@
       "license": "MIT",
       "min_host_version": 64,
       "size": 21952,
-      "sha256": "eee69c82e733f00f9c833e7c63bac39100fe4bf3238cfadcefbe17c7806442a6"
+      "sha256": "5a7f464eb304b2c2f8924a61b078a33d8216461d49b4e06961e34be4c3ca16c7"
     },
     {
       "id": "autolast",
@@ -236,7 +236,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 81640,
-      "sha256": "aca578aa46fa7571c388b729f183d36bd6ca12cc311c3997aa2c130444de4aff"
+      "sha256": "5a4e006ea50d99f6aa13b24d88f77e41bf5d7fc104ac18cb49a0fc8833f87371"
     },
     {
       "id": "autoresponder",
@@ -259,8 +259,8 @@
           "usage": ""
         }
       ],
-      "size": 87760,
-      "sha256": "6990e7ee1bb936ef3c633e0d1b65c7caa380e2faef2d6af89121c6a893acdfd5",
+      "size": 87488,
+      "sha256": "25e515e10ea072c7a9100d910472481e7f940820e52acedaa4dedd91a8e00c6d",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/autoresponder.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
       "license": "MIT",
@@ -283,7 +283,7 @@
         }
       ],
       "size": 101536,
-      "sha256": "0662e6efbc3d0579e59a9f0766995b2fe51d48738719ceeb558ec809acab892d",
+      "sha256": "dcc915c4efbf63a996caf244267d9c2cc3ec6c547fb76e39ea712f1e8f2092e6",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/bakusearch.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
       "license": "MIT",
@@ -315,7 +315,7 @@
       "license": "MIT",
       "min_host_version": 60,
       "size": 263024,
-      "sha256": "c28227b9123b5780b6f25364c96f0890ca8da8db1de8944f5ec6d4f0e1efc5b4"
+      "sha256": "bfea0824116a9ee310fecfe812194fbe79b9489cbff55ebac843e8f4a3dce883"
     },
     {
       "id": "calculator",
@@ -338,7 +338,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 78072,
-      "sha256": "a58324315bc5481d8464196156f7312cddf110aefdc9d41a0970cef29efe4013"
+      "sha256": "44844125828340b9fafda929db0e852e809e6f140a03bc9f3599b48273ba536e"
     },
     {
       "id": "chat",
@@ -386,7 +386,7 @@
       "license": "MIT",
       "min_host_version": 61,
       "size": 278728,
-      "sha256": "ba3d71d47f89e2fec104dd3aa8a927da62c3ab5b85e357a9f33402b72170accc"
+      "sha256": "ea4c20dcde6d8cb04cd833d285bb959bc0773f70384951f6d6bd8ccca8a75768"
     },
     {
       "id": "checkers",
@@ -415,7 +415,7 @@
         }
       ],
       "size": 27704,
-      "sha256": "764a82069e5d877ed7dea86166856bbede25c53b02043172e7cab6d43bc04469",
+      "sha256": "8ecca28c3aa33e77907ab9aaeef4f2fc435980f5618320e20cf7608f86726b97",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
@@ -453,7 +453,7 @@
         }
       ],
       "size": 31896,
-      "sha256": "cb3b1d8e6b07c524039b61b409bb5292502deb9adf815b81ec15f38bee49a791",
+      "sha256": "b668d9ea83b606f15674ea900a8b2b32830ac018b89349cc5d784bd81875f68b",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/chess.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chess.c",
       "license": "MIT",
@@ -481,7 +481,7 @@
         }
       ],
       "size": 7944,
-      "sha256": "90bec6af5594b7180db9ba103c19b22ff9999b507241e89ff379d0da101db2d4",
+      "sha256": "9c5dfe682b1e9a9aa38badd0d45bf1eec024a6ab2229eb78c2216cd316a40ddc",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/copymessage.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
       "license": "MIT",
@@ -513,7 +513,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 48680,
-      "sha256": "380cc89e7eb2b6e838dd2a408c48c809b0f030f407d2ceb9857422755bafe538"
+      "sha256": "88696d4766506c5620d6e34d09a9fa46a73587d7af4c44606503041e2623234c"
     },
     {
       "id": "dox",
@@ -541,7 +541,7 @@
       "license": "MIT",
       "min_host_version": 28,
       "size": 470904,
-      "sha256": "b4062c222934402928122dde4852d2143cdccd130f714ce1d274b5af66f556d4"
+      "sha256": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7"
     },
     {
       "id": "id",
@@ -565,7 +565,7 @@
         }
       ],
       "size": 49912,
-      "sha256": "8aed6af9ea82576dfc639fe52eb93263894c9398392339e9f9af9ee95f2ab072",
+      "sha256": "4b159cdddeab429a8a1dda0b2c532aaab9daf3a326fb7b361a6c8c16deeedd4e",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/id.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
       "license": "MIT",
@@ -588,7 +588,7 @@
         }
       ],
       "size": 51032,
-      "sha256": "c505bd1bfe9f07bec0807d7f57647b2b000f48700a9c2e7bfdb72a93c3e895cc",
+      "sha256": "304ad1d6747f56bbe34913f5bfb38b37e940d774955cfd04ff31630bca1b3582",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/idprem.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
       "license": "MIT",
@@ -645,7 +645,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 331832,
-      "sha256": "228ec6860ac31d6e2ecc5d64dd16849934a880dabd0d7c5e74a886cf7c0bdf34"
+      "sha256": "3ccbc033cc242eb4da4caabc334d7965cc51ac570180ddb102752f20ce44681b"
     },
     {
       "id": "kotserv",
@@ -672,8 +672,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kotserv.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 111168,
-      "sha256": "ac0ea76de39b97e65372abb5b4e1e9f1c6dfb042416ba537a9e7bcdfef24fd1c"
+      "size": 111320,
+      "sha256": "a51a9659677ccef38a662809c9450d4cdef1ca1b9dea0f6e4f5a48288f579dba"
     },
     {
       "id": "mafia_multitool",
@@ -801,8 +801,8 @@
           "usage": "<ник>"
         }
       ],
-      "size": 239880,
-      "sha256": "61974eb698d9d133580bf7351bfb583a1165474961517f97501fa11726df91e8",
+      "size": 240344,
+      "sha256": "c0fafaf092a9c11cc0f486eb1ca85462f9d0f9c4cc67740ff8eefd592ed1dd49",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
@@ -859,7 +859,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 128232,
-      "sha256": "3460fb0231029e2698029abfadfefe61f2357efce91ba42c3233e1886cdacdaa"
+      "sha256": "824cfd15c3149c7aee7e7480a7c909732b5c009f6e0fd183e5beab8629048b6e"
     },
     {
       "id": "mass_notifier",
@@ -877,8 +877,8 @@
           "usage": "<текст / реплай на сообщение>"
         }
       ],
-      "size": 61232,
-      "sha256": "228d337d3e18cc7676fb24773792be66d747d155d06b880f35040225d6211541",
+      "size": 60960,
+      "sha256": "0a3179049c47a6b2d9c36cd3bfefa33413c6957428eaebb3b2f6704981fe69eb",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
       "license": "MIT",
@@ -991,7 +991,7 @@
         }
       ],
       "size": 138192,
-      "sha256": "c691216a7a045eb117b79727693ba9e32d56b320dae1f1ff05d6f349879c3887",
+      "sha256": "35f407efc1fdf2f164eea143bf77874421eb23c35f1413e06ef8ece0b204e51e",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moderation.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
       "license": "MIT",
@@ -1019,7 +1019,7 @@
         }
       ],
       "size": 47736,
-      "sha256": "5e7473f19061b8025845cfdf65e6b7a32c54b45f9293a6b37be385717ad5a48f",
+      "sha256": "d89d886c3e6e7a4e02b83672982f5e72b2663d1193f08187e9911e8664a595c2",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/music.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
       "license": "MIT",
@@ -1071,8 +1071,8 @@
           "usage": ""
         }
       ],
-      "size": 84392,
-      "sha256": "c2713a97f01fdc0c64dc87e0cf4ff8cc5d142b1ff59f34bdf3fa771f016ed4bf",
+      "size": 84592,
+      "sha256": "c366897b1e9ce6ce78b5406e9a346db1d8309c3168bba48886b74434acb49ca2",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/profile_manager.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/profile_manager.cpp",
       "license": "MIT",
@@ -1155,7 +1155,7 @@
         }
       ],
       "size": 168024,
-      "sha256": "4bb1bf9e193ce48b82e87fa84dbecdd97e6627005671914b2a0dd0e3ac5b4c55",
+      "sha256": "d07fc8397c0badcb29f1087de8ceff2f666183811d3720701b988554835224a6",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/rp.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
       "license": "MIT",
@@ -1201,8 +1201,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 350736,
-      "sha256": "8cbdcda70f6e48003978b5ee6af974594797e2ab63e3ee641811be311f59b00e"
+      "size": 350664,
+      "sha256": "a8f2f5f9fc60c0dfa5cb67e96b38f4bead378814e1c2347756da43535c1fc878"
     },
     {
       "id": "spam_ban",
@@ -1226,7 +1226,7 @@
         }
       ],
       "size": 49224,
-      "sha256": "f629112167b5276ebc28d4dc3cc4f6e5f2c29107de64f55bad00f832a3d2e91e",
+      "sha256": "e76f0e2a7df21dc534d69cfc7606607fc843d2ed12d095c522c466bb2c87c69c",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spam_ban.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
       "license": "MIT",
@@ -1254,7 +1254,7 @@
         }
       ],
       "size": 63208,
-      "sha256": "30e226ae40d8df39da5e9f06be5f546c20ce792755e1d3ea7f1935584c920902",
+      "sha256": "1fdc1684d7cf569f822d78a8b8223c66e74983b2fc461e70bdca2e12a2a2f868",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/spammer.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
       "license": "MIT",
@@ -1286,8 +1286,8 @@
           "usage": ""
         }
       ],
-      "size": 318040,
-      "sha256": "b1cc60456338e029b6b08e7552ef384124dde4882be1197c5dec76b041e9fabc",
+      "size": 318224,
+      "sha256": "f1367e84cc84a3849781d7c7f52a00fcc90249ca345c321c0332a9a4d5dcf1de",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -1323,8 +1323,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
       "license": "MIT",
       "min_host_version": 63,
-      "size": 320752,
-      "sha256": "5795c99ffef299c53b4583dec11c464ac0ca5cec8d37f0682ac87d8b0c8d6e99"
+      "size": 321256,
+      "sha256": "45a8ccab91bea1e0429814e62cc31e7ab7e72e270efe9fd70dafa61ca53ed5dd"
     },
     {
       "id": "tagger",
@@ -1407,8 +1407,8 @@
           "usage": ""
         }
       ],
-      "size": 160232,
-      "sha256": "1d13c12c93ccc6f0eff1350b405490e7b665c8fe394faeb01c6640fde658c10a",
+      "size": 160280,
+      "sha256": "f7ec069b457c962ece7898a46ffd7aa31589c4038e2157fb2d3a5ee85ab7a9e8",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",
@@ -1431,7 +1431,7 @@
         }
       ],
       "size": 62824,
-      "sha256": "353e058b14c1da57f649f5601139aa6c50e06e98e469b0e08784eb2059838809",
+      "sha256": "47a934a27436eb8a0865dfdf06f5daca4dfbe34f58114ea1cade0037abc02025",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tt_dl.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
@@ -1473,7 +1473,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 408152,
-      "sha256": "b80f9bdfb95d5aef7fbdfd33fc31379b02a19df412f8433f0787099215d7e2e0"
+      "sha256": "4f4666eaffaa5d7ec7744ef4af6965ad14413edda626759cc7068f818ab7aa02"
     },
     {
       "id": "whois",
@@ -1506,7 +1506,35 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 279600,
-      "sha256": "bf4cd8ed98fedbaa330e8be9fcff90ef6dc234d580f3726cd6867f3d27a9a95e"
+      "sha256": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5"
+    },
+    {
+      "id": "delme",
+      "name": "delme",
+      "display_name": "DelMe — Очистка своих сообщений",
+      "author": "KeyZenD / Kote",
+      "description": "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "delme",
+          "doc": "Удаляет все сообщения от тебя с подтверждением",
+          "usage": "[код]"
+        },
+        {
+          "name": "delmenow",
+          "doc": "Удаляет все сообщения от тебя без вопросов",
+          "usage": ""
+        }
+      ],
+      "min_host_version": 71,
+      "size": 228736,
+      "sha256": "0f8839366aa7f3bcab49e7587a2e8d16d9fa908dc51fc60c2e00b9b651e0c7ca",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/delme.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
+      "license": "MIT"
     }
   ]
 }

@@ -1700,6 +1700,9 @@ static const koto_command MAFIA_COMMANDS[] = {
 
 // ── Обработчик нажатий inline-кнопок (on_callback) ───────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* data_ptr = api->cb_data(ctx);
+    if (!data_ptr || strncmp(data_ptr, "mfz:", 4) != 0) return;
+
     long long sender = api->sender_id ? api->sender_id(ctx) : 0;
     long long me = api->get_me ? api->get_me(ctx) : 0;
 
@@ -1712,8 +1715,6 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
         return;
     }
-    const char* data_ptr = api->cb_data(ctx);
-    if (!data_ptr) return;
     std::string data = data_ptr;
 
     if (data == "mfz:close") {

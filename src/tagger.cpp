@@ -1258,6 +1258,9 @@ static void cmd_tagsettings(koto_ctx* ctx, const koto_api* api) {
 
 // ── Колбэки инлайн-панели (с защитой владельца) ─────────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* raw_data = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!raw_data || (strncmp(raw_data, "ts_", 3) != 0 && strcmp(raw_data, "close_panel") != 0)) return;
+
     long long sender = api->sender_id ? api->sender_id(ctx) : 0;
     long long me = api->get_me ? api->get_me(ctx) : 0;
 
@@ -1270,9 +1273,6 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
         if (api->cb_answer) api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
         return;
     }
-
-    const char* raw_data = api->cb_data ? api->cb_data(ctx) : nullptr;
-    if (!raw_data) return;
     std::string data(raw_data);
 
     if (data == "close_panel") {

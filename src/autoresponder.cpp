@@ -467,18 +467,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
 // ── Колбэк (защита владельца) ───────────────────────────────────────────────
 static void on_callback(koto_ctx* ctx, const koto_api* api) {
-    long long sender = api->sender_id ? api->sender_id(ctx) : 0;
-    long long me = api->get_me ? api->get_me(ctx) : 0;
-
-    bool allowed = (me != 0 && sender == me);
-    if (!allowed && api->check_permission) {
-        allowed = (api->check_permission(ctx, KOTO_LEVEL_TRUSTED) != 0);
-    }
-
-    if (!allowed) {
-        if (api->cb_answer) api->cb_answer(ctx, "⛔ Эта панель только для владельца!", 1);
-        return;
-    }
+    (void)ctx; (void)api;
 }
 
 // ── Схема настроек модуля для панели .cfg ────────────────────────────────────

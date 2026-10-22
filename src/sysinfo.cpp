@@ -286,8 +286,10 @@ void cmd_neofetch(koto_ctx* ctx,const koto_api* api) {
     render_neofetch(ctx,api,collect_metrics(ctx,api));if(api->is_outgoing(ctx))api->c_edit(ctx,0);else api->c_reply(ctx,0);
 }
 void on_callback(koto_ctx* ctx,const koto_api* api) {
+    const char* raw=api->cb_data?api->cb_data(ctx):nullptr;
+    if(!raw || (strncmp(raw, "sys_", 4) != 0 && strncmp(raw, "sysinfo:", 8) != 0)) return;
     if(!api->check_permission(ctx,KOTO_LEVEL_OWNER)){if(api->cb_answer)api->cb_answer(ctx,"❌ Только для владельца",1);return;}
-    const char* raw=api->cb_data?api->cb_data(ctx):nullptr;if(!raw)return;std::string data=raw;
+    std::string data=raw;
     if(data=="sys_close"){if(api->cb_answer)api->cb_answer(ctx,"Закрыто",0);if(api->delete_msg)api->delete_msg(ctx);return;}
     if(data!="sys_refresh"&&data!="sys_main"&&data!="sys_details"&&data!="sys_neofetch")return;
     auto m=collect_metrics(ctx,api);

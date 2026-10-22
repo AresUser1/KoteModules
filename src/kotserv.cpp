@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <sys/utsname.h>
 #include <sys/sysinfo.h>
+#include <cstring>
 #include <unistd.h>
 #include <iomanip>
 
@@ -236,13 +237,13 @@ void cmd_kscfg(koto_ctx* ctx, const koto_api* api) {
 }
 
 void on_callback(koto_ctx* ctx, const koto_api* api) {
+    const char* data = api->cb_data ? api->cb_data(ctx) : nullptr;
+    if (!data || strncmp(data, "ks_", 3) != 0) return;
+
     if (!api->check_permission(ctx, KOTO_LEVEL_OWNER)) {
         if (api->cb_answer) api->cb_answer(ctx, "❌ Доступ запрещен! Только для владельца.", 1);
         return;
     }
-
-    const char* data = api->cb_data(ctx);
-    if (!data) return;
     std::string d = data;
 
     if (d == "ks_close") {
