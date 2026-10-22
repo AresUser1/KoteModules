@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "scrapper");
-    CHECK(std::string(mod->version) == "1.0.2");
+    CHECK(std::string(mod->version) == "1.0.3");
     CHECK(mod->command_count == 5);
     CHECK(std::string(mod->commands[0].name) == "scrap");
     CHECK(std::string(mod->commands[1].name) == "scrapper");
@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
         if (twin_uid == 7767394972LL && offset == 0) {
             std::string j = "[{\"id\":1001,\"sender_id\":333,\"text\":\"hi\"},"
                             "{\"id\":1002,\"sender_id\":333,\"text\":\"msg2\"},"
-                            "{\"id\":1003,\"sender_id\":444,\"text\":\"msg3\"}]";
+                            "{\"id\":1003,\"sender_id\":444,\"text\":\"msg3 hello @cooltag\",\"reactors\":[555]}]";
             int to_copy = std::min((int)j.size(), buflen - 1);
             std::memcpy(buf, j.data(), to_copy);
             buf[to_copy] = '\0';
@@ -173,10 +173,26 @@ int main(int argc, char** argv) {
     mod->commands[3].handler(&ctx, &api);
     CHECK(ctx.composed.find("остановлен") != std::string::npos);
 
-    // 5. Проверка ACTIVITY mode с воркером Umbra
+    // 5. Проверка ACTIVITY mode с воркером Umbra, реакциями и тегами
     ctx.args = "method activity";
     mod->commands[2].handler(&ctx, &api);
     CHECK(ctx.composed.find("ACTIVITY") != std::string::npos);
+
+    ctx.args = "reactions off";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Сбор реакций: ВЫКЛ") != std::string::npos);
+
+    ctx.args = "reactions on";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Сбор реакций: ВКЛ") != std::string::npos);
+
+    ctx.args = "tags off";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Сбор тегов: ВЫКЛ") != std::string::npos);
+
+    ctx.args = "tags on";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("Сбор тегов: ВКЛ") != std::string::npos);
 
     ctx.args = "worker Umbra";
     mod->commands[2].handler(&ctx, &api);
@@ -191,8 +207,23 @@ int main(int argc, char** argv) {
     CHECK(ctx.sent_file_content.find("WORKER: Umbra (ID: 7767394972)") != std::string::npos);
     CHECK(ctx.sent_file_content.find("@user333 | Сообщений: 2") != std::string::npos);
     CHECK(ctx.sent_file_content.find("@user444 | Сообщений: 1") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("555 | Реакций: 1") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("@cooltag | Упоминаний в чате: 1") != std::string::npos);
 
-    // 6. Проверка неизвестного воркера
+    // 6. Проверка указания воркера по числовому ID напрямую
+    ctx.args = "worker 7767394972";
+    mod->commands[2].handler(&ctx, &api);
+    CHECK(ctx.composed.find("7767394972") != std::string::npos);
+
+    ctx.args = "";
+    ctx.composed.clear();
+    ctx.sent_file_name.clear();
+    ctx.sent_file_content.clear();
+    mod->commands[0].handler(&ctx, &api); // scrap
+    CHECK(ctx.composed.find("Сбор участников успешно завершён") != std::string::npos);
+    CHECK(ctx.sent_file_content.find("WORKER: Umbra (ID: 7767394972)") != std::string::npos);
+
+    // 7. Проверка неизвестного воркера
     ctx.args = "worker UnknownTwin";
     mod->commands[2].handler(&ctx, &api);
 
