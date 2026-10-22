@@ -63,7 +63,8 @@ enum {
 /* ─── Флаги отправки/редактирования ─── */
 enum {
     KOTO_FMT_PLAIN       = 0,
-    KOTO_NO_LINK_PREVIEW = 1 << 0  /* link_preview=False */
+    KOTO_NO_LINK_PREVIEW = 1 << 0, /* link_preview=False */
+    KOTO_SEND_AS_FILE    = 1 << 1  /* c_send_file: отправить строго как документ-файл без авто-определения медиа */
 };
 
 /* ─── Типы настраиваемых полей (панель cfg) ─── */
