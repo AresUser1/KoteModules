@@ -1167,7 +1167,7 @@
       "display_name": "Сбор участников (Scrapper)",
       "author": "Kote",
       "description": "Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации.",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1201,8 +1201,8 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size": 345688,
-      "sha256": "16bdccd7bf1d135bfab71757fa071d9f80e8e905a080051ec84c4cd333a6938a"
+      "size": 350736,
+      "sha256": "8cbdcda70f6e48003978b5ee6af974594797e2ab63e3ee641811be311f59b00e"
     },
     {
       "id": "spam_ban",

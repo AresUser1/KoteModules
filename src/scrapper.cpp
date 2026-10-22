@@ -15,12 +15,16 @@
 #include <algorithm>
 #include <ctime>
 #include <cctype>
+#include <atomic>
+#include <chrono>
 
 namespace {
 
 static constexpr long long EMO_SCRAP = 5778661935927004845LL; // 📥
 static constexpr long long EMO_CFG   = 5470049770997292425LL; // ⚙️
 static constexpr long long EMO_OK    = 5283097055852503586LL; // ✅
+
+static std::atomic<bool> g_stop_scrap{false};
 
 static void send_result(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) {
@@ -203,12 +207,14 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
         if (target_cid == 0 && api->chat_id) target_cid = api->chat_id(ctx);
     }
 
-    if (target_cid == 0) {
+    if (target_cid == 0 || (args.empty() && target_cid > 0)) {
         api->c_reset(ctx);
         api->c_text(ctx, "❌ ");
-        api->c_fmt(ctx, "Чат для скрапинга не найден.\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Укажите ID или @username: ");
-        api->c_fmt(ctx, ".scrap @chat", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "Чат для скрапинга не найден или указан ЛС.\n\n", KOTO_ENT_BOLD);
+        api->c_text(ctx, "💡 Укажите публичный чат, группу или ID:\n");
+        api->c_fmt(ctx, ".scrap @chat\n", KOTO_ENT_CODE);
+        api->c_fmt(ctx, ".scrap https://t.me/chat\n", KOTO_ENT_CODE);
+        api->c_fmt(ctx, ".scrap -1001234567890", KOTO_ENT_CODE);
         send_result(ctx, api);
         return;
     }
@@ -226,6 +232,18 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
         send_result(ctx, api);
         return;
     }
+
+    g_stop_scrap.store(false);
+
+    // Мгновенное редактирование сообщения — визуальное подтверждение запуска команды
+    api->c_reset(ctx);
+    api->c_emoji(ctx, "⏳", EMO_SCRAP);
+    api->c_fmt(ctx, " Инициализация скрапинга...\n", KOTO_ENT_BOLD);
+    api->c_text(ctx, "🤖 "); api->c_text(ctx, "Воркер: "); api->c_fmt(ctx, worker_label.c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");
+    api->c_text(ctx, "⚙️ "); api->c_text(ctx, "Режим: "); api->c_fmt(ctx, cfg.method.c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");
+    api->c_text(ctx, "💬 "); api->c_text(ctx, "Цель: "); api->c_fmt(ctx, std::to_string(target_cid).c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n\n");
+    api->c_text(ctx, "🛑 "); api->c_fmt(ctx, "Остановить: .stopscrap", KOTO_ENT_CODE);
+    send_result(ctx, api);
 
     std::string chat_title = "Чат " + std::to_string(target_cid);
     std::string chat_uname = "";
@@ -260,6 +278,7 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     int reactors_count = 0;
     int tags_count = 0;
     bool fallback_to_main = false;
+    bool stopped_by_user = false;
 
     if (cfg.method == "ACTIVITY") {
         // Режим активности по сообщениям (с поддержкой твинков и постраничной пагинацией)
@@ -269,6 +288,30 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
         std::unordered_map<long long, int> user_reaction_counts;
         std::unordered_map<long long, int> user_reply_counts;
         std::unordered_map<std::string, int> tagged_usernames;
+        int total_processed_msgs = 0;
+        auto last_progress_time = std::chrono::steady_clock::now();
+
+        auto send_progress = [&](int processed, int total) {
+            api->c_reset(ctx);
+            api->c_text(ctx, "🤖 "); api->c_text(ctx, "Воркер: "); api->c_fmt(ctx, worker_label.c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");
+            api->c_text(ctx, "🕵️ "); api->c_fmt(ctx, "Сбор активности...\n\n", KOTO_ENT_BOLD);
+
+            int percent = total > 0 ? std::min(100, (processed * 100) / total) : 0;
+            int filled = percent / 10;
+            std::string bar;
+            for (int b = 0; b < filled; ++b) bar += "█";
+            for (int b = filled; b < 10; ++b) bar += "▒";
+
+            api->c_fmt(ctx, (bar + " " + std::to_string(percent) + "%\n").c_str(), KOTO_ENT_CODE);
+            api->c_text(ctx, "💬 "); api->c_text(ctx, "Чат: "); api->c_fmt(ctx, chat_title.c_str(), KOTO_ENT_ITALIC); api->c_text(ctx, "\n");
+            api->c_text(ctx, "📨 "); api->c_text(ctx, "Сообщений: "); api->c_fmt(ctx, (std::to_string(processed) + "/" + std::to_string(total) + "\n").c_str(), KOTO_ENT_BOLD);
+            api->c_text(ctx, "👥 "); api->c_text(ctx, "Активных: "); api->c_fmt(ctx, (std::to_string(user_msg_counts.size() + user_reaction_counts.size()) + "\n").c_str(), KOTO_ENT_CODE);
+            if (cfg.collect_tags) {
+                api->c_text(ctx, "🏷️ "); api->c_text(ctx, "Тегов: "); api->c_fmt(ctx, (std::to_string(tagged_usernames.size()) + "\n").c_str(), KOTO_ENT_CODE);
+            }
+            api->c_text(ctx, "\n🛑 Остановить: "); api->c_fmt(ctx, ".stopscrap", KOTO_ENT_CODE);
+            send_result(ctx, api);
+        };
 
         auto process_message_item = [&](const nlohmann::json& m) {
             long long from_id = m.value("sender_id", 0LL);
@@ -308,6 +351,7 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
         };
 
         for (int offset = 0; offset < limit_msgs; offset += 100) {
+            if (g_stop_scrap.load()) { stopped_by_user = true; break; }
             int chunk = std::min(100, limit_msgs - offset);
             int hn = 0;
             if (worker_uid > 0 && api->twin_get_history_json) {
@@ -330,11 +374,20 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
                 break;
             }
             if (parsed_in_chunk == 0) break;
+            total_processed_msgs += parsed_in_chunk;
+
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_progress_time).count();
+            if (elapsed >= 2500) {
+                last_progress_time = now;
+                send_progress(total_processed_msgs, limit_msgs);
+            }
         }
 
         // Если выбранный твинк не вернул сообщений (например, не состоит в чате), пробуем основной аккаунт
-        if (worker_uid > 0 && user_msg_counts.empty() && user_reaction_counts.empty() && api->get_history_json) {
+        if (worker_uid > 0 && !stopped_by_user && user_msg_counts.empty() && user_reaction_counts.empty() && api->get_history_json) {
             for (int offset = 0; offset < limit_msgs; offset += 100) {
+                if (g_stop_scrap.load()) { stopped_by_user = true; break; }
                 int chunk = std::min(100, limit_msgs - offset);
                 int hn = api->get_history_json(ctx, target_cid, 0, chunk, offset, hbuf.data(), static_cast<int>(hbuf.size()) - 1);
                 if (hn <= 2) break;
@@ -352,6 +405,14 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
                     break;
                 }
                 if (parsed_in_chunk == 0) break;
+                total_processed_msgs += parsed_in_chunk;
+
+                auto now = std::chrono::steady_clock::now();
+                auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_progress_time).count();
+                if (elapsed >= 2500) {
+                    last_progress_time = now;
+                    send_progress(total_processed_msgs, limit_msgs);
+                }
             }
             if (!user_msg_counts.empty() || !user_reaction_counts.empty()) {
                 fallback_to_main = true;
@@ -439,6 +500,13 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
         }
     } else {
         // Режим сбора участников
+        api->c_reset(ctx);
+        api->c_text(ctx, "🤖 "); api->c_text(ctx, "Воркер: "); api->c_fmt(ctx, worker_label.c_str(), KOTO_ENT_CODE); api->c_text(ctx, "\n");
+        api->c_text(ctx, "📥 "); api->c_fmt(ctx, "Сбор участников...\n\n", KOTO_ENT_BOLD);
+        api->c_text(ctx, "💬 "); api->c_text(ctx, "Чат: "); api->c_fmt(ctx, chat_title.c_str(), KOTO_ENT_ITALIC); api->c_text(ctx, "\n");
+        api->c_text(ctx, "👥 "); api->c_text(ctx, "Найдено в кеше: "); api->c_fmt(ctx, std::to_string(participants.size()).c_str(), KOTO_ENT_BOLD); api->c_text(ctx, "\n");
+        send_result(ctx, api);
+
         for (long long uid : participants) {
             if (cfg.skip_admins && admin_set.count(uid)) continue;
             if (cfg.skip_bots && bot_set.count(uid)) continue;
@@ -464,13 +532,12 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
             api->c_text(ctx, "💡 Добавьте твинк в чат или переключите воркер на MAIN: ");
             api->c_fmt(ctx, ".scrapcfg worker MAIN", KOTO_ENT_CODE);
         } else {
-            api->c_fmt(ctx, "Не удалось собрать участников или историю сообщений.\n\n", KOTO_ENT_BOLD);
-            api->c_text(ctx, "Возможные причины:\n");
-            api->c_text(ctx, "• Чат приватный, и аккаунт/воркер не состоит в нём\n");
-            api->c_text(ctx, "• Чат указан по ID без предварительного открытия (для публичных чатов используйте @username или ссылку t.me/...)\n");
-            api->c_text(ctx, "• Участники скрыты приватностью чата\n\n");
-            api->c_text(ctx, "💡 Если участники скрыты, попробуйте режим сбора по сообщениям: ");
-            api->c_fmt(ctx, ".scrapcfg method activity", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "Не удалось собрать участников через список (MEMBERS).\n\n", KOTO_ENT_BOLD);
+            api->c_text(ctx, "Причина: в этом чате участники скрыты настройками приватности Telegram.\n\n");
+            api->c_text(ctx, "💡 Включите режим сбора активности (по сообщениям, реакциям и тегам):\n");
+            api->c_fmt(ctx, ".scrapcfg method activity\n", KOTO_ENT_CODE);
+            api->c_text(ctx, "После этого повторите команду ");
+            api->c_fmt(ctx, ".scrap", KOTO_ENT_CODE);
         }
         send_result(ctx, api);
         return;
@@ -510,8 +577,13 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
 
     // Сообщение подтверждения
     api->c_reset(ctx);
-    api->c_emoji(ctx, "✅", EMO_OK);
-    api->c_fmt(ctx, " Сбор участников успешно завершён!\n\n", KOTO_ENT_BOLD);
+    if (stopped_by_user) {
+        api->c_text(ctx, "🛑 ");
+        api->c_fmt(ctx, " Сбор участников прерван (.stopscrap)!\n\n", KOTO_ENT_BOLD);
+    } else {
+        api->c_emoji(ctx, "✅", EMO_OK);
+        api->c_fmt(ctx, " Сбор участников успешно завершён!\n\n", KOTO_ENT_BOLD);
+    }
     if (fallback_to_main) {
         api->c_text(ctx, "⚠️ ");
         api->c_fmt(ctx, ("Воркер '" + worker_label + "' не в чате, сбор выполнен через MAIN.\n\n").c_str(), KOTO_ENT_ITALIC);
@@ -648,6 +720,7 @@ static void cmd_scrapcfg(koto_ctx* ctx, const koto_api* api) {
 
 static void cmd_stop_scrap(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    g_stop_scrap.store(true);
     api->c_reset(ctx);
     api->c_text(ctx, "🛑 ");
     api->c_fmt(ctx, "Активный процесс скрапинга остановлен.", KOTO_ENT_BOLD);
@@ -696,7 +769,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "scrapper",
     "Сбор участников и активности чатов в файл с поддержкой твинков (C++ ABI 3).",
-    "1.0.3",
+    "1.0.4",
     26,
     0,
     COMMANDS,

@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "scrapper");
-    CHECK(std::string(mod->version) == "1.0.3");
+    CHECK(std::string(mod->version) == "1.0.4");
     CHECK(mod->command_count == 5);
     CHECK(std::string(mod->commands[0].name) == "scrap");
     CHECK(std::string(mod->commands[1].name) == "scrapper");
