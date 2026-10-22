@@ -18,7 +18,7 @@ for src in "$root"/src/*.c "$root"/src/*.cpp; do
     case "$name" in administration|chess) continue ;; esac
     if [[ "$src" == *.cpp ]]; then compiler="$tc/aarch64-linux-android26-clang++"; standard=c++20
     else compiler="$tc/aarch64-linux-android26-clang"; standard=c11; fi
-    "$compiler" -O2 -shared -fPIC -pthread "-std=$standard" -I"$KOTO_SDK_INCLUDE" \
+    "$compiler" -O2 -shared -fPIC -pthread "-std=$standard" -Wl,-z,nodelete -I"$KOTO_SDK_INCLUDE" \
         "$src" -o "$out/$name.so"
 done
 python3 - "$root" "$out" "$KOTO_SDK_INCLUDE" <<'PY'

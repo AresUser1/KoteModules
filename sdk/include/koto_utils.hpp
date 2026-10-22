@@ -466,6 +466,17 @@ inline std::string get_history_json(const koto_api* api, koto_ctx* ctx, long lon
     return (len > 0) ? std::string(buf.data(), len) : "[]";
 }
 
+inline std::string twin_get_history_json(const koto_api* api, koto_ctx* ctx, long long twin_uid, long long chat_id, int offset_id = 0, int limit = 20, int add_offset = 0) {
+    if (!api || !api->twin_get_history_json) return "[]";
+    std::vector<char> buf(65536, 0);
+    int len = api->twin_get_history_json(ctx, twin_uid, chat_id, offset_id, limit, add_offset, buf.data(), (int)buf.size());
+    if (len >= (int)buf.size()) {
+        buf.resize(len + 16, 0);
+        len = api->twin_get_history_json(ctx, twin_uid, chat_id, offset_id, limit, add_offset, buf.data(), (int)buf.size());
+    }
+    return (len > 0) ? std::string(buf.data(), len) : "[]";
+}
+
 inline long long reply_msg_id(const koto_api* api, koto_ctx* ctx) {
     if (!api || !api->reply_msg_id) return 0;
     return api->reply_msg_id(ctx);

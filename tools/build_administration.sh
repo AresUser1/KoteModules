@@ -20,7 +20,7 @@ case "$mode" in
     *) echo 'Использование: bash tools/build_administration.sh [--android|--host]' >&2; exit 2 ;;
 esac
 mkdir -p -- "$(dirname -- "$output")"
-"$compiler" -std=c++20 -O2 -shared -fPIC -pthread -Wall -Wextra -Werror -pedantic \
+"$compiler" -std=c++20 -O2 -shared -fPIC -pthread -Wall -Wextra -Werror -pedantic -Wl,-z,nodelete \
     -I"$sdk_include" "$repo_dir/src/administration.cpp" -o "$output"
 printf 'Собрано: %s\n' "$output"
 if [[ "$mode" == --android ]]; then

@@ -29,7 +29,7 @@ case "$mode" in
     *) echo 'Использование: bash tools/build_chess.sh [--android|--host]' >&2; exit 2 ;;
 esac
 mkdir -p -- "$(dirname -- "$output")"
-"$compiler" -std=c11 -O2 -shared -fPIC -pthread -Wall -Wextra -Werror -pedantic \
+"$compiler" -std=c11 -O2 -shared -fPIC -pthread -Wall -Wextra -Werror -pedantic -Wl,-z,nodelete \
     -I"$sdk_include" "$repo_dir/src/chess.c" -o "$output"
 printf 'Собрано: %s\n' "$output"
 if [[ "$mode" == --android ]]; then
