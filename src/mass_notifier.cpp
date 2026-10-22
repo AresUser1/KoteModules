@@ -310,7 +310,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mass_notifier",
     "Модуль для рассылки сообщений участникам чата в ЛС (C++ ABI 3).",
-    "1.0.5", 60,
+    "1.0.6", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

@@ -33,7 +33,7 @@ if payload[:6]!=b'\x7fELF\x02\x01' or int.from_bytes(payload[18:20],'little')!=1
     raise SystemExit('Не ARM64 ELF; каталог не изменён.')
 catalog=json.loads(index.read_text())
 entry=next(m for m in catalog['modules'] if m['id']=='administration')
-entry.update(version='1.2.0', min_host_version=60, size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+entry.update(version='1.2.1', min_host_version=60, size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
 catalog['updated']=datetime.datetime.now(datetime.timezone.utc).date().isoformat()
 temp=index.with_suffix('.json.tmp')
 temp.write_text(json.dumps(catalog,ensure_ascii=False,indent=2)+'\n')

@@ -49,7 +49,7 @@ catalog = json.loads(index.read_text())
 entry = {
     'id': 'chess', 'name': 'chess', 'display_name': 'Шахматы', 'author': 'Kote',
     'description': 'Шахматы PvP на кнопках: рокировка, взятие на проходе, превращение, мат, ничьи, реванш и обычные Unicode-фигуры.',
-    'version': '1.0.0', 'kind': 'so', 'abi': 'arm64-v8a',
+    'version': '1.0.1', 'kind': 'so', 'abi': 'arm64-v8a',
     'commands': [
         {'name': 'chess', 'doc': 'Создать шахматный вызов', 'usage': '[white|black]'},
         {'name': 'шахматы', 'doc': 'Создать шахматный вызов', 'usage': '[white|black]'},

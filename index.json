@@ -9,7 +9,7 @@
       "display_name": "Администрирование чатов",
       "author": "Kote",
       "description": "Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки.",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -55,7 +55,7 @@
         }
       ],
       "size": 384104,
-      "sha256": "0cb37cb5c12194a376b9e92513cd2a2e0eafe4c4694594783a699ecca450890e",
+      "sha256": "e9e596496cffe516c2d4efc2b1c8f2904c4073dfbfb6b0f9dc846c6c5ecfeb11",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
@@ -110,7 +110,7 @@
       "display_name": "AniLiberty (Аниме)",
       "author": "Kote",
       "description": "AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах.",
-      "version": "1.0.8",
+      "version": "1.0.9",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -135,7 +135,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 271384,
-      "sha256": "4d388528b583db33d6e80683d2fe6e73e53ea5c39e3d3deaaf1de7e2ec96f61d"
+      "sha256": "231fb60db585c7d141f29f68c8a265b3fc906890dd8e3f43e9b48935ad38014d"
     },
     {
       "id": "auto_manager",
@@ -143,7 +143,7 @@
       "display_name": "Менеджер автоматизации (AutoManager)",
       "author": "Kote",
       "description": "Авточтение с исключениями для отдельных чатов и управлением режимами аккаунтов.",
-      "version": "1.2.4",
+      "version": "1.2.5",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -183,7 +183,7 @@
       "license": "MIT",
       "min_host_version": 64,
       "size": 21952,
-      "sha256": "5a7f464eb304b2c2f8924a61b078a33d8216461d49b4e06961e34be4c3ca16c7"
+      "sha256": "32208334b6715116ffea8f67176932ea7c4bd34c345928925cf7107f6bb73417"
     },
     {
       "id": "autolast",
@@ -244,7 +244,7 @@
       "display_name": "Автоответчик (AutoResponder)",
       "author": "Kote",
       "description": "Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов.",
-      "version": "2.4.3",
+      "version": "2.4.4",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -260,7 +260,7 @@
         }
       ],
       "size": 87488,
-      "sha256": "25e515e10ea072c7a9100d910472481e7f940820e52acedaa4dedd91a8e00c6d",
+      "sha256": "0d895d9844fca9a05dfcb929d6a721d5cb560ef30c8fd66b45b3a026aebbf7aa",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/autoresponder.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
       "license": "MIT",
@@ -394,7 +394,7 @@
       "display_name": "Шашки (Checkers PvP)",
       "author": "Kote",
       "description": "Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья.",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -415,7 +415,7 @@
         }
       ],
       "size": 27704,
-      "sha256": "8ecca28c3aa33e77907ab9aaeef4f2fc435980f5618320e20cf7608f86726b97",
+      "sha256": "3fc5dd557c115fbcce177ee47767b2cce3b39a84161c1213b82317e0a2d94d78",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/checkers.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
       "license": "MIT",
@@ -427,7 +427,7 @@
       "display_name": "Шахматы",
       "author": "Kote",
       "description": "Шахматы PvP на кнопках: рокировка, взятие на проходе, превращение, мат, ничьи, реванш и обычные Unicode-фигуры.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -453,7 +453,7 @@
         }
       ],
       "size": 31896,
-      "sha256": "b668d9ea83b606f15674ea900a8b2b32830ac018b89349cc5d784bd81875f68b",
+      "sha256": "e05942ccb40153c172bf565f2787fcdd10e91ace79c28e7560d120d3f762aa6c",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/chess.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chess.c",
       "license": "MIT",
@@ -653,7 +653,7 @@
       "display_name": "Сервер Kote (KotServ)",
       "author": "Kote",
       "description": "Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации.",
-      "version": "2.0.3",
+      "version": "2.0.4",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -673,7 +673,7 @@
       "license": "MIT",
       "min_host_version": 26,
       "size": 111320,
-      "sha256": "a51a9659677ccef38a662809c9450d4cdef1ca1b9dea0f6e4f5a48288f579dba"
+      "sha256": "245e7a0fba65a7adae9f29650b861009c525995f5fb6ba66d17d759e9a577d15"
     },
     {
       "id": "mafia_multitool",
@@ -681,7 +681,7 @@
       "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
       "author": "Kote",
       "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
-      "version": "1.2.8",
+      "version": "1.2.9",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -802,7 +802,7 @@
         }
       ],
       "size": 240344,
-      "sha256": "c0fafaf092a9c11cc0f486eb1ca85462f9d0f9c4cc67740ff8eefd592ed1dd49",
+      "sha256": "580123d15f93ee3cf31f24724f9c0faa910b1450d9c307b86544e5f066439c6b",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mafia_multitool.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
       "license": "MIT",
@@ -867,7 +867,7 @@
       "display_name": "Рассылка в ЛС (Mass Notifier)",
       "author": "Kote",
       "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
-      "version": "1.0.5",
+      "version": "1.0.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -878,7 +878,7 @@
         }
       ],
       "size": 60960,
-      "sha256": "0a3179049c47a6b2d9c36cd3bfefa33413c6957428eaebb3b2f6704981fe69eb",
+      "sha256": "e722bb63f60f461feab2f9731b2fda1a4c64ad448d101a6f69f236d55c277b29",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/mass_notifier.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
       "license": "MIT",
@@ -1031,7 +1031,7 @@
       "display_name": "Profile Manager",
       "author": "Kote",
       "description": "Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
-      "version": "1.2.1",
+      "version": "1.2.2",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1072,7 +1072,7 @@
         }
       ],
       "size": 84592,
-      "sha256": "c366897b1e9ce6ce78b5406e9a346db1d8309c3168bba48886b74434acb49ca2",
+      "sha256": "04259d1712b1c036301a615c57145f6bb5978648fcda5879f3e5090d84ef8e8b",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/profile_manager.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/profile_manager.cpp",
       "license": "MIT",
@@ -1266,7 +1266,7 @@
       "display_name": "Silent Tags",
       "author": "Kote",
       "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
-      "version": "2.9.9",
+      "version": "2.9.10",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1287,7 +1287,7 @@
         }
       ],
       "size": 318224,
-      "sha256": "f1367e84cc84a3849781d7c7f52a00fcc90249ca345c321c0332a9a4d5dcf1de",
+      "sha256": "a4ad51d70babf991547b4101a119018b3ae6b053fcc65a77c8070cdc2a8e0df7",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/stags.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
       "license": "MIT",
@@ -1299,7 +1299,7 @@
       "display_name": "Мониторинг сервера (SysInfo)",
       "author": "Kote",
       "description": "Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1324,7 +1324,7 @@
       "license": "MIT",
       "min_host_version": 63,
       "size": 321256,
-      "sha256": "45a8ccab91bea1e0429814e62cc31e7ab7e72e270efe9fd70dafa61ca53ed5dd"
+      "sha256": "5dba6ca79b493faae6d420629ddc4dbaa4c3262c9a0d8035418cd954a9283eb7"
     },
     {
       "id": "tagger",
@@ -1332,7 +1332,7 @@
       "display_name": "Tagger",
       "author": "Kote",
       "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
-      "version": "3.4.5",
+      "version": "3.4.6",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
@@ -1408,7 +1408,7 @@
         }
       ],
       "size": 160280,
-      "sha256": "f7ec069b457c962ece7898a46ffd7aa31589c4038e2157fb2d3a5ee85ab7a9e8",
+      "sha256": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",

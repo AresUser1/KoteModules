@@ -24,7 +24,7 @@ static int write(const std::string& value,char* buf,int cap){if(cap>0){auto n=st
 int main(int argc,char** argv){
     CHECK(argc==2);auto lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);CHECK(lib);
     auto load=reinterpret_cast<const koto_module*(*)()>(dlsym(lib,"koto_module_register"));CHECK(load);auto mod=load();
-    CHECK(std::string(mod->version)=="2.9.9" && mod->min_host_version==60);
+    CHECK(std::string(mod->version)=="2.9.10" && mod->min_host_version==60);
     CHECK(mod->flags & KOTO_MOD_TWINS);CHECK(mod->watch_flags & KOTO_WATCH_INCOMING);
     for(int i=0;i<mod->command_count;++i) {
         CHECK(mod->commands[i].min_level == KOTO_LEVEL_OWNER);

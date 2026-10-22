@@ -282,7 +282,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "kotserv",
     "Информация о сервере, нагрузке CPU/RAM и ОС с инлайн кнопками (C++ ABI 3).",
-    "2.0.3",
+    "2.0.4",
     26,
     0,
     COMMANDS,

@@ -301,6 +301,6 @@ const koto_command COMMANDS[]={
     {"sysinfo",cmd_sys,KOTO_LEVEL_OWNER,"Система, RAM, накопитель и трафик приложения.",nullptr},
     {"neofetch",cmd_neofetch,KOTO_LEVEL_OWNER,"Характеристики устройства с ASCII-котиком.",nullptr}
 };
-const koto_module MODULE={KOTO_MODULE_ABI,"sysinfo","Метрики устройства и хоста; Android TrafficStats и явная доступность данных.","1.1.0",63,0,COMMANDS,3,nullptr,0,on_callback,nullptr,0,"https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so"};
+const koto_module MODULE={KOTO_MODULE_ABI,"sysinfo","Метрики устройства и хоста; Android TrafficStats и явная доступность данных.","1.1.1",63,0,COMMANDS,3,nullptr,0,on_callback,nullptr,0,"https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so"};
 }
 extern "C" const koto_module* koto_module_register(){return &MODULE;}

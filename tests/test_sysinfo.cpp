@@ -8,7 +8,7 @@ struct koto_ctx { std::string text;int sent=0;bool owner=true; };
 static int checks=0;
 #define CHECK(x) do { ++checks; if(!(x)){std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x);std::exit(1);} } while(0)
 int main() {
-    CHECK(std::string(koto_module_register()->version)=="1.1.0" && MODULE.min_host_version==63);
+    CHECK(std::string(koto_module_register()->version)=="1.1.1" && MODULE.min_host_version==63);
     SysMetrics missing;
     CHECK(!missing.net_rx && !missing.load_1m && !missing.ram_used && !missing.rss);
     parse_load("0.00 0.00 0.00 1/100 42",missing);

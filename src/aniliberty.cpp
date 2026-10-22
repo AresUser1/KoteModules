@@ -337,7 +337,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "aniliberty",
     "Поиск и выбор случайного аниме из базы AniLiberty с постерами (C++ ABI 3).",
-    "1.0.8",
+    "1.0.9",
     26,
     0,
     COMMANDS,

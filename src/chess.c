@@ -624,7 +624,7 @@ static const koto_command COMMANDS[]={
 static const koto_module MODULE={
     .abi_version=KOTO_MODULE_ABI, .name="chess",
     .description="Шахматы PvP на кнопках: рокировка, en passant, превращение, мат, ничьи и реванш",
-    .version="1.0.0", .min_host_version=56, .flags=0,
+    .version="1.0.1", .min_host_version=56, .flags=0,
     .commands=COMMANDS, .command_count=(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),
     .on_callback=on_callback
 };

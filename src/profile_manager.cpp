@@ -393,7 +393,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "profile_manager",
     "Управление профилем (имя, аватар, история имён) (C++ ABI 3).",
-    "1.2.1",
+    "1.2.2",
     26,
     0,
     COMMANDS,

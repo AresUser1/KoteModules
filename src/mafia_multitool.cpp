@@ -1749,7 +1749,7 @@ static const koto_module MAFIA_MODULE = {
     KOTO_MODULE_ABI,
     MODULE_NAME,
     "Мафия Мульти-Тул — боевой комбайн для мафиозных ботов (Combat, TrueMafia, Baku, Koto, Mafioso).",
-    "1.2.8",
+    "1.2.9",
     28, // min_host_version 28 (0.3.8+)
     0,
     MAFIA_COMMANDS,
