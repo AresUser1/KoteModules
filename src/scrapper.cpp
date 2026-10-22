@@ -567,15 +567,16 @@ static void cmd_scrap(koto_ctx* ctx, const koto_api* api) {
     std::string dump_str = ss.str();
     std::string filename = sanitize_filename(chat_title) + "_" + cfg.method + ".txt";
 
-    // Отправляем файл пользователю
+    // 1. Отправляем файл пользователю с чистым композером (чтобы не захватить старый текст прогресс-бара)
     long long send_to = api->chat_id ? api->chat_id(ctx) : target_cid;
     if (api->c_send_bytes) {
+        api->c_reset(ctx);
         api->c_send_bytes(ctx, send_to, filename.c_str(),
                           reinterpret_cast<const unsigned char*>(dump_str.data()),
                           static_cast<int>(dump_str.size()), 0);
     }
 
-    // Сообщение подтверждения
+    // 2. Редактируем исходное сообщение команды в итоговый отчёт
     api->c_reset(ctx);
     if (stopped_by_user) {
         api->c_text(ctx, "🛑 ");
@@ -769,7 +770,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "scrapper",
     "Сбор участников и активности чатов в файл с поддержкой твинков (C++ ABI 3).",
-    "1.0.4",
+    "1.0.5",
     26,
     0,
     COMMANDS,

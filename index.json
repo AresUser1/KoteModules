@@ -1167,7 +1167,7 @@
       "display_name": "Сбор участников (Scrapper)",
       "author": "Kote",
       "description": "Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации.",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "kind": "so",
       "abi": "arm64-v8a",
       "commands": [
