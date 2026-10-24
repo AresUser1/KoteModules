@@ -436,6 +436,15 @@ typedef struct koto_api {
        Returns full JSON byte length (may exceed buflen), -1 if unavailable;
        output is NUL-terminated when buflen>0. Requires min_host_version=63. */
     int (*system_metrics_json)(koto_ctx*, char* buf, int buflen);
+    /* 34. Versioned named host services, host 74+. APPEND ONLY. Declare
+       min_host_version>=74 before accessing these members. Read-only methods
+       return JSON {schema,ok,...}, full byte length or -1; NUL terminate when
+       buflen>0. Size retries reuse results in this callback. "capabilities"
+       lists methods. Actions: 1=queued, -1=rejected; queued is not confirmed.
+       No raw MTProto/client/session access. See SDK HOST_SERVICES.md. */
+    int (*host_call_json)(koto_ctx*, const char* method, const char* request_json,
+                          char* buf, int buflen);
+    int (*host_action_json)(koto_ctx*, const char* method, const char* request_json);
 } koto_api;
 /* ========================================================================== *
  *  Хэндлеры модуля. Все СИНХРОННЫЕ (как on_message в ABI 2): api передаётся    *
