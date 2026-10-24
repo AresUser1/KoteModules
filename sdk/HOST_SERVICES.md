@@ -1,4 +1,4 @@
-# Host services — KoteLoader 0.3.54 / versionCode 74
+# Host services — KoteLoader 0.3.56 / versionCode 79
 
 ABI 3 сохранён: в конец `koto_api` добавлены `host_call_json` и
 `host_action_json`. Старые поля и их позиции не менялись. Модуль, которому

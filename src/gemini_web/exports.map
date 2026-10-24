@@ -1,0 +1,4 @@
+GWEB_0.1 {
+    global: koto_module_register;
+    local: *;
+};

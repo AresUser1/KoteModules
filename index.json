@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
-  "version": "1.5.0",
-  "updated": "2026-10-22",
+  "version": "1.6.0",
+  "updated": "2026-10-25",
   "modules": [
     {
       "id": "administration",
@@ -488,6 +488,34 @@
       "min_host_version": 0
     },
     {
+      "id": "delme",
+      "name": "delme",
+      "display_name": "DelMe — Очистка своих сообщений",
+      "author": "KeyZenD / Kote",
+      "description": "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "delme",
+          "doc": "Удаляет все сообщения от тебя с подтверждением",
+          "usage": "[код]"
+        },
+        {
+          "name": "delmenow",
+          "doc": "Удаляет все сообщения от тебя без вопросов",
+          "usage": ""
+        }
+      ],
+      "min_host_version": 71,
+      "size": 228736,
+      "sha256": "0f8839366aa7f3bcab49e7587a2e8d16d9fa908dc51fc60c2e00b9b651e0c7ca",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/delme.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
+      "license": "MIT"
+    },
+    {
       "id": "dep",
       "name": "dep",
       "display_name": "Депозит / Ставки (Dep)",
@@ -542,6 +570,74 @@
       "min_host_version": 28,
       "size": 470904,
       "sha256": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7"
+    },
+    {
+      "id": "gemini_web",
+      "name": "gemini_web",
+      "display_name": "Gemini Web AI",
+      "author": "Kote",
+      "description": "Клиент Gemini Web для Android с прямым защищённым HTTPS-транспортом, поддержкой cookies, выбором моделей и надёжной персистентной памятью диалогов.",
+      "version": "0.1.2",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "gweblogin",
+          "doc": "Сохранить cookies из reply на сообщение с PSID [PSIDTS] в Избранном",
+          "usage": "reply на cookies; без аргументов"
+        },
+        {
+          "name": "gweblogout",
+          "doc": "Удалить cookies и локальную память Gemini Web",
+          "usage": ""
+        },
+        {
+          "name": "gwebcookies",
+          "doc": "Инструкция по получению cookies Google",
+          "usage": ""
+        },
+        {
+          "name": "gweb",
+          "doc": "Спросить Gemini Web; текст и reply на текст, память диалога",
+          "usage": "[вопрос]"
+        },
+        {
+          "name": "gwebclear",
+          "doc": "Сбросить локальную память всех моделей в этом чате",
+          "usage": ""
+        },
+        {
+          "name": "gwebmodel",
+          "doc": "Список моделей аккаунта или выбор модели; auto — выбор Google",
+          "usage": "[auto|ключ|id]"
+        },
+        {
+          "name": "gwebstatus",
+          "doc": "Локальный статус Gemini Web без показа секретов",
+          "usage": ""
+        },
+        {
+          "name": "gwebtest",
+          "doc": "Проверить прямой HTTPS, затем вход и модели (без генерации)",
+          "usage": ""
+        },
+        {
+          "name": "gwebrefresh",
+          "doc": "Обновить cookies, токен и модели без сброса диалогов",
+          "usage": ""
+        },
+        {
+          "name": "gwebtimeout",
+          "doc": "Таймаут генерации в секундах (30–300)",
+          "usage": "[секунды]"
+        }
+      ],
+      "size": 5878752,
+      "sha256": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/gemini_web.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/tree/main/src/gemini_web",
+      "license": "MIT",
+      "min_host_version": 26
     },
     {
       "id": "id",
@@ -1026,6 +1122,64 @@
       "min_host_version": 13
     },
     {
+      "id": "pmbl",
+      "name": "pmbl",
+      "display_name": "PMBL — Защита ЛС",
+      "author": "Kote",
+      "description": "Нативная защита личных сообщений: фильтрация спама, белый список, проверка контактов и истории переписки, жалобы и автоматическая блокировка.",
+      "version": "0.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a",
+      "commands": [
+        {
+          "name": "pmbl",
+          "doc": "Включить/выключить PMBL; strict — явный режим только белого списка",
+          "usage": "[on|off|strict]"
+        },
+        {
+          "name": "pmblstatus",
+          "doc": "Статус защиты и настройки PMBL",
+          "usage": ""
+        },
+        {
+          "name": "allowpm",
+          "doc": "Разрешить пользователю писать в ЛС; снять блокировку PMBL",
+          "usage": "[ID|@username|reply]"
+        },
+        {
+          "name": "denypm",
+          "doc": "Удалить пользователя из белого списка PMBL",
+          "usage": "[ID|@username|reply]"
+        },
+        {
+          "name": "pmlist",
+          "doc": "Показать белый список PMBL текущего аккаунта",
+          "usage": ""
+        },
+        {
+          "name": "pmblsett",
+          "doc": "Настроить жалобы на спам и удаление диалога (0/1)",
+          "usage": "<report_spam> <delete_dialog>"
+        },
+        {
+          "name": "pmblcfg",
+          "doc": "Изменить настройку PMBL",
+          "usage": "<ключ> <значение>"
+        },
+        {
+          "name": "pmbanlast",
+          "doc": "Заблокировать и очистить у себя N последних начатых личных диалогов",
+          "usage": "<число>"
+        }
+      ],
+      "size": 654552,
+      "sha256": "4c3e935d6e0b604f42e47b4a9021a25f361a4ccb0d112215c2ed04e3539c3e71",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/pmbl.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/pmbl.cpp",
+      "license": "AGPL-3.0-only",
+      "min_host_version": 74
+    },
+    {
       "id": "profile_manager",
       "name": "profile_manager",
       "display_name": "Profile Manager",
@@ -1507,34 +1661,6 @@
       "min_host_version": 26,
       "size": 279600,
       "sha256": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5"
-    },
-    {
-      "id": "delme",
-      "name": "delme",
-      "display_name": "DelMe — Очистка своих сообщений",
-      "author": "KeyZenD / Kote",
-      "description": "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
-      "version": "1.0.1",
-      "kind": "so",
-      "abi": "arm64-v8a",
-      "commands": [
-        {
-          "name": "delme",
-          "doc": "Удаляет все сообщения от тебя с подтверждением",
-          "usage": "[код]"
-        },
-        {
-          "name": "delmenow",
-          "doc": "Удаляет все сообщения от тебя без вопросов",
-          "usage": ""
-        }
-      ],
-      "min_host_version": 71,
-      "size": 228736,
-      "sha256": "0f8839366aa7f3bcab49e7587a2e8d16d9fa908dc51fc60c2e00b9b651e0c7ca",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/delme.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
-      "license": "MIT"
     }
   ]
 }

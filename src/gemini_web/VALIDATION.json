@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-24",
+  "version": "0.1.2",
+  "checks_passed": 4774,
+  "sanitizers": {
+    "address": "passed",
+    "undefined_behavior": "passed",
+    "leak": "disabled: managed environment prevents ptrace"
+  },
+  "tls_tests": "real TLS over AF_UNIX socketpair; trusted file and Android-style CA directory accepted; hostname mismatch and untrusted CA rejected",
+  "protocol_tests": "synthetic Google replies, bootstrap/account/model RPCs, conversation metadata and restart; no real account used; omitted/null AccountStatus, sparse JSPB and explicit rejection tested",
+  "abi_tests": "actual module descriptor, ten commands, permission checks, separate account/model/chat state, clear/logout, reply-based credential import; rich composer captured through actual command descriptor",
+  "android_elf": "AArch64/API26, ABI3, 16KiB LOAD alignment, standalone OpenSSL/C++ runtime, below existing installer 8MiB cap",
+  "apk_checked": {
+    "file": "koteloader.apk",
+    "version": "0.3.50",
+    "version_code": 70,
+    "internet_permission": true,
+    "sandbox_isolated": false,
+    "modified": false,
+    "sha256": "e84153183a2c39c8d72c5f4df724d3ec72a6c81a9580cdf38cc30d5513407f66",
+    "note": "Historical baseline APK check; this delivery also includes a separately updated 0.3.54 APK for new host services."
+  },
+  "not_tested": [
+    "loading version 0.1.2 on Android device",
+    "version 0.1.2 live Google generation"
+  ],
+  "limitations": [
+    "text only",
+    "no background refresh while idle",
+    "no Chrome TLS impersonation",
+    "system VPN supported; Telegram-only proxy does not cover this transport",
+    "Markdown subset: tables/LaTeX remain text",
+    "Live progress for outgoing commands; incoming trusted commands receive final reply",
+    "Code language highlighting depends on existing host API"
+  ],
+  "binary_sha256": "fb9163a092f449f99d72c7f677db6a7cccd39db09060875456f27fd30e62d071",
+  "apk_update_required_for_text": false,
+  "ui_tests": "Markdown to Telegram entities; headings, emphasis, quotes, links, code fences; UTF-16 and entity-count splitting; literal code preserved; status before transport and error replacement; exact premium emoji document IDs",
+  "google_protocol_and_transport_changed": false,
+  "user_reported_baseline": {
+    "date": "2026-10-24",
+    "version": "0.1.1",
+    "android_loading": true,
+    "live_google_generation": true,
+    "model_selection": true,
+    "source": "User supplied Telegram transcript; no credentials used by agent"
+  },
+  "premium_emoji": {
+    "✅": "5774022692642492953",
+    "❌": "5774077015388852135",
+    "🧹": "5845945815549350824"
+  }
+}
