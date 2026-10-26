@@ -3,7 +3,7 @@
 *.a
 *.tmp
 build/
-dist/
+# dist/ is tracked for module distribution binaries (arm64-v8a and armeabi-v7a)
 .cache/
 
 # OS artifacts

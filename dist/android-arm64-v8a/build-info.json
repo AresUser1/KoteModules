@@ -1,0 +1,9 @@
+{
+  "repository": "AresUser1/KoteModules",
+  "commit": "51c482c67682b910b198a1856b898bf309449478",
+  "abi": "arm64-v8a",
+  "api": 26,
+  "ndk": "26.3.11579264",
+  "core_commit": "24796bf5ed87a98c285be734368c229c2a66db5b",
+  "sdk_header_sha256": "e57fffbf01b706117f2341e13885a9f3d54386e4678c0a43aed601f341cb80ef"
+}

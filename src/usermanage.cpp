@@ -197,6 +197,11 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
     if (api->reply_sender_id && api->reply_sender_id(ctx) > 0) {
         target_uid = api->reply_sender_id(ctx);
         first_name = args;
+        if (first_name.empty()) {
+            char nbuf[128] = {0};
+            if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
+            if (nbuf[0] != 0) first_name = nbuf;
+        }
     } else {
         auto space = args.find(' ');
         if (space != std::string::npos) {
@@ -205,6 +210,16 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
             try { target_uid = std::stoll(t); } catch (...) {}
             if (target_uid <= 0 && t[0] == '@' && api->resolve) {
                 target_uid = api->resolve(ctx, t.substr(1).c_str());
+            }
+        } else if (!args.empty()) {
+            try { target_uid = std::stoll(args); } catch (...) {}
+            if (target_uid <= 0 && args[0] == '@' && api->resolve) {
+                target_uid = api->resolve(ctx, args.substr(1).c_str());
+            }
+            if (target_uid > 0) {
+                char nbuf[128] = {0};
+                if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
+                if (nbuf[0] != 0) first_name = nbuf;
             }
         }
     }
