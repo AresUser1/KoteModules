@@ -27,10 +27,13 @@ struct OptionItem {
 
 struct TemplateItem {
     std::vector<OptionItem> options;
-    bool is_public = true;
-    bool multi = false;
-    bool quiz = false;
-    bool pin = false;
+    bool is_public = true;       // Имена участников (public_voters)
+    bool multi = false;          // Несколько ответов (multiple_choice)
+    bool open_answers = false;   // Добавление вариантов (open_answers)
+    bool revote = true;          // Изменение ответа (revoting_disabled = !revote)
+    bool shuffle = false;        // Случайный порядок (shuffle_answers)
+    bool quiz = false;           // Викторина / Правильный ответ (quiz)
+    bool pin = false;            // 📌 Закреп (pin)
 };
 
 static std::string to_lower(std::string s) {
@@ -75,15 +78,15 @@ static std::map<std::string, TemplateItem> get_templates(koto_ctx* ctx, const ko
     // Дефолтные шаблоны
     res["данет"] = {
         { {"Да", json::array()}, {"Нет", json::array()} },
-        true, false, false, false
+        true, false, false, true, false, false, false
     };
     res["оценка"] = {
         { {"1", json::array()}, {"2", json::array()}, {"3", json::array()}, {"4", json::array()}, {"5", json::array()} },
-        true, false, false, false
+        true, false, false, true, false, false, false
     };
     res["время"] = {
         { {"Сейчас", json::array()}, {"Через 5 мин", json::array()}, {"Через 15 мин", json::array()}, {"Позже", json::array()} },
-        true, false, false, false
+        true, false, false, true, false, false, false
     };
 
     std::vector<char> buf(65536, 0);
@@ -112,6 +115,9 @@ static std::map<std::string, TemplateItem> get_templates(koto_ctx* ctx, const ko
                         const auto& f = val["flags"];
                         item.is_public = f.value("public", true);
                         item.multi = f.value("multi", false);
+                        item.open_answers = f.value("open_answers", false);
+                        item.revote = f.value("revote", true);
+                        item.shuffle = f.value("shuffle", false);
                         item.quiz = f.value("quiz", false);
                         item.pin = f.value("pin", false);
                     }
@@ -138,6 +144,9 @@ static void save_templates(koto_ctx* ctx, const koto_api* api, const std::map<st
             {"flags", {
                 {"public", td.is_public},
                 {"multi", td.multi},
+                {"open_answers", td.open_answers},
+                {"revote", td.revote},
+                {"shuffle", td.shuffle},
                 {"quiz", td.quiz},
                 {"pin", td.pin}
             }}
@@ -153,8 +162,8 @@ static void render_poll_menu(koto_ctx* ctx, const koto_api* api, bool is_callbac
     api->c_reset(ctx);
     api->c_emoji(ctx, "📂", ICON_POLL);
     api->c_text(ctx, " ");
-    api->c_fmt(ctx, "Шаблоны опросов\n\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, "Выберите шаблон для настройки или создания опроса:\n");
+    api->c_fmt(ctx, "Шаблоны опросов", KOTO_ENT_BOLD);
+    api->c_text(ctx, "\n\nВыберите шаблон для настройки или создания опроса:\n");
 
     for (const auto& [name, td] : templates) {
         std::string label = "📝 " + name;
@@ -193,23 +202,32 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
     api->c_fmt(ctx, "Шаблон: ", KOTO_ENT_BOLD);
     api->c_fmt(ctx, tpl_name.c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n\n⚙️ ");
-    api->c_fmt(ctx, "Настройки:\n", KOTO_ENT_BOLD);
-    api->c_text(ctx, (std::string("• Публичный: ") + (td.is_public ? "✅" : "❌") + "\n").c_str());
-    api->c_text(ctx, (std::string("• Множ. выбор: ") + (td.multi ? "✅" : "❌") + "\n").c_str());
+    api->c_fmt(ctx, "Настройки:", KOTO_ENT_BOLD);
+    api->c_text(ctx, "\n");
+    api->c_text(ctx, (std::string("• Имена участников: ") + (td.is_public ? "✅" : "❌") + "\n").c_str());
+    api->c_text(ctx, (std::string("• Несколько ответов: ") + (td.multi ? "✅" : "❌") + "\n").c_str());
+    api->c_text(ctx, (std::string("• Добавление вариантов: ") + (td.open_answers ? "✅" : "❌") + "\n").c_str());
+    api->c_text(ctx, (std::string("• Изменение ответа: ") + (td.revote ? "✅" : "❌") + "\n").c_str());
+    api->c_text(ctx, (std::string("• Случайный порядок: ") + (td.shuffle ? "✅" : "❌") + "\n").c_str());
     api->c_text(ctx, (std::string("• Викторина: ") + (td.quiz ? "✅" : "❌") + "\n").c_str());
     api->c_text(ctx, (std::string("• 📌 Закреп: ") + (td.pin ? "✅" : "❌") + "\n\n").c_str());
 
-    api->c_fmt(ctx, "Варианты ответов:\n", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "Варианты ответов:", KOTO_ENT_BOLD);
+    api->c_text(ctx, "\n");
     if (td.options.empty()) {
-        api->c_fmt(ctx, "(Нет вариантов ответов)\n", KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, "(Нет вариантов ответов)", KOTO_ENT_ITALIC);
+        api->c_text(ctx, "\n");
     } else {
         for (size_t i = 0; i < td.options.size(); ++i) {
             api->c_text(ctx, (std::to_string(i + 1) + ". " + td.options[i].text + "\n").c_str());
         }
     }
 
-    std::string btn_pub = (td.is_public ? "✅" : "❌") + std::string(" Публичный");
-    std::string btn_multi = (td.multi ? "✅" : "❌") + std::string(" Multi");
+    std::string btn_pub = (td.is_public ? "✅" : "❌") + std::string(" Имена");
+    std::string btn_multi = (td.multi ? "✅" : "❌") + std::string(" Несколько");
+    std::string btn_open = (td.open_answers ? "✅" : "❌") + std::string(" Доб. варик");
+    std::string btn_revote = (td.revote ? "✅" : "❌") + std::string(" Изм. ответ");
+    std::string btn_shuf = (td.shuffle ? "✅" : "❌") + std::string(" Рандом");
     std::string btn_quiz = (td.quiz ? "✅" : "❌") + std::string(" Викторина");
     std::string btn_pin = (td.pin ? "✅" : "❌") + std::string(" 📌 Закреп");
 
@@ -217,8 +235,13 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
         api->c_button_ex(ctx, btn_pub.c_str(), ("poll:set:" + tpl_name + ":public").c_str(), 1, td.is_public ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
         api->c_button_ex(ctx, btn_multi.c_str(), ("poll:set:" + tpl_name + ":multi").c_str(), 0, td.multi ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
 
-        api->c_button_ex(ctx, btn_quiz.c_str(), ("poll:set:" + tpl_name + ":quiz").c_str(), 1, td.quiz ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
-        api->c_button_ex(ctx, btn_pin.c_str(), ("poll:set:" + tpl_name + ":pin").c_str(), 0, td.pin ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
+        api->c_button_ex(ctx, btn_open.c_str(), ("poll:set:" + tpl_name + ":open_answers").c_str(), 1, td.open_answers ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
+        api->c_button_ex(ctx, btn_revote.c_str(), ("poll:set:" + tpl_name + ":revote").c_str(), 0, td.revote ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
+
+        api->c_button_ex(ctx, btn_shuf.c_str(), ("poll:set:" + tpl_name + ":shuffle").c_str(), 1, td.shuffle ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
+        api->c_button_ex(ctx, btn_quiz.c_str(), ("poll:set:" + tpl_name + ":quiz").c_str(), 0, td.quiz ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
+
+        api->c_button_ex(ctx, btn_pin.c_str(), ("poll:set:" + tpl_name + ":pin").c_str(), 1, td.pin ? KOTO_BTN_SUCCESS : KOTO_BTN_DEFAULT, 0);
 
         api->c_button_ex(ctx, "➕ Вариант", ("poll:opt:add:" + tpl_name).c_str(), 1, KOTO_BTN_PRIMARY, 0);
         api->c_button_ex(ctx, "➖ Вариант", ("poll:opt:del_menu:" + tpl_name).c_str(), 0, KOTO_BTN_DANGER, 0);
@@ -229,8 +252,13 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
         api->c_button(ctx, btn_pub.c_str(), ("poll:set:" + tpl_name + ":public").c_str(), 1);
         api->c_button(ctx, btn_multi.c_str(), ("poll:set:" + tpl_name + ":multi").c_str(), 0);
 
-        api->c_button(ctx, btn_quiz.c_str(), ("poll:set:" + tpl_name + ":quiz").c_str(), 1);
-        api->c_button(ctx, btn_pin.c_str(), ("poll:set:" + tpl_name + ":pin").c_str(), 0);
+        api->c_button(ctx, btn_open.c_str(), ("poll:set:" + tpl_name + ":open_answers").c_str(), 1);
+        api->c_button(ctx, btn_revote.c_str(), ("poll:set:" + tpl_name + ":revote").c_str(), 0);
+
+        api->c_button(ctx, btn_shuf.c_str(), ("poll:set:" + tpl_name + ":shuffle").c_str(), 1);
+        api->c_button(ctx, btn_quiz.c_str(), ("poll:set:" + tpl_name + ":quiz").c_str(), 0);
+
+        api->c_button(ctx, btn_pin.c_str(), ("poll:set:" + tpl_name + ":pin").c_str(), 1);
 
         api->c_button(ctx, "➕ Вариант", ("poll:opt:add:" + tpl_name).c_str(), 1);
         api->c_button(ctx, "➖ Вариант", ("poll:opt:del_menu:" + tpl_name).c_str(), 0);
@@ -239,7 +267,14 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
         api->c_button(ctx, "🔙 Назад", "poll:menu", 1);
     }
 
-    api->c_edit_message(ctx, chat_id, msg_id, 0);
+    if (msg_id > 0) {
+        api->c_edit_message(ctx, chat_id, msg_id, 0);
+    } else {
+        if (api->c_send) api->c_send(ctx, chat_id, 0);
+        else if (api->c_reply) api->c_reply(ctx, 0);
+        else if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+        else api->c_reply(ctx, 0);
+    }
 }
 
 static void render_opt_del_menu(koto_ctx* ctx, const koto_api* api, const std::string& tpl_name, long long chat_id, long long msg_id) {
@@ -311,8 +346,8 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
 
         api->c_reset(ctx);
         api->c_text(ctx, "⌨️ ");
-        api->c_fmt(ctx, "Введите название для нового шаблона.\n\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Отправьте сообщение с названием в этот чат.");
+        api->c_fmt(ctx, "Введите название для нового шаблона.", KOTO_ENT_BOLD);
+        api->c_text(ctx, "\n\nОтправьте сообщение с названием в этот чат.");
         if (api->c_button_ex) api->c_button_ex(ctx, "🔙 Назад", "poll:menu", 1, KOTO_BTN_DEFAULT, 0);
         else api->c_button(ctx, "🔙 Назад", "poll:menu", 1);
 
@@ -342,6 +377,9 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
                 auto& td = templates[tpl_name];
                 if (flag == "public") td.is_public = !td.is_public;
                 else if (flag == "multi") td.multi = !td.multi;
+                else if (flag == "open_answers") td.open_answers = !td.open_answers;
+                else if (flag == "revote") td.revote = !td.revote;
+                else if (flag == "shuffle") td.shuffle = !td.shuffle;
                 else if (flag == "quiz") td.quiz = !td.quiz;
                 else if (flag == "pin") td.pin = !td.pin;
 
@@ -361,9 +399,10 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
 
         api->c_reset(ctx);
         api->c_text(ctx, "⌨️ ");
-        api->c_fmt(ctx, ("Введите вариант ответа для '" + tpl_name + "'.\n\n").c_str(), KOTO_ENT_BOLD);
-        api->c_fmt(ctx, "Поддерживаются любые символы и Telegram Premium кастом-эмодзи!\n", KOTO_ENT_ITALIC);
-        api->c_text(ctx, "Отправьте текст варианта в этот чат.");
+        api->c_fmt(ctx, ("Введите вариант ответа для '" + tpl_name + "'.").c_str(), KOTO_ENT_BOLD);
+        api->c_text(ctx, "\n\n");
+        api->c_fmt(ctx, "Поддерживаются любые символы и Telegram Premium кастом-эмодзи!", KOTO_ENT_ITALIC);
+        api->c_text(ctx, "\nОтправьте текст варианта в этот чат.");
 
         std::string back_cb = "poll:tpl:edit:" + tpl_name;
         if (api->c_button_ex) api->c_button_ex(ctx, "🔙 Назад", back_cb.c_str(), 1, KOTO_BTN_DEFAULT, 0);
@@ -441,8 +480,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         if (templates.find(name) != templates.end()) {
             if (panel_msg_id > 0) {
                 api->c_reset(ctx);
-                api->c_fmt(ctx, ("⚠️ Шаблон '" + name + "' уже существует!\n\n").c_str(), KOTO_ENT_BOLD);
-                api->c_text(ctx, "Введите другое имя для нового шаблона:");
+                api->c_fmt(ctx, ("⚠️ Шаблон '" + name + "' уже существует!").c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, "\n\nВведите другое имя для нового шаблона:");
                 if (api->c_button_ex) api->c_button_ex(ctx, "🔙 Назад", "poll:menu", 1, KOTO_BTN_DEFAULT, 0);
                 else api->c_button(ctx, "🔙 Назад", "poll:menu", 1);
                 api->c_edit_message(ctx, chat_id, panel_msg_id, 0);
@@ -453,6 +492,9 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         TemplateItem item;
         item.is_public = true;
         item.multi = false;
+        item.open_answers = false;
+        item.revote = true;
+        item.shuffle = false;
         item.quiz = false;
         item.pin = false;
         templates[name] = std::move(item);
@@ -461,9 +503,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->db_del(ctx, "wait_type");
         api->db_del(ctx, "wait_msg");
 
-        if (panel_msg_id > 0) {
-            render_template_edit(ctx, api, name, chat_id, panel_msg_id);
-        }
+        render_template_edit(ctx, api, name, chat_id, panel_msg_id);
         return 1;
     }
 
@@ -481,10 +521,8 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         }
 
         auto& td = templates[tpl_name];
-        if (td.options.size() >= 10) {
-            if (panel_msg_id > 0) {
-                render_template_edit(ctx, api, tpl_name, chat_id, panel_msg_id);
-            }
+        if (td.options.size() >= 12) {
+            render_template_edit(ctx, api, tpl_name, chat_id, panel_msg_id);
             api->db_del(ctx, "wait_type");
             api->db_del(ctx, "wait_tpl");
             api->db_del(ctx, "wait_msg");
@@ -511,9 +549,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         api->db_del(ctx, "wait_tpl");
         api->db_del(ctx, "wait_msg");
 
-        if (panel_msg_id > 0) {
-            render_template_edit(ctx, api, tpl_name, chat_id, panel_msg_id);
-        }
+        render_template_edit(ctx, api, tpl_name, chat_id, panel_msg_id);
         return 1;
     }
 
@@ -611,6 +647,9 @@ static void cmd_poll(koto_ctx* ctx, const koto_api* api) {
         {"answers", answers_arr},
         {"public_voters", td.is_public},
         {"multiple_choice", td.multi},
+        {"open_answers", td.open_answers},
+        {"revoting_disabled", !td.revote},
+        {"shuffle_answers", td.shuffle},
         {"quiz", td.quiz},
         {"pin", td.pin}
     };
@@ -708,8 +747,10 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
 
         api->c_emoji(ctx, "📋", ICON_POLL);
         api->c_text(ctx, " ");
-        api->c_fmt(ctx, "Сканер опроса\n", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, (q_text + "\n\n").c_str(), KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, "Сканер опроса", KOTO_ENT_BOLD);
+        api->c_text(ctx, "\n");
+        api->c_fmt(ctx, q_text.c_str(), KOTO_ENT_ITALIC);
+        api->c_text(ctx, "\n\n");
 
         int total_chars = (int)q_text.size() + 50;
 
@@ -721,11 +762,14 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
 
                 api->c_emoji(ctx, "✅", ICON_VOTE);
                 api->c_text(ctx, " ");
-                api->c_fmt(ctx, (std::to_string(opt_num++) + ". " + opt_text + " (" + std::to_string(count) + ")\n").c_str(), KOTO_ENT_BOLD);
+                std::string opt_title = std::to_string(opt_num++) + ". " + opt_text + " (" + std::to_string(count) + ")";
+                api->c_fmt(ctx, opt_title.c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, "\n");
                 total_chars += (int)opt_text.size() + 20;
 
                 if (count == 0) {
-                    api->c_fmt(ctx, "    (Нет голосов)\n\n", KOTO_ENT_ITALIC);
+                    api->c_fmt(ctx, "    (Нет голосов)", KOTO_ENT_ITALIC);
+                    api->c_text(ctx, "\n\n");
                     total_chars += 20;
                 } else if (opt.contains("voters") && opt["voters"].is_array()) {
                     const auto& vlist = opt["voters"];
@@ -734,7 +778,8 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
                         if (total_chars > 3300) {
                             int rem = (int)vlist.size() - v_idx;
                             if (rem > 0) {
-                                api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                                api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
+                                api->c_text(ctx, "\n");
                                 total_chars += 25;
                             }
                             break;
@@ -758,11 +803,14 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
             const auto& nv = resp["non_voters"];
             api->c_emoji(ctx, "❌", ICON_NOVOTE);
             api->c_text(ctx, " ");
-            api->c_fmt(ctx, ("Не голосовали (" + std::to_string(nv.size()) + ")\n").c_str(), KOTO_ENT_BOLD);
+            std::string nv_title = "Не голосовали (" + std::to_string(nv.size()) + ")";
+            api->c_fmt(ctx, nv_title.c_str(), KOTO_ENT_BOLD);
+            api->c_text(ctx, "\n");
             total_chars += 30;
 
             if (nv.empty()) {
-                api->c_fmt(ctx, "    (Все проголосовали или нет данных)\n\n", KOTO_ENT_ITALIC);
+                api->c_fmt(ctx, "    (Все проголосовали или нет данных)", KOTO_ENT_ITALIC);
+                api->c_text(ctx, "\n\n");
                 total_chars += 40;
             } else {
                 int nv_idx = 0;
@@ -770,7 +818,8 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
                     if (total_chars > 3500) {
                         int rem = (int)nv.size() - nv_idx;
                         if (rem > 0) {
-                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
+                            api->c_text(ctx, "\n");
                             total_chars += 25;
                         }
                         break;
@@ -794,14 +843,17 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
             if (!nic.empty()) {
                 api->c_emoji(ctx, "🚪", ICON_NOVOTE);
                 api->c_text(ctx, " ");
-                api->c_fmt(ctx, ("Не состоят в группе (" + std::to_string(nic.size()) + ")\n").c_str(), KOTO_ENT_BOLD);
+                std::string nic_title = "Не состоят в группе (" + std::to_string(nic.size()) + ")";
+                api->c_fmt(ctx, nic_title.c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, "\n");
                 total_chars += 35;
                 int nic_idx = 0;
                 for (const auto& v : nic) {
                     if (total_chars > 3700) {
                         int rem = (int)nic.size() - nic_idx;
                         if (rem > 0) {
-                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
+                            api->c_text(ctx, "\n");
                             total_chars += 25;
                         }
                         break;
@@ -996,8 +1048,8 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.3.2",
-    85,
+    "3.4.0",
+    86,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

@@ -2014,16 +2014,16 @@
             "display_name": "Конструктор опросов",
             "author": "Kote",
             "description": "Создание опросов по шаблонам, сканер результатов и теги участников.",
-            "version": "3.3.2",
+            "version": "3.4.0",
             "kind": "so",
             "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
             "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
             "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/poll.so",
-            "size": 318712,
-            "sha256": "47b33bd1622b5b9f8386f4cee745ed2c3a0bb431bf710c20e5808efc7bd8eac6",
+            "size": 330448,
+            "sha256": "008eb50b275c4dd4b5a377ed9c057e1e07350c18e0b31f68db8e4cc77ac4fc46",
             "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
             "license": "MIT",
-            "min_host_version": 85,
+            "min_host_version": 86,
             "commands": [
                 {
                     "name": "poll",
@@ -2046,10 +2046,10 @@
                     "usage": "<номер|novote> [текст]"
                 }
             ],
-            "size_arm64": 318712,
-            "sha256_arm64": "47b33bd1622b5b9f8386f4cee745ed2c3a0bb431bf710c20e5808efc7bd8eac6",
-            "size_arm32": 248332,
-            "sha256_arm32": "ce0c1da3f1a6cc603b220dfe75b47fdfd6eed8c0f667accb5c5215c6a8e77146",
+            "size_arm64": 330448,
+            "sha256_arm64": "008eb50b275c4dd4b5a377ed9c057e1e07350c18e0b31f68db8e4cc77ac4fc46",
+            "size_arm32": 258840,
+            "sha256_arm32": "0db3f932feb2041620f74b8fc8311d053fa9fc7292fcfa2da6166ec1a82ea6d7",
             "abi": "arm64-v8a, armeabi-v7a"
         }
     ]
