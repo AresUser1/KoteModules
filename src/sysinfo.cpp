@@ -274,7 +274,7 @@ void render_neofetch(koto_ctx* ctx,const koto_api* api,const SysMetrics& m) {
        <<"OS: "<<m.os_name<<"\nHost: "<<m.hostname<<"\nKernel: "<<m.kernel<<"\nArch: "<<m.arch
        <<"\nUptime: "<<uptime(m.uptime_sec)<<"\nCPU: "<<m.cpu_model<<"\nLoad Average: "<<load_text(m)<<"\n\nRAM\n"<<memory_text(m)
        <<"\nDisk\n"<<disk_text(m)<<"\n"<<m.process_scope<<"\n"<<process_text(m)<<"\n"<<network_text(m);
-    api->c_fmt(ctx,out.str().c_str(),KOTO_ENT_CODE);
+    api->c_fmt(ctx,out.str().c_str(),KOTO_ENT_PRE);
     api->c_button(ctx,"🔄 Обновить","sys_neofetch",0);api->c_button(ctx,"💻 Панель","sys_main",0);api->c_button(ctx,"🚫 Закрыть","sys_close",1);
 }
 void cmd_sys(koto_ctx* ctx,const koto_api* api) {
