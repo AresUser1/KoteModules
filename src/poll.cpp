@@ -629,6 +629,28 @@ static void cmd_pollcfg(koto_ctx* ctx, const koto_api* api) {
     render_poll_menu(ctx, api, false, api->chat_id(ctx), api->msg_id(ctx));
 }
 
+static json make_poll_scan_req(koto_ctx* ctx, const koto_api* api, long long reply_id) {
+    long long cid = api->chat_id(ctx);
+    long long bare_id = std::abs(cid);
+    if (bare_id > 1000000000000LL) {
+        bare_id -= 1000000000000LL;
+    }
+    int ct = api->chat_type(ctx);
+    std::string ptype = "user";
+    if (ct == KOTO_CHAT_CHANNEL || cid <= -1000000000000LL) {
+        ptype = "channel";
+    } else if (ct == KOTO_CHAT_GROUP || cid < 0) {
+        ptype = "chat";
+    }
+    return {
+        {"peer", {
+            {"type", ptype},
+            {"id", bare_id}
+        }},
+        {"id", (int)reply_id}
+    };
+}
+
 static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
@@ -643,14 +665,7 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    long long cid = api->chat_id(ctx);
-    json q_req = {
-        {"peer", {
-            {"type", (cid < 0 ? "channel" : "user")},
-            {"id", std::abs(cid)}
-        }},
-        {"id", (int)reply_id}
-    };
+    json q_req = make_poll_scan_req(ctx, api, reply_id);
 
     std::vector<char> res_buf(256 * 1024, 0);
     int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf.data(), (int)res_buf.size()) : -1;
@@ -848,13 +863,7 @@ static void cmd_polltag(koto_ctx* ctx, const koto_api* api) {
     std::string custom_text = (space != std::string::npos) ? koto_utils::trim(args.substr(space + 1)) : "";
 
     long long cid = api->chat_id(ctx);
-    json q_req = {
-        {"peer", {
-            {"type", (cid < 0 ? "channel" : "user")},
-            {"id", std::abs(cid)}
-        }},
-        {"id", (int)reply_id}
-    };
+    json q_req = make_poll_scan_req(ctx, api, reply_id);
 
     std::vector<char> res_buf(256 * 1024, 0);
     int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf.data(), (int)res_buf.size()) : -1;
@@ -987,7 +996,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.3.1",
+    "3.3.2",
     85,
     0,
     COMMANDS,
