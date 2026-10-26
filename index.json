@@ -571,7 +571,7 @@
                         "display_name":  "DelMe — Очистка своих сообщений",
                         "author":  "KeyZenD / Kote",
                         "description":  "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
-                        "version":  "1.0.1",
+                        "version":  "1.0.2",
                         "kind":  "so",
                         "abi":  "arm64-v8a, armeabi-v7a",
                         "commands":  [
@@ -587,16 +587,16 @@
                                          }
                                      ],
                         "min_host_version":  71,
-                        "size":  228736,
-                        "sha256":  "0f8839366aa7f3bcab49e7587a2e8d16d9fa908dc51fc60c2e00b9b651e0c7ca",
+                        "size":  211864,
+                        "sha256":  "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
                         "url":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
                         "git_url":  "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
                         "license":  "MIT",
-                        "size_arm64":  228736,
-                        "sha256_arm64":  "0f8839366aa7f3bcab49e7587a2e8d16d9fa908dc51fc60c2e00b9b651e0c7ca",
+                        "size_arm64":  211864,
+                        "sha256_arm64":  "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
                         "url_arm64":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
-                        "size_arm32":  119852,
-                        "sha256_arm32":  "a35e23945921f856925ce83d4fc399fd8958bb742604028416ba208862442254",
+                        "size_arm32":  158336,
+                        "sha256_arm32":  "58e1db64f6da2d3d90dbd40a6a416683ef11caca4a4d8cc6fa7fbd6d2b768f66",
                         "url_arm32":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/delme.so"
                     },
                     {
@@ -1960,13 +1960,13 @@
                         "display_name":  "Управление пользователями",
                         "author":  "Kote",
                         "description":  "Управление пользователями, черным списком и контактами.",
-                        "version":  "1.0.5",
+                        "version":  "1.0.6",
                         "kind":  "so",
                         "url":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
                         "url_arm64":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
                         "url_arm32":  "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/usermanage.so",
-                        "size":  137096,
-                        "sha256":  "dea71402bbf52eb7b60dcf99079825ab7f169a28098df16d05f7e182cfdba7a5",
+                        "size":  139352,
+                        "sha256":  "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
                         "git_url":  "https://github.com/AresUser1/KoteModules/blob/main/src/usermanage.cpp",
                         "license":  "MIT",
                         "min_host_version":  2,
@@ -2002,10 +2002,10 @@
                                              "usage":  "[@user/ID]"
                                          }
                                      ],
-                        "size_arm64":  137096,
-                        "sha256_arm64":  "dea71402bbf52eb7b60dcf99079825ab7f169a28098df16d05f7e182cfdba7a5",
-                        "size_arm32":  90980,
-                        "sha256_arm32":  "1bed299929ab47b3b23ba5d7594eb0a7f952b015608eb44f0b823b45b611ec15",
+                        "size_arm64":  139352,
+                        "sha256_arm64":  "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
+                        "size_arm32":  92876,
+                        "sha256_arm32":  "9717643685a8c9290d095ecd1b48749fbe5976859e45a5632e61fc4f78b45d95",
                         "abi":  "arm64-v8a, armeabi-v7a"
                     },
                     {

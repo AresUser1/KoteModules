@@ -1,5 +1,5 @@
 // usermanage.cpp — Модуль для управления пользователями и контактами.
-// C++ ABI 3 port of usermanage.py (v1.0.5).
+// C++ ABI 3 port of usermanage.py (v1.0.6).
 // Автор: Kote
 
 #include "module_abi.h"
@@ -54,6 +54,9 @@ static void save_blocklist(koto_ctx* ctx, const koto_api* api, const std::set<lo
 static long long resolve_target(koto_ctx* ctx, const koto_api* api, std::string& name_out) {
     const char* raw = api->cmd_args(ctx);
     std::string arg = raw ? koto_utils::trim(raw) : "";
+    long long my_id = api->get_me ? api->get_me(ctx) : 0;
+    long long cid = api->chat_id(ctx);
+    bool is_dm = (cid > 0 && cid != my_id);
 
     // 1. Из аргументов
     if (!arg.empty()) {
@@ -76,10 +79,10 @@ static long long resolve_target(koto_ctx* ctx, const koto_api* api, std::string&
         }
     }
 
-    // 2. Из реплая
+    // 2. Из реплая (игнорируем реплай на себя, если не в ЛС)
     if (api->reply_sender_id) {
         long long ruid = api->reply_sender_id(ctx);
-        if (ruid > 0) {
+        if (ruid > 0 && ruid != my_id) {
             char nbuf[128] = {0};
             if (api->user_name) api->user_name(ctx, ruid, nbuf, sizeof(nbuf));
             name_out = (nbuf[0] != 0) ? nbuf : ("ID: " + std::to_string(ruid));
@@ -88,9 +91,7 @@ static long long resolve_target(koto_ctx* ctx, const koto_api* api, std::string&
     }
 
     // 3. Из текущего чата (если ЛС)
-    long long cid = api->chat_id(ctx);
-    long long my_id = api->get_me ? api->get_me(ctx) : 0;
-    if (cid > 0 && cid != my_id) {
+    if (is_dm) {
         char nbuf[128] = {0};
         if (api->user_name) api->user_name(ctx, cid, nbuf, sizeof(nbuf));
         name_out = (nbuf[0] != 0) ? nbuf : ("ID: " + std::to_string(cid));
@@ -208,55 +209,45 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
     const char* raw = api->cmd_args(ctx);
     std::string args = raw ? koto_utils::trim(raw) : "";
     long long target_uid = 0;
-    std::string first_name;
+    std::string name_str;
     long long my_id = api->get_me ? api->get_me(ctx) : 0;
     long long cid = api->chat_id(ctx);
     bool is_dm = (cid > 0 && cid != my_id);
 
-    if (api->reply_sender_id && api->reply_sender_id(ctx) > 0) {
-        target_uid = api->reply_sender_id(ctx);
-        first_name = args;
-        if (first_name.empty()) {
-            char nbuf[128] = {0};
-            if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
-            if (nbuf[0] != 0) first_name = nbuf;
-        }
+    long long ruid = (api->reply_sender_id) ? api->reply_sender_id(ctx) : 0;
+    if (ruid > 0 && ruid != my_id) {
+        target_uid = ruid;
+        name_str = args;
+    } else if (ruid > 0 && ruid == my_id && is_dm) {
+        target_uid = cid;
+        name_str = args;
     } else {
         auto space = args.find(' ');
-        if (space != std::string::npos) {
-            std::string t = args.substr(0, space);
-            std::string fn = koto_utils::trim(args.substr(space + 1));
-            try { target_uid = std::stoll(t); } catch (...) {}
-            if (target_uid <= 0 && t[0] == '@' && api->resolve) {
-                target_uid = api->resolve(ctx, t.substr(1).c_str());
-            }
-            if (target_uid > 0) {
-                first_name = fn;
-            }
-        } else if (!args.empty()) {
-            try { target_uid = std::stoll(args); } catch (...) {}
-            if (target_uid <= 0 && args[0] == '@' && api->resolve) {
-                target_uid = api->resolve(ctx, args.substr(1).c_str());
-            }
-            if (target_uid > 0) {
-                char nbuf[128] = {0};
-                if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
-                if (nbuf[0] != 0) first_name = nbuf;
-            } else if (is_dm) {
-                target_uid = cid;
-                first_name = args;
-            }
+        std::string first_token = (space != std::string::npos) ? args.substr(0, space) : args;
+        std::string rest = (space != std::string::npos) ? koto_utils::trim(args.substr(space + 1)) : "";
+
+        long long parsed_id = 0;
+        try { parsed_id = std::stoll(first_token); } catch (...) {}
+        if (parsed_id <= 0 && first_token.size() > 1 && first_token[0] == '@' && api->resolve) {
+            parsed_id = api->resolve(ctx, first_token.substr(1).c_str());
         }
 
-        if (target_uid <= 0 && is_dm) {
+        if (parsed_id > 0) {
+            target_uid = parsed_id;
+            name_str = rest;
+        } else if (is_dm) {
             target_uid = cid;
-            char nbuf[128] = {0};
-            if (api->user_name) api->user_name(ctx, cid, nbuf, sizeof(nbuf));
-            if (nbuf[0] != 0) first_name = nbuf;
+            name_str = args;
         }
     }
 
-    if (target_uid <= 0 || first_name.empty()) {
+    if (name_str.empty() && target_uid > 0) {
+        char nbuf[128] = {0};
+        if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
+        if (nbuf[0] != 0) name_str = nbuf;
+    }
+
+    if (target_uid <= 0 || name_str.empty()) {
         api->c_reset(ctx);
         api->c_emoji(ctx, "📝", ICON_CONTACT);
         api->c_text(ctx, " ");
@@ -265,11 +256,20 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
         return;
     }
 
+    std::string first_name = name_str;
+    std::string last_name = "";
+    auto space_idx = name_str.find(' ');
+    if (space_idx != std::string::npos) {
+        first_name = name_str.substr(0, space_idx);
+        last_name = koto_utils::trim(name_str.substr(space_idx + 1));
+    }
+
     if (api->host_action_json) {
         json req = {
             {"user_id", target_uid},
             {"peer", {{"type", "user"}, {"id", target_uid}}},
             {"first_name", first_name},
+            {"last_name", last_name},
             {"mutual", mutual}
         };
         api->host_action_json(ctx, "telegram.contact.add.v1", req.dump().c_str());
@@ -278,7 +278,7 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
     api->c_reset(ctx);
     api->c_emoji(ctx, "✅", ICON_SUCCESS);
     api->c_text(ctx, mutual ? " Взаимный контакт " : " Контакт ");
-    api->c_fmt(ctx, first_name.c_str(), KOTO_ENT_CODE);
+    api->c_fmt(ctx, name_str.c_str(), KOTO_ENT_CODE);
     api->c_fmt(ctx, " добавлен.", KOTO_ENT_BOLD);
     send_result(ctx, api);
 }
@@ -336,7 +336,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "usermanage",
     "Управление пользователями и контактами (C++ ABI 3).",
-    "1.0.5",
+    "1.0.6",
     26,
     0,
     COMMANDS,
