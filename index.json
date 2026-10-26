@@ -2019,11 +2019,11 @@
             "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
             "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
             "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/poll.so",
-            "size": 330384,
-            "sha256": "203b202a428cbafc6e10aae9884b9662c30d584443c143ffadee788eba459cae",
+            "size": 331760,
+            "sha256": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
             "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
             "license": "MIT",
-            "min_host_version": 86,
+            "min_host_version": 85,
             "commands": [
                 {
                     "name": "poll",
@@ -2046,10 +2046,10 @@
                     "usage": "<номер|novote> [текст]"
                 }
             ],
-            "size_arm64": 330384,
-            "sha256_arm64": "203b202a428cbafc6e10aae9884b9662c30d584443c143ffadee788eba459cae",
-            "size_arm32": 258760,
-            "sha256_arm32": "70df5b492578165206b05fe73e35e1d7d742f6ed71fcc8a96a36949a16779040",
+            "size_arm64": 331760,
+            "sha256_arm64": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
+            "size_arm32": 260264,
+            "sha256_arm32": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
             "abi": "arm64-v8a, armeabi-v7a"
         }
     ]

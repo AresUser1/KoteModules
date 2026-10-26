@@ -36,6 +36,14 @@ struct TemplateItem {
     bool pin = false;            // 📌 Закреп (pin)
 };
 
+static std::string get_cmd_prefix(koto_ctx* ctx, const koto_api* api) {
+    char pbuf[32] = ".";
+    if (api && api->setting_get) {
+        api->setting_get(ctx, "prefix", pbuf, sizeof(pbuf));
+    }
+    return (pbuf[0] != '\0') ? std::string(pbuf) : std::string(".");
+}
+
 static std::string to_lower(std::string s) {
     for (char& c : s) c = (char)std::tolower((unsigned char)c);
     return s;
@@ -562,7 +570,8 @@ static void cmd_poll(koto_ctx* ctx, const koto_api* api) {
         api->c_reset(ctx);
         api->c_emoji(ctx, "📋", ICON_POLL);
         api->c_text(ctx, " ");
-        api->c_fmt(ctx, "Используйте: .poll <шаблон> <вопрос>\n\n", KOTO_ENT_ITALIC);
+        std::string pfx = get_cmd_prefix(ctx, api);
+        api->c_fmt(ctx, ("Используйте: " + pfx + "poll <шаблон> <вопрос>\n\n").c_str(), KOTO_ENT_ITALIC);
         api->c_fmt(ctx, "Доступные шаблоны: ", KOTO_ENT_BOLD);
         bool first = true;
         for (const auto& [name, _] : templates) {
@@ -887,7 +896,8 @@ static void cmd_polltag(koto_ctx* ctx, const koto_api* api) {
         api->c_reset(ctx);
         api->c_emoji(ctx, "❌", ICON_NOVOTE);
         api->c_text(ctx, " ");
-        api->c_fmt(ctx, "Использование: .polltag <номер|novote> [текст]", KOTO_ENT_BOLD);
+        std::string pfx = get_cmd_prefix(ctx, api);
+        api->c_fmt(ctx, ("Использование: " + pfx + "polltag <номер|novote> [текст]").c_str(), KOTO_ENT_BOLD);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
         else api->c_reply(ctx, 0);
         return;
@@ -1043,7 +1053,7 @@ static const koto_module MODULE = {
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
     "3.4.1",
-    86,
+    85,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),
