@@ -87,6 +87,16 @@ static long long resolve_target(koto_ctx* ctx, const koto_api* api, std::string&
         }
     }
 
+    // 3. Из текущего чата (если ЛС)
+    long long cid = api->chat_id(ctx);
+    long long my_id = api->get_me ? api->get_me(ctx) : 0;
+    if (cid > 0 && cid != my_id) {
+        char nbuf[128] = {0};
+        if (api->user_name) api->user_name(ctx, cid, nbuf, sizeof(nbuf));
+        name_out = (nbuf[0] != 0) ? nbuf : ("ID: " + std::to_string(cid));
+        return cid;
+    }
+
     return 0;
 }
 
@@ -106,7 +116,10 @@ static void cmd_block(koto_ctx* ctx, const koto_api* api) {
 
     // Блокировка через хост
     if (api->host_action_json) {
-        json req = {{"user_id", uid}};
+        json req = {
+            {"user_id", uid},
+            {"peer", {{"type", "user"}, {"id", uid}}}
+        };
         api->host_action_json(ctx, "telegram.block.v1", req.dump().c_str());
     }
 
@@ -138,7 +151,10 @@ static void cmd_unblock(koto_ctx* ctx, const koto_api* api) {
 
     // Разблокировка через хост
     if (api->host_action_json) {
-        json req = {{"user_id", uid}};
+        json req = {
+            {"user_id", uid},
+            {"peer", {{"type", "user"}, {"id", uid}}}
+        };
         api->host_action_json(ctx, "telegram.unblock.v1", req.dump().c_str());
     }
 
@@ -193,6 +209,9 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
     std::string args = raw ? koto_utils::trim(raw) : "";
     long long target_uid = 0;
     std::string first_name;
+    long long my_id = api->get_me ? api->get_me(ctx) : 0;
+    long long cid = api->chat_id(ctx);
+    bool is_dm = (cid > 0 && cid != my_id);
 
     if (api->reply_sender_id && api->reply_sender_id(ctx) > 0) {
         target_uid = api->reply_sender_id(ctx);
@@ -206,10 +225,13 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
         auto space = args.find(' ');
         if (space != std::string::npos) {
             std::string t = args.substr(0, space);
-            first_name = koto_utils::trim(args.substr(space + 1));
+            std::string fn = koto_utils::trim(args.substr(space + 1));
             try { target_uid = std::stoll(t); } catch (...) {}
             if (target_uid <= 0 && t[0] == '@' && api->resolve) {
                 target_uid = api->resolve(ctx, t.substr(1).c_str());
+            }
+            if (target_uid > 0) {
+                first_name = fn;
             }
         } else if (!args.empty()) {
             try { target_uid = std::stoll(args); } catch (...) {}
@@ -220,7 +242,17 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
                 char nbuf[128] = {0};
                 if (api->user_name) api->user_name(ctx, target_uid, nbuf, sizeof(nbuf));
                 if (nbuf[0] != 0) first_name = nbuf;
+            } else if (is_dm) {
+                target_uid = cid;
+                first_name = args;
             }
+        }
+
+        if (target_uid <= 0 && is_dm) {
+            target_uid = cid;
+            char nbuf[128] = {0};
+            if (api->user_name) api->user_name(ctx, cid, nbuf, sizeof(nbuf));
+            if (nbuf[0] != 0) first_name = nbuf;
         }
     }
 
@@ -236,6 +268,7 @@ static void cmd_contact(koto_ctx* ctx, const koto_api* api, bool mutual) {
     if (api->host_action_json) {
         json req = {
             {"user_id", target_uid},
+            {"peer", {{"type", "user"}, {"id", target_uid}}},
             {"first_name", first_name},
             {"mutual", mutual}
         };
@@ -273,7 +306,10 @@ static void cmd_rct(koto_ctx* ctx, const koto_api* api) {
     }
 
     if (api->host_action_json) {
-        json req = {{"user_id", uid}};
+        json req = {
+            {"user_id", uid},
+            {"peer", {{"type", "user"}, {"id", uid}}}
+        };
         api->host_action_json(ctx, "telegram.contact.delete.v1", req.dump().c_str());
     }
 
