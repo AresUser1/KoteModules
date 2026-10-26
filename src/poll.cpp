@@ -86,11 +86,11 @@ static std::map<std::string, TemplateItem> get_templates(koto_ctx* ctx, const ko
         true, false, false, false
     };
 
-    char buf[65536];
-    int len = api->db_get(ctx, "templates_v3", buf, sizeof(buf));
+    std::vector<char> buf(65536, 0);
+    int len = api->db_get(ctx, "templates_v3", buf.data(), (int)buf.size());
     if (len > 0) {
         try {
-            auto j = json::parse(std::string(buf, len));
+            auto j = json::parse(std::string(buf.data(), len));
             if (j.is_object()) {
                 res.clear();
                 for (auto it = j.begin(); it != j.end(); ++it) {
@@ -652,8 +652,8 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
         {"id", (int)reply_id}
     };
 
-    char res_buf[256 * 1024];
-    int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf, sizeof(res_buf)) : -1;
+    std::vector<char> res_buf(256 * 1024, 0);
+    int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf.data(), (int)res_buf.size()) : -1;
 
     if (res_len <= 0) {
         api->c_reset(ctx);
@@ -666,7 +666,7 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
     }
 
     try {
-        auto resp = json::parse(std::string(res_buf, res_len));
+        auto resp = json::parse(std::string(res_buf.data(), res_len));
         if (!resp.value("ok", false)) {
             std::string err = resp.value("error", "unknown_error");
             if (err == "poll_is_anonymous") {
@@ -696,6 +696,8 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
         api->c_fmt(ctx, "Сканер опроса\n", KOTO_ENT_BOLD);
         api->c_fmt(ctx, (q_text + "\n\n").c_str(), KOTO_ENT_ITALIC);
 
+        int total_chars = (int)q_text.size() + 50;
+
         if (poll.contains("options") && poll["options"].is_array()) {
             int opt_num = 1;
             for (const auto& opt : poll["options"]) {
@@ -705,18 +707,33 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
                 api->c_emoji(ctx, "✅", ICON_VOTE);
                 api->c_text(ctx, " ");
                 api->c_fmt(ctx, (std::to_string(opt_num++) + ". " + opt_text + " (" + std::to_string(count) + ")\n").c_str(), KOTO_ENT_BOLD);
+                total_chars += (int)opt_text.size() + 20;
 
                 if (count == 0) {
                     api->c_fmt(ctx, "    (Нет голосов)\n\n", KOTO_ENT_ITALIC);
+                    total_chars += 20;
                 } else if (opt.contains("voters") && opt["voters"].is_array()) {
-                    for (const auto& v : opt["voters"]) {
+                    const auto& vlist = opt["voters"];
+                    int v_idx = 0;
+                    for (const auto& v : vlist) {
+                        if (total_chars > 3300) {
+                            int rem = (int)vlist.size() - v_idx;
+                            if (rem > 0) {
+                                api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                                total_chars += 25;
+                            }
+                            break;
+                        }
                         long long uid = v.value("id", 0LL);
                         std::string uname = format_user_name(v);
                         api->c_text(ctx, "    • ");
                         api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                         api->c_text(ctx, "\n");
+                        total_chars += (int)uname.size() + 10;
+                        v_idx++;
                     }
                     api->c_text(ctx, "\n");
+                    total_chars += 1;
                 }
             }
         }
@@ -727,18 +744,32 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
             api->c_emoji(ctx, "❌", ICON_NOVOTE);
             api->c_text(ctx, " ");
             api->c_fmt(ctx, ("Не голосовали (" + std::to_string(nv.size()) + ")\n").c_str(), KOTO_ENT_BOLD);
+            total_chars += 30;
 
             if (nv.empty()) {
                 api->c_fmt(ctx, "    (Все проголосовали или нет данных)\n\n", KOTO_ENT_ITALIC);
+                total_chars += 40;
             } else {
+                int nv_idx = 0;
                 for (const auto& v : nv) {
+                    if (total_chars > 3500) {
+                        int rem = (int)nv.size() - nv_idx;
+                        if (rem > 0) {
+                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                            total_chars += 25;
+                        }
+                        break;
+                    }
                     long long uid = v.value("id", 0LL);
                     std::string uname = format_user_name(v);
                     api->c_text(ctx, "    • ");
                     api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                     api->c_text(ctx, "\n");
+                    total_chars += (int)uname.size() + 10;
+                    nv_idx++;
                 }
                 api->c_text(ctx, "\n");
+                total_chars += 1;
             }
         }
 
@@ -749,12 +780,24 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
                 api->c_emoji(ctx, "🚪", ICON_NOVOTE);
                 api->c_text(ctx, " ");
                 api->c_fmt(ctx, ("Не состоят в группе (" + std::to_string(nic.size()) + ")\n").c_str(), KOTO_ENT_BOLD);
+                total_chars += 35;
+                int nic_idx = 0;
                 for (const auto& v : nic) {
+                    if (total_chars > 3700) {
+                        int rem = (int)nic.size() - nic_idx;
+                        if (rem > 0) {
+                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.\n").c_str(), KOTO_ENT_ITALIC);
+                            total_chars += 25;
+                        }
+                        break;
+                    }
                     long long uid = v.value("id", 0LL);
                     std::string uname = format_user_name(v);
                     api->c_text(ctx, "    • ");
                     api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                     api->c_text(ctx, "\n");
+                    total_chars += (int)uname.size() + 10;
+                    nic_idx++;
                 }
                 api->c_text(ctx, "\n");
             }
@@ -813,8 +856,8 @@ static void cmd_polltag(koto_ctx* ctx, const koto_api* api) {
         {"id", (int)reply_id}
     };
 
-    char res_buf[256 * 1024];
-    int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf, sizeof(res_buf)) : -1;
+    std::vector<char> res_buf(256 * 1024, 0);
+    int res_len = api->host_call_json ? api->host_call_json(ctx, "telegram.poll.scan.v1", q_req.dump().c_str(), res_buf.data(), (int)res_buf.size()) : -1;
 
     if (res_len <= 0) {
         api->c_reset(ctx);
@@ -827,7 +870,7 @@ static void cmd_polltag(koto_ctx* ctx, const koto_api* api) {
     }
 
     try {
-        auto resp = json::parse(std::string(res_buf, res_len));
+        auto resp = json::parse(std::string(res_buf.data(), res_len));
         if (!resp.value("ok", false)) {
             api->c_reset(ctx);
             api->c_emoji(ctx, "❌", ICON_NOVOTE);
@@ -944,8 +987,8 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.3.0",
-    76,
+    "3.3.1",
+    85,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

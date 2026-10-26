@@ -10,6 +10,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "nlohmann/json.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -222,6 +223,51 @@ static std::vector<HistoryEntry> load_history(koto_ctx* ctx, const koto_api* api
     return list;
 }
 
+// ── Очередь игровых банов (.gameban) ──────────────────────────────────────────
+struct GameBanItem {
+    long long chat_id = 0;
+    long long user_id = 0;
+    std::string user_name;
+    long long unban_at = 0;
+};
+
+static std::vector<GameBanItem> load_gamebans(koto_ctx* ctx, const koto_api* api) {
+    std::vector<char> buf(64 * 1024, 0);
+    int len = api->db_get(ctx, "gamebans", buf.data(), (int)buf.size());
+    std::vector<GameBanItem> list;
+    if (len <= 0) return list;
+    try {
+        auto j = nlohmann::json::parse(std::string(buf.data(), len));
+        if (j.is_array()) {
+            for (const auto& item : j) {
+                GameBanItem gb;
+                gb.chat_id = item.value("chat_id", 0LL);
+                gb.user_id = item.value("user_id", 0LL);
+                gb.user_name = item.value("user_name", "");
+                gb.unban_at = item.value("unban_at", 0LL);
+                if (gb.chat_id != 0 && gb.user_id != 0) {
+                    list.push_back(gb);
+                }
+            }
+        }
+    } catch (...) {}
+    return list;
+}
+
+static void save_gamebans(koto_ctx* ctx, const koto_api* api, const std::vector<GameBanItem>& list) {
+    nlohmann::json j = nlohmann::json::array();
+    for (const auto& gb : list) {
+        j.push_back({
+            {"chat_id", gb.chat_id},
+            {"user_id", gb.user_id},
+            {"user_name", gb.user_name},
+            {"unban_at", gb.unban_at}
+        });
+    }
+    std::string s = j.dump();
+    api->db_set(ctx, "gamebans", s.c_str());
+}
+
 // ── Глобальные наборы чатов (global_sets) ──────────────────────────────────────
 static std::map<std::string, std::vector<long long>> load_global_sets(koto_ctx* ctx, const koto_api* api) {
     std::map<std::string, std::vector<long long>> res;
@@ -349,6 +395,16 @@ static void cmd_unban(koto_ctx* ctx, const koto_api* api) {
 
     api->unban_user(ctx, cid, target_uid);
     log_action(ctx, api, me, cid, target_uid, "unban", reason);
+
+    // Очищаем из активных игровых банов, если был
+    auto gblist = load_gamebans(ctx, api);
+    auto it = std::remove_if(gblist.begin(), gblist.end(), [cid, target_uid](const GameBanItem& item) {
+        return item.chat_id == cid && item.user_id == target_uid;
+    });
+    if (it != gblist.end()) {
+        gblist.erase(it, gblist.end());
+        save_gamebans(ctx, api, gblist);
+    }
 
     api->c_reset(ctx);
     api->c_emoji(ctx, "✅", SUCCESS_EMOJI_ID);
@@ -574,9 +630,23 @@ static void cmd_gameban(koto_ctx* ctx, const koto_api* api) {
     std::string display_name = get_user_display_name(ctx, api, target_uid);
     std::string reason = "бан на игру";
 
-    // 3600 секунд (1 час) — MTProto сервер Telegram снимет бан автоматически!
+    // 3600 секунд (1 час) — бан на уровне прав супергруппы
     api->ban_user(ctx, cid, target_uid, 3600);
     log_action(ctx, api, me, cid, target_uid, "GAMEBAN", reason);
+
+    // Добавляем в очередь авто-разбана
+    auto gblist = load_gamebans(ctx, api);
+    gblist.erase(std::remove_if(gblist.begin(), gblist.end(), [cid, target_uid](const GameBanItem& item) {
+        return item.chat_id == cid && item.user_id == target_uid;
+    }), gblist.end());
+
+    GameBanItem gb;
+    gb.chat_id = cid;
+    gb.user_id = target_uid;
+    gb.user_name = display_name;
+    gb.unban_at = (long long)std::time(nullptr) + 3600;
+    gblist.push_back(gb);
+    save_gamebans(ctx, api, gblist);
 
     api->c_reset(ctx);
     api->c_emoji(ctx, "💥", HAMMER_EMOJI_ID);
@@ -899,6 +969,34 @@ static void cmd_gban(koto_ctx* ctx, const koto_api* api)  { do_global_action(ctx
 static void cmd_ungban(koto_ctx* ctx, const koto_api* api) { do_global_action(ctx, api, "ungban"); }
 static void cmd_gkick(koto_ctx* ctx, const koto_api* api)  { do_global_action(ctx, api, "gkick"); }
 
+// ── Фоновый обработчик (авто-разбан игровых банов) ───────────────────────────
+static int on_watch_moderation(koto_ctx* ctx, const koto_api* api) {
+    long long now = (long long)std::time(nullptr);
+    auto list = load_gamebans(ctx, api);
+    if (list.empty()) return 0;
+
+    std::vector<GameBanItem> remaining;
+    bool changed = false;
+
+    for (const auto& gb : list) {
+        if (gb.unban_at <= now) {
+            changed = true;
+            api->unban_user(ctx, gb.chat_id, gb.user_id);
+            api->c_reset(ctx);
+            api->c_emoji(ctx, "✅", SUCCESS_EMOJI_ID);
+            c_text_s(ctx, api, " Срок бана на игру (1 час) для " + gb.user_name + " истёк. Пользователь разбанен!");
+            api->c_send(ctx, gb.chat_id, 0);
+        } else {
+            remaining.push_back(gb);
+        }
+    }
+
+    if (changed) {
+        save_gamebans(ctx, api, remaining);
+    }
+    return 0;
+}
+
 // ── Декларация команд модуля ──────────────────────────────────────────────────
 static const koto_command MODERATION_COMMANDS[] = {
     { "ban",      cmd_ban,      KOTO_LEVEL_TRUSTED, "Забанить пользователя в чате",           "<user> [reason]" },
@@ -921,12 +1019,12 @@ static const koto_module MODERATION_MODULE = {
     KOTO_MODULE_ABI,
     "moderation",
     "Мощный модуль для администрирования чатов (бан, мут, варны, gameban, gban/gkick).",
-    "1.1.7", 60, // min_host_version: resolved peer API
+    "1.1.8", 60, // min_host_version: resolved peer API
     0,  // flags
     MODERATION_COMMANDS,
     sizeof(MODERATION_COMMANDS) / sizeof(MODERATION_COMMANDS[0]),
-    nullptr, // on_watch
-    0,       // watch_flags
+    &on_watch_moderation, // on_watch
+    KOTO_WATCH_ALL,       // watch_flags
     nullptr, // on_callback
     nullptr, // settings
     0,       // settings_count
