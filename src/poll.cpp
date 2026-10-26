@@ -199,7 +199,8 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
     const auto& td = templates[tpl_name];
 
     api->c_reset(ctx);
-    api->c_fmt(ctx, "Шаблон: ", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, "Шаблон:", KOTO_ENT_BOLD);
+    api->c_text(ctx, " ");
     api->c_fmt(ctx, tpl_name.c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n\n⚙️ ");
     api->c_fmt(ctx, "Настройки:", KOTO_ENT_BOLD);
@@ -267,14 +268,7 @@ static void render_template_edit(koto_ctx* ctx, const koto_api* api, const std::
         api->c_button(ctx, "🔙 Назад", "poll:menu", 1);
     }
 
-    if (msg_id > 0) {
-        api->c_edit_message(ctx, chat_id, msg_id, 0);
-    } else {
-        if (api->c_send) api->c_send(ctx, chat_id, 0);
-        else if (api->c_reply) api->c_reply(ctx, 0);
-        else if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
-    }
+    api->c_edit_message(ctx, chat_id, msg_id, 0);
 }
 
 static void render_opt_del_menu(koto_ctx* ctx, const koto_api* api, const std::string& tpl_name, long long chat_id, long long msg_id) {
@@ -1048,7 +1042,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.4.0",
+    "3.4.1",
     86,
     0,
     COMMANDS,
