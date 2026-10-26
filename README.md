@@ -1,7 +1,7 @@
 # 🐾 KoteModules — Официальный репозиторий модулей Kotogram
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
+  <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a%20%7C%20armeabi--v7a%20(32--bit)-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
   <img src="https://img.shields.io/badge/ABI-Native%20ABI%203-blue?style=for-the-badge" alt="ABI" />
   <img src="https://img.shields.io/badge/Kotogram-v0.3.40+-orange?style=for-the-badge" alt="Kotogram Version" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
