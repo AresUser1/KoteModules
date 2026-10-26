@@ -1,2056 +1,2056 @@
 {
-    "name": "KoteModules Official Repository",
-    "version": "2.0.0",
-    "updated": "2026-10-26",
-    "modules": [
+  "name": "KoteModules Official Repository",
+  "version": "2.0.0",
+  "updated": "2026-10-26",
+  "modules": [
+    {
+      "id": "administration",
+      "name": "administration",
+      "display_name": "Администрирование чатов",
+      "author": "Kote",
+      "description": "Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки.",
+      "version": "1.2.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
         {
-            "id": "administration",
-            "name": "administration",
-            "display_name": "Администрирование чатов",
-            "author": "Kote",
-            "description": "Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки.",
-            "version": "1.2.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "admin",
-                    "doc": "Назначить пользователя администратором с правами и рангом",
-                    "usage": "[@user/ID] [Ранг]"
-                },
-                {
-                    "name": "unadmin",
-                    "doc": "Полностью разжаловать администратора",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "unrank",
-                    "doc": "Снять ранг, права и boost-тег участника",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "untag",
-                    "doc": "Убрать тег-метку (Member Tag) у участников чата",
-                    "usage": ""
-                },
-                {
-                    "name": "rank",
-                    "doc": "Установить должность (ранг) администратору",
-                    "usage": "[@user/ID] <Ранг>"
-                },
-                {
-                    "name": "adminhelp",
-                    "doc": "Справка по правам и флагам администратора",
-                    "usage": ""
-                },
-                {
-                    "name": "admincfg",
-                    "doc": "Управление сохраненными конфигурациями прав",
-                    "usage": "[save/del/load/list] [name]"
-                },
-                {
-                    "name": "adminsettings",
-                    "doc": "Открыть инлайн-панель настройки шаблона прав админа",
-                    "usage": ""
-                }
-            ],
-            "size": 384104,
-            "sha256": "e9e596496cffe516c2d4efc2b1c8f2904c4073dfbfb6b0f9dc846c6c5ecfeb11",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/administration.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 384104,
-            "sha256_arm64": "e9e596496cffe516c2d4efc2b1c8f2904c4073dfbfb6b0f9dc846c6c5ecfeb11",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/administration.so",
-            "size_arm32": 218168,
-            "sha256_arm32": "d4617cc1a4e70bf986a786fbc4eaa66de6e123c56bbdfbec2dd03d49fe5894cd",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/administration.so"
+          "name": "admin",
+          "doc": "Назначить пользователя администратором с правами и рангом",
+          "usage": "[@user/ID] [Ранг]"
         },
         {
-            "id": "afk",
-            "name": "afk",
-            "display_name": "Автоответчик (AFK)",
-            "author": "Kote",
-            "description": "Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' || AFK' в профиле Telegram.",
-            "version": "2.1.3",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "afk",
-                    "doc": "Включить режим AFK или посмотреть статус",
-                    "usage": "[причина]"
-                },
-                {
-                    "name": "unafk",
-                    "doc": "Выключить режим AFK",
-                    "usage": ""
-                },
-                {
-                    "name": "afkexc",
-                    "doc": "Управление исключениями AFK (add/del/list)",
-                    "usage": "<add/del/list> [user/id]"
-                },
-                {
-                    "name": "setstatus",
-                    "doc": "Добавить метку ' || AFK' к фамилии/имени профиля",
-                    "usage": ""
-                },
-                {
-                    "name": "removestatus",
-                    "doc": "Убрать метку ' || AFK' из профиля",
-                    "usage": ""
-                }
-            ],
-            "size": 93448,
-            "sha256": "a7463fd609e2b3da0246d3cc082202df31fe9086ecacc0e21ed429a67f21f598",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/afk.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 93448,
-            "sha256_arm64": "a7463fd609e2b3da0246d3cc082202df31fe9086ecacc0e21ed429a67f21f598",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/afk.so",
-            "size_arm32": 36524,
-            "sha256_arm32": "89f9252aa154dcec86dd9bccf4bc5b15bb17dd61d87d37973ef3b99b4cfe92d7",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/afk.so"
+          "name": "unadmin",
+          "doc": "Полностью разжаловать администратора",
+          "usage": "[@user/ID]"
         },
         {
-            "id": "aniliberty",
-            "name": "aniliberty",
-            "display_name": "AniLiberty (Аниме)",
-            "author": "Kote",
-            "description": "AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах.",
-            "version": "1.0.9",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "aniliberty",
-                    "doc": "AniLiberty: случайное аниме или поиск по названию.",
-                    "usage": "[название]"
-                },
-                {
-                    "name": "arandom",
-                    "doc": "Случайное аниме из базы AniLiberty.",
-                    "usage": ""
-                },
-                {
-                    "name": "anilib_search",
-                    "doc": "Поиск аниме по названию в базе AniLiberty.",
-                    "usage": "<название>"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/aniliberty.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 271384,
-            "sha256": "231fb60db585c7d141f29f68c8a265b3fc906890dd8e3f43e9b48935ad38014d",
-            "size_arm64": 271384,
-            "sha256_arm64": "231fb60db585c7d141f29f68c8a265b3fc906890dd8e3f43e9b48935ad38014d",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/aniliberty.so",
-            "size_arm32": 146440,
-            "sha256_arm32": "cb92412f0905e76d8db1da90c502c76123ff8f7718e04442ea44c6511ea95d57",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/aniliberty.so"
+          "name": "unrank",
+          "doc": "Снять ранг, права и boost-тег участника",
+          "usage": "[@user/ID]"
         },
         {
-            "id": "auto_manager",
-            "name": "auto_manager",
-            "display_name": "Менеджер автоматизации (AutoManager)",
-            "author": "Kote",
-            "description": "Авточтение с исключениями для отдельных чатов и управлением режимами аккаунтов.",
-            "version": "1.2.5",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "autread",
-                    "doc": "Управление авточтением текущего или указанного чата.",
-                    "usage": "<on|off> [this|ID]"
-                },
-                {
-                    "name": "autreadlist",
-                    "doc": "Список чатов с включенным авточтением.",
-                    "usage": ""
-                },
-                {
-                    "name": "autreadnow",
-                    "doc": "Прочитать текущий чат и очистить непрочитанные упоминания прямо сейчас.",
-                    "usage": ""
-                },
-                {
-                    "name": "autoapprove",
-                    "doc": "Управление автоодобрением заявок на вступление.",
-                    "usage": "[chat_id]"
-                },
-                {
-                    "name": "autoapprovelist",
-                    "doc": "Список чатов с автоодобрением заявок.",
-                    "usage": ""
-                },
-                {
-                    "name": "amtwins",
-                    "doc": "Список и управление авточтением твинков",
-                    "usage": "[list|on ID|off ID]"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/auto_manager.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/auto_manager.c",
-            "license": "MIT",
-            "min_host_version": 64,
-            "size": 21952,
-            "sha256": "32208334b6715116ffea8f67176932ea7c4bd34c345928925cf7107f6bb73417",
-            "size_arm64": 21952,
-            "sha256_arm64": "32208334b6715116ffea8f67176932ea7c4bd34c345928925cf7107f6bb73417",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/auto_manager.so",
-            "size_arm32": 17460,
-            "sha256_arm32": "e6add04d8551d1ac43d6b80c39ef1e4085c16e49de96060bd57d3a1a70a7e92b",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/auto_manager.so"
+          "name": "untag",
+          "doc": "Убрать тег-метку (Member Tag) у участников чата",
+          "usage": ""
         },
         {
-            "id": "autolast",
-            "name": "autolast",
-            "display_name": "Авто-ласт (AutoLast)",
-            "author": "Kote",
-            "description": "Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом.",
-            "version": "1.7.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "addlastchat",
-                    "doc": "Добавить чат в белый список autolast.",
-                    "usage": "[chat_id]"
-                },
-                {
-                    "name": "rmlastchat",
-                    "doc": "Удалить чат из белого списка autolast.",
-                    "usage": "[chat_id]"
-                },
-                {
-                    "name": "addlastuser",
-                    "doc": "Добавить юзера в белый список autolast.",
-                    "usage": "[@user/id]"
-                },
-                {
-                    "name": "rmlastuser",
-                    "doc": "Удалить юзера из белого списка autolast.",
-                    "usage": "[@user/id]"
-                },
-                {
-                    "name": "lastadmin",
-                    "doc": "Переключить режим ответа только админам.",
-                    "usage": ""
-                },
-                {
-                    "name": "lasthard",
-                    "doc": "Переключить режим хардмода (отвечать на всё подряд).",
-                    "usage": ""
-                },
-                {
-                    "name": "listlast",
-                    "doc": "Показать конфигурацию и списки autolast.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autolast.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autolast.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 81640,
-            "sha256": "5a4e006ea50d99f6aa13b24d88f77e41bf5d7fc104ac18cb49a0fc8833f87371",
-            "size_arm64": 81640,
-            "sha256_arm64": "5a4e006ea50d99f6aa13b24d88f77e41bf5d7fc104ac18cb49a0fc8833f87371",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autolast.so",
-            "size_arm32": 28632,
-            "sha256_arm32": "04cf01718b634da280d28053134b6882089922909b609dc41c33554b503f4fbf",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/autolast.so"
+          "name": "rank",
+          "doc": "Установить должность (ранг) администратору",
+          "usage": "[@user/ID] <Ранг>"
         },
         {
-            "id": "autoresponder",
-            "name": "autoresponder",
-            "display_name": "Автоответчик (AutoResponder)",
-            "author": "Kote",
-            "description": "Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов.",
-            "version": "2.4.4",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "pm",
-                    "doc": "Главная панель настройки автоответчика в ЛС",
-                    "usage": "[on|off|text|premtext|time|pic|nopic|cd|block|read|ghost|stats]"
-                },
-                {
-                    "name": "pmignore",
-                    "doc": "Добавить или удалить текущий чат из игнор-листа автоответчика",
-                    "usage": ""
-                }
-            ],
-            "size": 87488,
-            "sha256": "0d895d9844fca9a05dfcb929d6a721d5cb560ef30c8fd66b45b3a026aebbf7aa",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autoresponder.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 87488,
-            "sha256_arm64": "0d895d9844fca9a05dfcb929d6a721d5cb560ef30c8fd66b45b3a026aebbf7aa",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autoresponder.so",
-            "size_arm32": 34036,
-            "sha256_arm32": "04255c4e81dcacf1fb74d9e8e30872f46ad13d60de5f742a46996819ad1007dd",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/autoresponder.so"
+          "name": "adminhelp",
+          "doc": "Справка по правам и флагам администратора",
+          "usage": ""
         },
         {
-            "id": "bakusearch",
-            "name": "bakusearch",
-            "display_name": "BakuSearch (Помощник Baku Mafia)",
-            "author": "Kote",
-            "description": "Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue).",
-            "version": "1.0.4",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "baku",
-                    "doc": "Поиск не проголосовавших игроков",
-                    "usage": "[red/blue]"
-                }
-            ],
-            "size": 101536,
-            "sha256": "dcc915c4efbf63a996caf244267d9c2cc3ec6c547fb76e39ea712f1e8f2092e6",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/bakusearch.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
-            "license": "MIT",
-            "min_host_version": 27,
-            "size_arm64": 101536,
-            "sha256_arm64": "dcc915c4efbf63a996caf244267d9c2cc3ec6c547fb76e39ea712f1e8f2092e6",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/bakusearch.so",
-            "size_arm32": 41924,
-            "sha256_arm32": "120cb9f261a58b3e62981eb0f1ef842101b758b70a47e0e0a78826b3c3f64318",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/bakusearch.so"
+          "name": "admincfg",
+          "doc": "Управление сохраненными конфигурациями прав",
+          "usage": "[save/del/load/list] [name]"
         },
         {
-            "id": "banall",
-            "name": "banall",
-            "display_name": "Массовая очистка (BanAll)",
-            "author": "Kote",
-            "description": "Бан или кик обычных участников с раздельными счётчиками и ID пропущенных; сообщает о неполном списке участников.",
-            "version": "1.0.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "banall",
-                    "doc": "Забанить обычных участников; показать причины пропусков.",
-                    "usage": ""
-                },
-                {
-                    "name": "kickall",
-                    "doc": "Исключить обычных участников; показать причины пропусков.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banall.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size": 263024,
-            "sha256": "bfea0824116a9ee310fecfe812194fbe79b9489cbff55ebac843e8f4a3dce883",
-            "size_arm64": 263024,
-            "sha256_arm64": "bfea0824116a9ee310fecfe812194fbe79b9489cbff55ebac843e8f4a3dce883",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banall.so",
-            "size_arm32": 140456,
-            "sha256_arm32": "683aa81cf919551db2985cf7a6bd6b0ef76590724bde36652c67a0822d4bdecf",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banall.so"
-        },
-        {
-            "id": "calculator",
-            "name": "calculator",
-            "display_name": "Калькулятор (Calc)",
-            "author": "Kote",
-            "description": "Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями.",
-            "version": "1.2.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "calc",
-                    "doc": "Вычислить математическое выражение.",
-                    "usage": "<выражение>"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/calculator.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/calculator.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 78072,
-            "sha256": "44844125828340b9fafda929db0e852e809e6f140a03bc9f3599b48273ba536e",
-            "size_arm64": 78072,
-            "sha256_arm64": "44844125828340b9fafda929db0e852e809e6f140a03bc9f3599b48273ba536e",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/calculator.so",
-            "size_arm32": 27428,
-            "sha256_arm32": "b5499b77081531711e2aa2b27e19eca1c70f45884a44f69100aefabeaa684686",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/calculator.so"
-        },
-        {
-            "id": "chat",
-            "name": "chat",
-            "display_name": "Управление чатом (Chat)",
-            "author": "Kote",
-            "description": "Управление чатами, списки участников, администраторов и ботов, получение ID.",
-            "version": "1.0.6",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "userid",
-                    "doc": "Информация и ID пользователя.",
-                    "usage": "[@user/ID/ответ]"
-                },
-                {
-                    "name": "chatid",
-                    "doc": "Показывает название и ID текущего чата.",
-                    "usage": ""
-                },
-                {
-                    "name": "kickme",
-                    "doc": "Выйти из текущего чата.",
-                    "usage": ""
-                },
-                {
-                    "name": "users",
-                    "doc": "Список участников текущего чата.",
-                    "usage": ""
-                },
-                {
-                    "name": "admins",
-                    "doc": "Список администраторов текущего чата.",
-                    "usage": ""
-                },
-                {
-                    "name": "bots",
-                    "doc": "Список ботов в текущем чате.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chat.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
-            "license": "MIT",
-            "min_host_version": 61,
-            "size": 278728,
-            "sha256": "ea4c20dcde6d8cb04cd833d285bb959bc0773f70384951f6d6bd8ccca8a75768",
-            "size_arm64": 278728,
-            "sha256_arm64": "ea4c20dcde6d8cb04cd833d285bb959bc0773f70384951f6d6bd8ccca8a75768",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chat.so",
-            "size_arm32": 153832,
-            "sha256_arm32": "eb7798715b703b3a0dc46b6671f1cab99537eb0dd69fc2e461f47241f5f13635",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/chat.so"
-        },
-        {
-            "id": "checkers",
-            "name": "checkers",
-            "display_name": "Шашки (Checkers PvP)",
-            "author": "Kote",
-            "description": "Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья.",
-            "version": "2.2.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "checkers",
-                    "doc": "Начать игру в русские шашки (инлайн)",
-                    "usage": "[white|black]"
-                },
-                {
-                    "name": "шашки",
-                    "doc": "Начать игру в русские шашки (псевдоним)",
-                    "usage": "[white|black]"
-                },
-                {
-                    "name": "checkersend",
-                    "doc": "Список активных партий или завершение игры по ID",
-                    "usage": "[id]"
-                }
-            ],
-            "size": 27704,
-            "sha256": "3fc5dd557c115fbcce177ee47767b2cce3b39a84161c1213b82317e0a2d94d78",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/checkers.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
-            "license": "MIT",
-            "min_host_version": 18,
-            "size_arm64": 27704,
-            "sha256_arm64": "3fc5dd557c115fbcce177ee47767b2cce3b39a84161c1213b82317e0a2d94d78",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/checkers.so",
-            "size_arm32": 25812,
-            "sha256_arm32": "076e851bf4548a7bcce91ed24591c18fb952d8e0913bdb7f4cb187a0f0335a7b",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/checkers.so"
-        },
-        {
-            "id": "chess",
-            "name": "chess",
-            "display_name": "Шахматы",
-            "author": "Kote",
-            "description": "Шахматы PvP на кнопках: рокировка, взятие на проходе, превращение, мат, ничьи, реванш и обычные Unicode-фигуры.",
-            "version": "1.0.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "chess",
-                    "doc": "Создать шахматный вызов",
-                    "usage": "[white|black]"
-                },
-                {
-                    "name": "шахматы",
-                    "doc": "Создать шахматный вызов",
-                    "usage": "[white|black]"
-                },
-                {
-                    "name": "chessend",
-                    "doc": "Партии в чате / закрыть свою",
-                    "usage": "[id]"
-                },
-                {
-                    "name": "chesshelp",
-                    "doc": "Управление и правила",
-                    "usage": ""
-                }
-            ],
-            "size": 31896,
-            "sha256": "e05942ccb40153c172bf565f2787fcdd10e91ace79c28e7560d120d3f762aa6c",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chess.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chess.c",
-            "license": "MIT",
-            "min_host_version": 56,
-            "size_arm64": 31896,
-            "sha256_arm64": "e05942ccb40153c172bf565f2787fcdd10e91ace79c28e7560d120d3f762aa6c",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chess.so",
-            "size_arm32": 26760,
-            "sha256_arm32": "77a586c2fc9f658a9e2d68e5e6601aff0fea880f67644421e070fc24cc3b9799",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/chess.so"
-        },
-        {
-            "id": "copymessage",
-            "name": "copymessage",
-            "display_name": "CopyMessage",
-            "author": "Kote",
-            "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
-            "version": "1.3.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "copy",
-                    "doc": "Копирование сообщения в Избранное с отчетом",
-                    "usage": "[в ответ на сообщение]"
-                },
-                {
-                    "name": "hcopy",
-                    "doc": "Тихое копирование сообщения в Избранное",
-                    "usage": "[в ответ на сообщение]"
-                }
-            ],
-            "size": 7944,
-            "sha256": "9c5dfe682b1e9a9aa38badd0d45bf1eec024a6ab2229eb78c2216cd316a40ddc",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/copymessage.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
-            "license": "MIT",
-            "min_host_version": 0,
-            "size_arm64": 7944,
-            "sha256_arm64": "9c5dfe682b1e9a9aa38badd0d45bf1eec024a6ab2229eb78c2216cd316a40ddc",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/copymessage.so",
-            "size_arm32": 5012,
-            "sha256_arm32": "f18117530648965ec8da627979dac16e24ec824183e37d6181aa87c20484e79a",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/copymessage.so"
-        },
-        {
-            "id": "delme",
-            "name": "delme",
-            "display_name": "DelMe — Очистка своих сообщений",
-            "author": "KeyZenD / Kote",
-            "description": "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
-            "version": "1.0.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "delme",
-                    "doc": "Удаляет все сообщения от тебя с подтверждением",
-                    "usage": "[код]"
-                },
-                {
-                    "name": "delmenow",
-                    "doc": "Удаляет все сообщения от тебя без вопросов",
-                    "usage": ""
-                }
-            ],
-            "min_host_version": 71,
-            "size": 211864,
-            "sha256": "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
-            "license": "MIT",
-            "size_arm64": 211864,
-            "sha256_arm64": "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
-            "size_arm32": 158336,
-            "sha256_arm32": "58e1db64f6da2d3d90dbd40a6a416683ef11caca4a4d8cc6fa7fbd6d2b768f66",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/delme.so"
-        },
-        {
-            "id": "dep",
-            "name": "dep",
-            "display_name": "Депозит / Ставки (Dep)",
-            "author": "Kote",
-            "description": "Эмуляция ставок и азартного броска в чате со слотами (🎰).",
-            "version": "1.0.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "депаю",
-                    "doc": "Сделать ставку на всё что угодно (слот 🎰).",
-                    "usage": "[сумма/текст]"
-                },
-                {
-                    "name": "dep",
-                    "doc": "Сделать ставку (псевдоним депаю).",
-                    "usage": "[сумма/текст]"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dep.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dep.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 48680,
-            "sha256": "88696d4766506c5620d6e34d09a9fa46a73587d7af4c44606503041e2623234c",
-            "size_arm64": 48680,
-            "sha256_arm64": "88696d4766506c5620d6e34d09a9fa46a73587d7af4c44606503041e2623234c",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dep.so",
-            "size_arm32": 6792,
-            "sha256_arm32": "2d26dc8addb69fd90092dbe9c78aa48aab5667a60da5fc613d65768fa6cbd7ac",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dep.so"
-        },
-        {
-            "id": "dox",
-            "name": "dox",
-            "display_name": "Поиск данных (Dox)",
-            "author": "Kote",
-            "description": "Интеграция с Dox-ботами: автовыбор Telegram и поиск номера телефона (1:1 порт dox.py).",
-            "version": "1.0.10",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "dox",
-                    "doc": "Ищет информацию о пользователе (1:1 как в dox.py).",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "setdoxbot",
-                    "doc": "Устанавливает вашего Dox-бота (1:1 как в dox.py).",
-                    "usage": "<@username_бота>"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dox.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
-            "license": "MIT",
-            "min_host_version": 28,
-            "size": 470904,
-            "sha256": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7",
-            "size_arm64": 470904,
-            "sha256_arm64": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dox.so",
-            "size_arm32": 285744,
-            "sha256_arm32": "db88cae0de31ab3fbe952f2d6a0623136b5025d70b3afac3b5f3f66737e22d72",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dox.so"
-        },
-        {
-            "id": "gemini_web",
-            "name": "gemini_web",
-            "display_name": "Gemini Web AI",
-            "author": "Kote",
-            "description": "Клиент Gemini Web для Android с прямым защищённым HTTPS-транспортом, поддержкой cookies, выбором моделей и надёжной персистентной памятью диалогов.",
-            "version": "0.1.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "gweblogin",
-                    "doc": "Сохранить cookies из reply на сообщение с PSID [PSIDTS] в Избранном",
-                    "usage": "reply на cookies; без аргументов"
-                },
-                {
-                    "name": "gweblogout",
-                    "doc": "Удалить cookies и локальную память Gemini Web",
-                    "usage": ""
-                },
-                {
-                    "name": "gwebcookies",
-                    "doc": "Инструкция по получению cookies Google",
-                    "usage": ""
-                },
-                {
-                    "name": "gweb",
-                    "doc": "Спросить Gemini Web; текст и reply на текст, память диалога",
-                    "usage": "[вопрос]"
-                },
-                {
-                    "name": "gwebclear",
-                    "doc": "Сбросить локальную память всех моделей в этом чате",
-                    "usage": ""
-                },
-                {
-                    "name": "gwebmodel",
-                    "doc": "Список моделей аккаунта или выбор модели; auto — выбор Google",
-                    "usage": "[auto|ключ|id]"
-                },
-                {
-                    "name": "gwebstatus",
-                    "doc": "Локальный статус Gemini Web без показа секретов",
-                    "usage": ""
-                },
-                {
-                    "name": "gwebtest",
-                    "doc": "Проверить прямой HTTPS, затем вход и модели (без генерации)",
-                    "usage": ""
-                },
-                {
-                    "name": "gwebrefresh",
-                    "doc": "Обновить cookies, токен и модели без сброса диалогов",
-                    "usage": ""
-                },
-                {
-                    "name": "gwebtimeout",
-                    "doc": "Таймаут генерации в секундах (30–300)",
-                    "usage": "[секунды]"
-                }
-            ],
-            "size": 5878752,
-            "sha256": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/tree/main/src/gemini_web",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size_arm64": 5878752,
-            "sha256_arm64": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
-            "size_arm32": 4280992,
-            "sha256_arm32": "30a3bc09411778573abeddf785174c64927bc66ef87e2214e6f96ee70d326978",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/gemini_web.so"
-        },
-        {
-            "id": "id",
-            "name": "id",
-            "display_name": "User ID & Link",
-            "author": "Kote",
-            "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
-            "version": "1.0.6",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "ай",
-                    "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе.",
-                    "usage": "(в ответ или без)"
-                },
-                {
-                    "name": "id",
-                    "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе (псевдоним).",
-                    "usage": "(в ответ или без)"
-                }
-            ],
-            "size": 49912,
-            "sha256": "4b159cdddeab429a8a1dda0b2c532aaab9daf3a326fb7b361a6c8c16deeedd4e",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/id.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size_arm64": 49912,
-            "sha256_arm64": "4b159cdddeab429a8a1dda0b2c532aaab9daf3a326fb7b361a6c8c16deeedd4e",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/id.so",
-            "size_arm32": 8468,
-            "sha256_arm32": "2e617d93ee6be634b382a304c8d675a0ccf83828f118ff073b839d122772d096",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/id.so"
-        },
-        {
-            "id": "idprem",
-            "name": "idprem",
-            "display_name": "ID премиум-эмодзи",
-            "author": "Kote",
-            "description": "Утилита для получения document_id премиум-эмодзи из сообщения (в ответ или к своему). Удобно для настройки .setrpemoji / .setmodemoji.",
-            "version": "1.0.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "idprem",
-                    "doc": "Показать ID премиум-эмодзи из сообщения",
-                    "usage": "[в ответ на сообщение]"
-                }
-            ],
-            "size": 51032,
-            "sha256": "304ad1d6747f56bbe34913f5bfb38b37e940d774955cfd04ff31630bca1b3582",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/idprem.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
-            "license": "MIT",
-            "min_host_version": 17,
-            "size_arm64": 51032,
-            "sha256_arm64": "304ad1d6747f56bbe34913f5bfb38b37e940d774955cfd04ff31630bca1b3582",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/idprem.so",
-            "size_arm32": 9332,
-            "sha256_arm32": "86afa712872cc43d88bdb44625df6e0d7f4163aaf7f780eb448dd99e4b78a9ae",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/idprem.so"
-        },
-        {
-            "id": "inviter",
-            "name": "inviter",
-            "display_name": "Инвайтер и рассылка (Inviter)",
-            "author": "Kote",
-            "description": "Массовая рассылка и инвайтинг с поддержкой твинков, настраиваемых задержек и фильтров.",
-            "version": "1.0.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "invite",
-                    "doc": "Запустить добавление участников чата в очередь рассылки.",
-                    "usage": "[chat_id|@username]"
-                },
-                {
-                    "name": "inviter",
-                    "doc": "Рассылка / инвайтинг (псевдоним invite).",
-                    "usage": "[chat_id|@username]"
-                },
-                {
-                    "name": "invsetmsg",
-                    "doc": "Установить или просмотреть текст сообщения для рассылки.",
-                    "usage": "[текст]"
-                },
-                {
-                    "name": "invstatus",
-                    "doc": "Просмотр статуса очереди и статистики отправленных сообщений.",
-                    "usage": ""
-                },
-                {
-                    "name": "invcfg",
-                    "doc": "Настройки Inviter (delay, worker, admins, bots).",
-                    "usage": "[параметр] [значение]"
-                },
-                {
-                    "name": "invclear",
-                    "doc": "Очистить очередь рассылки и сбросить счетчики.",
-                    "usage": ""
-                },
-                {
-                    "name": "invstop",
-                    "doc": "Остановить текущий процесс рассылки.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/inviter.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/inviter.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 331832,
-            "sha256": "3ccbc033cc242eb4da4caabc334d7965cc51ac570180ddb102752f20ce44681b",
-            "size_arm64": 331832,
-            "sha256_arm64": "3ccbc033cc242eb4da4caabc334d7965cc51ac570180ddb102752f20ce44681b",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/inviter.so",
-            "size_arm32": 194512,
-            "sha256_arm32": "a23b2ab6a03394a689e7080092e99ddb67c23ac9b3e70fc188f540e07d206c0e",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/inviter.so"
-        },
-        {
-            "id": "kotserv",
-            "name": "kotserv",
-            "display_name": "Сервер Kote (KotServ)",
-            "author": "Kote",
-            "description": "Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации.",
-            "version": "2.0.4",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "serv",
-                    "doc": "Статус и подключение к серверу Kote.",
-                    "usage": ""
-                },
-                {
-                    "name": "kscfg",
-                    "doc": "Настройка параметров отображения модуля kotserv.",
-                    "usage": "[ключ] [значение]"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/kotserv.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kotserv.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 111320,
-            "sha256": "245e7a0fba65a7adae9f29650b861009c525995f5fb6ba66d17d759e9a577d15",
-            "size_arm64": 111320,
-            "sha256_arm64": "245e7a0fba65a7adae9f29650b861009c525995f5fb6ba66d17d759e9a577d15",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/kotserv.so",
-            "size_arm32": 48372,
-            "sha256_arm32": "ba6f4f40d774e57f0a7e244f1ccb6e2598de122791f162ddd5fe02e2635c0166",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/kotserv.so"
-        },
-        {
-            "id": "mafia_multitool",
-            "name": "mafia_multitool",
-            "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
-            "author": "Kote",
-            "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
-            "version": "1.2.9",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "mset",
-                    "doc": "Установить лог-чат или арену",
-                    "usage": "<tourney|arena> [id]"
-                },
-                {
-                    "name": "mdelay",
-                    "doc": "Задержка голосования (мс)",
-                    "usage": "[мс]"
-                },
-                {
-                    "name": "mhuman",
-                    "doc": "Режим живых игроков",
-                    "usage": "[on|off|status|set...]"
-                },
-                {
-                    "name": "msettings",
-                    "doc": "Текущие настройки и статус твинков",
-                    "usage": ""
-                },
-                {
-                    "name": "mfreeze",
-                    "doc": "Заморозить/разморозить твинка",
-                    "usage": "[имя]"
-                },
-                {
-                    "name": "mcombat",
-                    "doc": "Вкл/выкл Combat авто-голосование",
-                    "usage": "<on/off>"
-                },
-                {
-                    "name": "mlast",
-                    "doc": "Combat: голос в последнего врага",
-                    "usage": ""
-                },
-                {
-                    "name": "mprelast",
-                    "doc": "Combat: голос в предпоследнего врага",
-                    "usage": ""
-                },
-                {
-                    "name": "mvesh",
-                    "doc": "Combat: голос в конкретного игрока",
-                    "usage": "<имя>"
-                },
-                {
-                    "name": "mreg",
-                    "doc": "Регистрация всех аккаунтов в игре",
-                    "usage": "<ссылка/старт-параметр>"
-                },
-                {
-                    "name": "mbvesh",
-                    "doc": "Baku: голос за игрока через ЛС",
-                    "usage": "<ник>"
-                },
-                {
-                    "name": "mblike",
-                    "doc": "Baku: подтвердить линч (лайк)",
-                    "usage": ""
-                },
-                {
-                    "name": "mbdis",
-                    "doc": "Baku: оправдать (дизлайк)",
-                    "usage": ""
-                },
-                {
-                    "name": "mrole",
-                    "doc": "Скан ролей из ЛС в лог-чат",
-                    "usage": "<combat|true|baku|koto|oso>"
-                },
-                {
-                    "name": "mlike",
-                    "doc": "Combat/Oso/True/Koto: подтвердить линч",
-                    "usage": "[oso|true|koto]"
-                },
-                {
-                    "name": "mdis",
-                    "doc": "Combat/Oso/True/Koto: оправдать",
-                    "usage": "[oso|true|koto]"
-                },
-                {
-                    "name": "mprofile",
-                    "doc": "Отправить /profile в Combat со всех акк.",
-                    "usage": ""
-                },
-                {
-                    "name": "mtrue",
-                    "doc": "Вкл/выкл TrueMafia режим",
-                    "usage": "<on/off>"
-                },
-                {
-                    "name": "mtvesh",
-                    "doc": "TrueMafia: голос за игрока",
-                    "usage": "<ник>"
-                },
-                {
-                    "name": "mkvesh",
-                    "doc": "KotoMafia: голос за игрока через ЛС",
-                    "usage": "<ник>"
-                },
-                {
-                    "name": "mkgraf",
-                    "doc": "KotoMafia: поиск не проголосовавших",
-                    "usage": ""
-                },
-                {
-                    "name": "mbaku",
-                    "doc": "Baku: поиск не проголосовавших",
-                    "usage": "[red/blue]"
-                },
-                {
-                    "name": "movesh",
-                    "doc": "Mafioso: голос за игрока через ЛС",
-                    "usage": "<ник>"
-                }
-            ],
-            "size": 240344,
-            "sha256": "580123d15f93ee3cf31f24724f9c0faa910b1450d9c307b86544e5f066439c6b",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_multitool.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
-            "license": "MIT",
-            "min_host_version": 28,
-            "size_arm64": 240344,
-            "sha256_arm64": "580123d15f93ee3cf31f24724f9c0faa910b1450d9c307b86544e5f066439c6b",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_multitool.so",
-            "size_arm32": 156868,
-            "sha256_arm32": "bf27b0133be28efdd73e7312087c16fbbd98980d5c4c2de6697f2840605c3667",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mafia_multitool.so"
-        },
-        {
-            "id": "mafia_triggers",
-            "name": "mafia_triggers",
-            "display_name": "Триггеры Мафии (MafiaTriggers)",
-            "author": "Kote",
-            "description": "Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков с настройкой длительности и пунктов правил.",
-            "version": "2.2.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "wtr",
-                    "doc": "Вкл/Выкл Warn-триггер для Мафии (варнит вышедших/afk).",
-                    "usage": ""
-                },
-                {
-                    "name": "mtr",
-                    "doc": "Вкл/Выкл Mute-триггер для Мафии (мутит вышедших/afk).",
-                    "usage": ""
-                },
-                {
-                    "name": "mtrcfg",
-                    "doc": "Настройки MafiaTriggers: время мута, причины AFK и лива.",
-                    "usage": "[time <время> | reason <причина> | leave <причина> | reset]"
-                },
-                {
-                    "name": "mtrtime",
-                    "doc": "Установить длительность мута (напр. .mtrtime 30m / 1h / 2h / 1d).",
-                    "usage": "<время>"
-                },
-                {
-                    "name": "mtrreason",
-                    "doc": "Установить причину/пункт правил за AFK (напр. .mtrreason 1.2 АФК).",
-                    "usage": "<причина>"
-                },
-                {
-                    "name": "mtrleave",
-                    "doc": "Установить причину/пункт правил за выход (напр. .mtrleave 1.3 Лив).",
-                    "usage": "<причина>"
-                },
-                {
-                    "name": "mtrsettings",
-                    "doc": "Интерактивная панель настроек MafiaTriggers с кнопками.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_triggers.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_triggers.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 128232,
-            "sha256": "824cfd15c3149c7aee7e7480a7c909732b5c009f6e0fd183e5beab8629048b6e",
-            "size_arm64": 128232,
-            "sha256_arm64": "824cfd15c3149c7aee7e7480a7c909732b5c009f6e0fd183e5beab8629048b6e",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_triggers.so",
-            "size_arm32": 69652,
-            "sha256_arm32": "ada446956b2119a47cedfe48dddf357eec959886736df2845af76eca3dbebc3b",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mafia_triggers.so"
-        },
-        {
-            "id": "mass_notifier",
-            "name": "mass_notifier",
-            "display_name": "Рассылка в ЛС (Mass Notifier)",
-            "author": "Kote",
-            "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
-            "version": "1.0.6",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "lsall",
-                    "doc": "Рассылка сообщений участникам чата в ЛС",
-                    "usage": "<текст / реплай на сообщение>"
-                }
-            ],
-            "size": 60960,
-            "sha256": "e722bb63f60f461feab2f9731b2fda1a4c64ad448d101a6f69f236d55c277b29",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mass_notifier.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 60960,
-            "sha256_arm64": "e722bb63f60f461feab2f9731b2fda1a4c64ad448d101a6f69f236d55c277b29",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mass_notifier.so",
-            "size_arm32": 16364,
-            "sha256_arm32": "927838b3bbe7303d86b18eb94faa0e6f7d75faea254ed8f83c3ee7122c84f320",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mass_notifier.so"
-        },
-        {
-            "id": "moderation",
-            "name": "moderation",
-            "display_name": "Модерация (Moderation)",
-            "author": "Kote",
-            "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
-            "version": "1.1.8",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "ban",
-                    "doc": "Забанить пользователя в чате",
-                    "usage": "[user/id] [причина]"
-                },
-                {
-                    "name": "sban",
-                    "doc": "Тихо забанить пользователя (без уведомления)",
-                    "usage": "[user/id] [причина]"
-                },
-                {
-                    "name": "unban",
-                    "doc": "Разбанить пользователя в чате",
-                    "usage": "[user/id]"
-                },
-                {
-                    "name": "kick",
-                    "doc": "Кикнуть пользователя из чата",
-                    "usage": "[user/id] [причина]"
-                },
-                {
-                    "name": "skick",
-                    "doc": "Тихо кикнуть пользователя из чата",
-                    "usage": "[user/id] [причина]"
-                },
-                {
-                    "name": "mute",
-                    "doc": "Замутить пользователя в чате",
-                    "usage": "[user/id] [время: 10m/1h/2d] [причина]"
-                },
-                {
-                    "name": "smute",
-                    "doc": "Тихо замутить пользователя",
-                    "usage": "[user/id] [время] [причина]"
-                },
-                {
-                    "name": "unmute",
-                    "doc": "Размутить пользователя в чате",
-                    "usage": "[user/id]"
-                },
-                {
-                    "name": "warn",
-                    "doc": "Выдать предупреждение (варн) с автобаном при лимите",
-                    "usage": "[user/id] [причина]"
-                },
-                {
-                    "name": "unwarn",
-                    "doc": "Снять последнее предупреждение",
-                    "usage": "[user/id]"
-                },
-                {
-                    "name": "warns",
-                    "doc": "Посмотреть варны пользователя",
-                    "usage": "[user/id]"
-                },
-                {
-                    "name": "warnlimit",
-                    "doc": "Установить лимит варнов для чата",
-                    "usage": "<число>"
-                },
-                {
-                    "name": "delusers",
-                    "doc": "Удалить последние сообщения пользователя",
-                    "usage": "[user/id] [лимит]"
-                },
-                {
-                    "name": "modhistory",
-                    "doc": "Посмотреть историю действий модерации",
-                    "usage": "[user/id] [лимит]"
-                },
-                {
-                    "name": "gameban",
-                    "doc": "Игровой временный бан (серверный бан на 1 час)",
-                    "usage": "[user/id]"
-                },
-                {
-                    "name": "gset",
-                    "doc": "Управление наборами глобальных чатов",
-                    "usage": "add/rm/list <cat> [id]"
-                },
-                {
-                    "name": "gban",
-                    "doc": "Глобальный бан пользователя в категории чатов",
-                    "usage": "<категория> [user/id] [причина]"
-                },
-                {
-                    "name": "ungban",
-                    "doc": "Снять глобальный бан пользователя в категории чатов",
-                    "usage": "<категория> [user/id]"
-                },
-                {
-                    "name": "gkick",
-                    "doc": "Глобальный кик пользователя из категории чатов",
-                    "usage": "<категория> [user/id] [причина]"
-                }
-            ],
-            "size": 289376,
-            "sha256": "35372e34244ae8fe7c7d5d6db9991b3a2b0d2eeafb844f8cfbfe52dc5a4db83f",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 289376,
-            "sha256_arm64": "35372e34244ae8fe7c7d5d6db9991b3a2b0d2eeafb844f8cfbfe52dc5a4db83f",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
-            "size_arm32": 228324,
-            "sha256_arm32": "aa29882e634e4014b3afd8dd033d76cea18fcba4b184c17cdc8be4ecd060f8c4",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/moderation.so"
-        },
-        {
-            "id": "music",
-            "name": "music",
-            "display_name": "Music Player (Telegram Bots)",
-            "author": "Kote",
-            "description": "Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства.",
-            "version": "3.0.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "mus",
-                    "doc": "Поиск и отправка музыки через Telegram-ботов",
-                    "usage": "<запрос>"
-                },
-                {
-                    "name": "musconfig",
-                    "doc": "Информация и конфигурация музыкального модуля",
-                    "usage": ""
-                }
-            ],
-            "size": 47736,
-            "sha256": "d89d886c3e6e7a4e02b83672982f5e72b2663d1193f08187e9911e8664a595c2",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/music.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
-            "license": "MIT",
-            "min_host_version": 13,
-            "size_arm64": 47736,
-            "sha256_arm64": "d89d886c3e6e7a4e02b83672982f5e72b2663d1193f08187e9911e8664a595c2",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/music.so",
-            "size_arm32": 6516,
-            "sha256_arm32": "e20434c39e0d16ef7488dfdcf123a28a19993bc43a932d8e597f20245af9a8f5",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/music.so"
-        },
-        {
-            "id": "pmbl",
-            "name": "pmbl",
-            "display_name": "PMBL — Защита ЛС",
-            "author": "Kote",
-            "description": "Нативная защита личных сообщений: фильтрация спама, белый список, проверка контактов и истории переписки, жалобы и автоматическая блокировка.",
-            "version": "0.2.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "pmbl",
-                    "doc": "Включить/выключить PMBL; strict — явный режим только белого списка",
-                    "usage": "[on|off|strict]"
-                },
-                {
-                    "name": "pmblstatus",
-                    "doc": "Статус защиты и настройки PMBL",
-                    "usage": ""
-                },
-                {
-                    "name": "allowpm",
-                    "doc": "Разрешить пользователю писать в ЛС; снять блокировку PMBL",
-                    "usage": "[ID|@username|reply]"
-                },
-                {
-                    "name": "denypm",
-                    "doc": "Удалить пользователя из белого списка PMBL",
-                    "usage": "[ID|@username|reply]"
-                },
-                {
-                    "name": "pmlist",
-                    "doc": "Показать белый список PMBL текущего аккаунта",
-                    "usage": ""
-                },
-                {
-                    "name": "pmblsett",
-                    "doc": "Настроить жалобы на спам и удаление диалога (0/1)",
-                    "usage": "<report_spam> <delete_dialog>"
-                },
-                {
-                    "name": "pmblcfg",
-                    "doc": "Изменить настройку PMBL",
-                    "usage": "<ключ> <значение>"
-                },
-                {
-                    "name": "pmbanlast",
-                    "doc": "Заблокировать и очистить у себя N последних начатых личных диалогов",
-                    "usage": "<число>"
-                }
-            ],
-            "size": 654552,
-            "sha256": "4c3e935d6e0b604f42e47b4a9021a25f361a4ccb0d112215c2ed04e3539c3e71",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/pmbl.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/pmbl.cpp",
-            "license": "AGPL-3.0-only",
-            "min_host_version": 74,
-            "size_arm64": 654552,
-            "sha256_arm64": "4c3e935d6e0b604f42e47b4a9021a25f361a4ccb0d112215c2ed04e3539c3e71",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/pmbl.so",
-            "size_arm32": 261216,
-            "sha256_arm32": "b54fd95d4ef3249e041ca7fe118cf70fb5ebd27d24547f7c7eb8f24e9e49fc87",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/pmbl.so"
-        },
-        {
-            "id": "profile_manager",
-            "name": "profile_manager",
-            "display_name": "Profile Manager",
-            "author": "Kote",
-            "description": "Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
-            "version": "1.2.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "name",
-                    "doc": "Изменить имя профиля.",
-                    "usage": "<новое_имя>"
-                },
-                {
-                    "name": "sname",
-                    "doc": "Сохранить текущее имя в историю.",
-                    "usage": ""
-                },
-                {
-                    "name": "lname",
-                    "doc": "Показать историю сохранённых имён.",
-                    "usage": ""
-                },
-                {
-                    "name": "dname",
-                    "doc": "Очистить историю имён.",
-                    "usage": "<номер|all>"
-                },
-                {
-                    "name": "namelist",
-                    "doc": "Показать инлайн-меню с историей имён.",
-                    "usage": ""
-                },
-                {
-                    "name": "setava",
-                    "doc": "Установить аватар из фото (ответ на фото или документ-изображение).",
-                    "usage": ""
-                },
-                {
-                    "name": "delava",
-                    "doc": "Удалить текущий аватар профиля.",
-                    "usage": ""
-                }
-            ],
-            "size": 84592,
-            "sha256": "04259d1712b1c036301a615c57145f6bb5978648fcda5879f3e5090d84ef8e8b",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/profile_manager.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/profile_manager.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size_arm64": 84592,
-            "sha256_arm64": "04259d1712b1c036301a615c57145f6bb5978648fcda5879f3e5090d84ef8e8b",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/profile_manager.so",
-            "size_arm32": 30312,
-            "sha256_arm32": "cd0613d96d43c6438af1cc898db5e0c0e9290ddafcfc77cc4cddc48564dc71e6",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/profile_manager.so"
-        },
-        {
-            "id": "rp",
-            "name": "rp",
-            "display_name": "Role-Play (РП команды)",
-            "author": "Kote",
-            "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
-            "version": "3.0.3",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "rp",
-                    "doc": "Управление RP-модулем в чате (on/off/access)",
-                    "usage": "[on|off|access]"
-                },
-                {
-                    "name": "addrp",
-                    "doc": "Добавить новую RP-команду (с премиум-эмодзи)",
-                    "usage": "<алиасы>|<действие>|<эмодзи/ID>"
-                },
-                {
-                    "name": "delrp",
-                    "doc": "Удалить RP-команду",
-                    "usage": "<алиас|all|prem|simple>"
-                },
-                {
-                    "name": "rplist",
-                    "doc": "Список всех доступных RP-команд",
-                    "usage": ""
-                },
-                {
-                    "name": "setrpnick",
-                    "doc": "Установить RP-ник пользователю",
-                    "usage": "[-g] [@user] <ник>"
-                },
-                {
-                    "name": "delrpnick",
-                    "doc": "Удалить или скрыть RP-ник",
-                    "usage": "[-g] [@user]"
-                },
-                {
-                    "name": "rpnick",
-                    "doc": "Посмотреть текущие RP-ники",
-                    "usage": "[@user]"
-                },
-                {
-                    "name": "addrpcreator",
-                    "doc": "Назначить создателя RP-команд",
-                    "usage": "[@user]"
-                },
-                {
-                    "name": "delrpcreator",
-                    "doc": "Снять права создателя RP-команд",
-                    "usage": "[@user]"
-                },
-                {
-                    "name": "listrpcreators",
-                    "doc": "Список создателей RP-команд",
-                    "usage": ""
-                },
-                {
-                    "name": "setrpemoji",
-                    "doc": "Кастомный статичный эмодзи интерфейса RP",
-                    "usage": "<ключ> <эмодзи/ID> [| fallback]"
-                },
-                {
-                    "name": "delrpemoji",
-                    "doc": "Сбросить статичный эмодзи до дефолтного",
-                    "usage": "<ключ>"
-                },
-                {
-                    "name": "rpemojis",
-                    "doc": "Список статичных эмодзи интерфейса RP",
-                    "usage": ""
-                }
-            ],
-            "size": 168024,
-            "sha256": "d07fc8397c0badcb29f1087de8ceff2f666183811d3720701b988554835224a6",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rp.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 168024,
-            "sha256_arm64": "d07fc8397c0badcb29f1087de8ceff2f666183811d3720701b988554835224a6",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rp.so",
-            "size_arm32": 101268,
-            "sha256_arm32": "13a665a8f236615cba847d70ee55b7c5de02ed8aebd5342b62a103eaf34b66a0",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/rp.so"
-        },
-        {
-            "id": "scrapper",
-            "name": "scrapper",
-            "display_name": "Сбор участников (Scrapper)",
-            "author": "Kote",
-            "description": "Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации.",
-            "version": "1.0.5",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "scrap",
-                    "doc": "Сбор участников чата в файл дампа с фильтрами.",
-                    "usage": "[chat_id|@username]"
-                },
-                {
-                    "name": "scrapper",
-                    "doc": "Сбор участников (псевдоним scrap).",
-                    "usage": "[chat_id|@username]"
-                },
-                {
-                    "name": "scrapcfg",
-                    "doc": "Настройки параметров сбора (method, limit, admins, bots, worker).",
-                    "usage": "[параметр] [значение]"
-                },
-                {
-                    "name": "stopscrap",
-                    "doc": "Остановить текущий процесс сбора данных.",
-                    "usage": ""
-                },
-                {
-                    "name": "killscrap",
-                    "doc": "Прервать сбор данных (псевдоним stopscrap).",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/scrapper.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 350664,
-            "sha256": "a8f2f5f9fc60c0dfa5cb67e96b38f4bead378814e1c2347756da43535c1fc878",
-            "size_arm64": 350664,
-            "sha256_arm64": "a8f2f5f9fc60c0dfa5cb67e96b38f4bead378814e1c2347756da43535c1fc878",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/scrapper.so",
-            "size_arm32": 215192,
-            "sha256_arm32": "32ea231ec8b4151481f6ed3e481eba24011ddc314842c6164a2c48ea84c7b1ba",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/scrapper.so"
-        },
-        {
-            "id": "spam_ban",
-            "name": "spam_ban",
-            "display_name": "Spam Ban",
-            "author": "Kote",
-            "description": "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3).",
-            "version": "1.6.2",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "spamtwins",
-                    "doc": "Включить/выключить атаку с твинков.",
-                    "usage": ""
-                },
-                {
-                    "name": "spamban",
-                    "doc": "Мощная жалоба (Спам) + Блок.",
-                    "usage": "<@user/ID/ответ>"
-                }
-            ],
-            "size": 49224,
-            "sha256": "e76f0e2a7df21dc534d69cfc7606607fc843d2ed12d095c522c466bb2c87c69c",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spam_ban.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 49224,
-            "sha256_arm64": "e76f0e2a7df21dc534d69cfc7606607fc843d2ed12d095c522c466bb2c87c69c",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spam_ban.so",
-            "size_arm32": 7372,
-            "sha256_arm32": "da1971f88907fa8283d2ca3b0653cf933da142013e0217cee892a3314961a683",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/spam_ban.so"
-        },
-        {
-            "id": "spammer",
-            "name": "spammer",
-            "display_name": "Спамер (Spammer)",
-            "author": "Kote",
-            "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении.",
-            "version": "1.2.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "spam",
-                    "doc": "Начать спам сообщениями (с поддержкой цитат, форматирования и премиум-эмодзи)",
-                    "usage": "[количество] <текст>"
-                },
-                {
-                    "name": "stopspam",
-                    "doc": "Остановить задачу спама",
-                    "usage": ""
-                }
-            ],
-            "size": 63208,
-            "sha256": "1fdc1684d7cf569f822d78a8b8223c66e74983b2fc461e70bdca2e12a2a2f868",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spammer.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
-            "license": "MIT",
-            "min_host_version": 24,
-            "size_arm64": 63208,
-            "sha256_arm64": "1fdc1684d7cf569f822d78a8b8223c66e74983b2fc461e70bdca2e12a2a2f868",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spammer.so",
-            "size_arm32": 17984,
-            "sha256_arm32": "21fff346d82f6624caee4571a986d770a7a2b1ae03c403ab2120622b4f44f9ea",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/spammer.so"
-        },
-        {
-            "id": "stags",
-            "name": "stags",
-            "display_name": "Silent Tags",
-            "author": "Kote",
-            "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
-            "version": "2.9.10",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "stags",
-                    "doc": "Включить или выключить модуль Silent Tags.",
-                    "usage": "<on/off>"
-                },
-                {
-                    "name": "stconfig",
-                    "doc": "Просмотр и детальная настройка модуля Silent Tags.",
-                    "usage": "[help/key] [value]"
-                },
-                {
-                    "name": "sttwins",
-                    "doc": "Инлайн-панель управления режимами твинков для Silent Tags.",
-                    "usage": ""
-                }
-            ],
-            "size": 318224,
-            "sha256": "a4ad51d70babf991547b4101a119018b3ae6b053fcc65a77c8070cdc2a8e0df7",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/stags.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
-            "license": "MIT",
-            "min_host_version": 60,
-            "size_arm64": 318224,
-            "sha256_arm64": "a4ad51d70babf991547b4101a119018b3ae6b053fcc65a77c8070cdc2a8e0df7",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/stags.so",
-            "size_arm32": 190260,
-            "sha256_arm32": "4bce183d0dbc583c388986d616a04ae727e3ef78348781085bf2ecdf136376e3",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/stags.so"
-        },
-        {
-            "id": "sysinfo",
-            "name": "sysinfo",
-            "display_name": "Мониторинг сервера (SysInfo)",
-            "author": "Kote",
-            "description": "Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно.",
-            "version": "1.1.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "sys",
-                    "doc": "Показывает точные метрики системы, нагрузку CPU, RAM, диска и процесса.",
-                    "usage": ""
-                },
-                {
-                    "name": "sysinfo",
-                    "doc": "Полная системная панель мониторинга сервера и устройства.",
-                    "usage": ""
-                },
-                {
-                    "name": "neofetch",
-                    "doc": "Красивый ASCII Neofetch с логотипом Kotogram и характеристиками системы.",
-                    "usage": ""
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/sysinfo.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
-            "license": "MIT",
-            "min_host_version": 63,
-            "size": 321256,
-            "sha256": "5dba6ca79b493faae6d420629ddc4dbaa4c3262c9a0d8035418cd954a9283eb7",
-            "size_arm64": 321256,
-            "sha256_arm64": "5dba6ca79b493faae6d420629ddc4dbaa4c3262c9a0d8035418cd954a9283eb7",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/sysinfo.so",
-            "size_arm32": 180352,
-            "sha256_arm32": "bed0103f227b0c01d4ed70a8ccb26bd77584cef4eae5878c796675678814a897",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/sysinfo.so"
-        },
-        {
-            "id": "tagger",
-            "name": "tagger",
-            "display_name": "Tagger",
-            "author": "Kote",
-            "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
-            "version": "3.4.6",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "tag",
-                    "doc": "Тегнуть участников чата (всех или указанное количество).",
-                    "usage": "[число] [текст] [-id]"
-                },
-                {
-                    "name": "itag",
-                    "doc": "Тегнуть только указанных пользователей (include tag).",
-                    "usage": "<id1 id2...> [текст]"
-                },
-                {
-                    "name": "etag",
-                    "doc": "Тегнуть всех за исключением указанных пользователей (exclude tag).",
-                    "usage": "<id1 id2...> [текст]"
-                },
-                {
-                    "name": "stoptag",
-                    "doc": "Остановить текущий процесс тега участников.",
-                    "usage": ""
-                },
-                {
-                    "name": "cleartag",
-                    "doc": "Очистить очередь и остановить процесс тега.",
-                    "usage": ""
-                },
-                {
-                    "name": "tagdelay",
-                    "doc": "Установить диапазон задержки между сообщениями теггера (сек).",
-                    "usage": "<min> [max]"
-                },
-                {
-                    "name": "tagusers",
-                    "doc": "Установить диапазон количества юзеров за раз.",
-                    "usage": "<min> [max]"
-                },
-                {
-                    "name": "add",
-                    "doc": "Добавить пользователя в вайтлист чата (не тегать).",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "remove",
-                    "doc": "Убрать пользователя из вайтлиста чата.",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "helps",
-                    "doc": "Показать количество участников в вайтлисте чата.",
-                    "usage": ""
-                },
-                {
-                    "name": "nonick",
-                    "doc": "Управление кастомными никами теггера (add/del/list, -g).",
-                    "usage": "<add/del/list> [@user] [Name] [-g]"
-                },
-                {
-                    "name": "tagbots",
-                    "doc": "Включить или выключить тегирование ботов чата.",
-                    "usage": "[on/off]"
-                },
-                {
-                    "name": "tagadmins",
-                    "doc": "Включить или выключить тегирование администраторов чата.",
-                    "usage": "[on/off]"
-                },
-                {
-                    "name": "tagsettings",
-                    "doc": "Инлайн-панель настроек теггера.",
-                    "usage": ""
-                }
-            ],
-            "size": 160280,
-            "sha256": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size_arm64": 160280,
-            "sha256_arm64": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
-            "size_arm32": 94504,
-            "sha256_arm32": "2dcece826a1adddf93398f6764d3818218b5c782081d9b50f86c8e853a55e86a",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tagger.so"
-        },
-        {
-            "id": "tt_dl",
-            "name": "tt_dl",
-            "display_name": "TikTok Downloader",
-            "author": "Коте",
-            "description": "Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album) через tikwm API с живым статусом и логами. Настройка подписи: полная или краткая (в приложении и через .tt caption).",
-            "version": "1.5.0",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "tt",
-                    "doc": "Скачать контент из TikTok (видео/гиф/фото)",
-                    "usage": "<ссылка> | caption [full|short]"
-                }
-            ],
-            "size": 62824,
-            "sha256": "47a934a27436eb8a0865dfdf06f5daca4dfbe34f58114ea1cade0037abc02025",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tt_dl.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
-            "license": "MIT",
-            "min_host_version": 24,
-            "size_arm64": 62824,
-            "sha256_arm64": "47a934a27436eb8a0865dfdf06f5daca4dfbe34f58114ea1cade0037abc02025",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tt_dl.so",
-            "size_arm32": 17736,
-            "sha256_arm32": "e95faa46b5eea6206baf5c3499801fbe8f1844e5c338021a0d96554b8a203ab9",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tt_dl.so"
-        },
-        {
-            "id": "weather",
-            "name": "weather",
-            "display_name": "Погода (Weather)",
-            "author": "Kote",
-            "description": "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени.",
-            "version": "1.1.3",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "weather",
-                    "doc": "Показывает текущую погоду и прогноз наперёд в указанном городе.",
-                    "usage": "<город>"
-                },
-                {
-                    "name": "w",
-                    "doc": "Погода (псевдоним weather).",
-                    "usage": "<город>"
-                },
-                {
-                    "name": "forecast",
-                    "doc": "Подробный прогноз погоды на 3 или 7 дней наперёд.",
-                    "usage": "<город> [7]"
-                },
-                {
-                    "name": "fc",
-                    "doc": "Прогноз погоды (псевдоним forecast).",
-                    "usage": "<город> [7]"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/weather.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 408152,
-            "sha256": "4f4666eaffaa5d7ec7744ef4af6965ad14413edda626759cc7068f818ab7aa02",
-            "size_arm64": 408152,
-            "sha256_arm64": "4f4666eaffaa5d7ec7744ef4af6965ad14413edda626759cc7068f818ab7aa02",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/weather.so",
-            "size_arm32": 248020,
-            "sha256_arm32": "b3930819ba7c9f8759ca1737b187b041116afbdaf050dc3eba77b7d46297bd75",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/weather.so"
-        },
-        {
-            "id": "whois",
-            "name": "whois",
-            "display_name": "Информация и анализ (WhoIs)",
-            "author": "Kote",
-            "description": "Подробная информация о пользователях (профиль, ID, bio, dc, premium) и глубокий анализ чатов (участники, админы, боты).",
-            "version": "1.0.1",
-            "kind": "so",
-            "abi": "arm64-v8a, armeabi-v7a",
-            "commands": [
-                {
-                    "name": "whois",
-                    "doc": "Подробная информация о пользователе (по reply, ID, @username или о себе).",
-                    "usage": "[id|@username]"
-                },
-                {
-                    "name": "whoischat",
-                    "doc": "Анализ чата или канала (участники, админы, боты, тип, права).",
-                    "usage": "[chat_id|@username]"
-                },
-                {
-                    "name": "chatanalysis",
-                    "doc": "Анализ текущего или указанного чата (псевдоним whoischat).",
-                    "usage": "[chat_id|@username]"
-                }
-            ],
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/whois.so",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/whois.cpp",
-            "license": "MIT",
-            "min_host_version": 26,
-            "size": 279600,
-            "sha256": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5",
-            "size_arm64": 279600,
-            "sha256_arm64": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/whois.so",
-            "size_arm32": 156888,
-            "sha256_arm32": "d7e67abaeb926d086e48cbe14f82ec1d160d58c63d01cecc0b612ee2d2727a52",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/whois.so"
-        },
-        {
-            "id": "moomod",
-            "name": "moomod",
-            "display_name": "MooBot (Корова)",
-            "author": "Kote",
-            "description": "Взаимодействие с игрой @moolokobot (MooBot) с поддержкой форматирования и премиум-эмодзи.",
-            "version": "1.3.0",
-            "kind": "so",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moomod.so",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moomod.so",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/moomod.so",
-            "size": 53288,
-            "sha256": "cdee5e1066b6cdaf136e6d5f83e3440fef4ffe86b0854ae3d076a0e7b7ab41d6",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moomod.cpp",
-            "license": "MIT",
-            "min_host_version": 2,
-            "commands": [
-                {
-                    "name": "лес",
-                    "doc": "Отправить /forest боту",
-                    "usage": ""
-                },
-                {
-                    "name": "таск",
-                    "doc": "Отправить /task боту",
-                    "usage": ""
-                },
-                {
-                    "name": "крафт",
-                    "doc": "Отправить /craft боту",
-                    "usage": ""
-                },
-                {
-                    "name": "мун",
-                    "doc": "Узнать количество муней",
-                    "usage": ""
-                },
-                {
-                    "name": "мукри",
-                    "doc": "Узнать количество кристаллов",
-                    "usage": ""
-                },
-                {
-                    "name": "мукр",
-                    "doc": "Узнать баланс крови",
-                    "usage": ""
-                },
-                {
-                    "name": "бб",
-                    "doc": "Узнать профиль теленка",
-                    "usage": ""
-                },
-                {
-                    "name": "мудон",
-                    "doc": "Узнать прайс доната",
-                    "usage": "[число]"
-                }
-            ],
-            "size_arm64": 53288,
-            "sha256_arm64": "cdee5e1066b6cdaf136e6d5f83e3440fef4ffe86b0854ae3d076a0e7b7ab41d6",
-            "size_arm32": 9516,
-            "sha256_arm32": "973a7cf94807eb0c06b13ffd45f611aec8b16ab1f529b4f27c3fbc2d17378f90",
-            "abi": "arm64-v8a, armeabi-v7a"
-        },
-        {
-            "id": "usermanage",
-            "name": "usermanage",
-            "display_name": "Управление пользователями",
-            "author": "Kote",
-            "description": "Управление пользователями, черным списком и контактами.",
-            "version": "1.0.6",
-            "kind": "so",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/usermanage.so",
-            "size": 139352,
-            "sha256": "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/usermanage.cpp",
-            "license": "MIT",
-            "min_host_version": 2,
-            "commands": [
-                {
-                    "name": "block",
-                    "doc": "Заблокировать пользователя",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "unblock",
-                    "doc": "Разблокировать пользователя",
-                    "usage": "[@user/ID]"
-                },
-                {
-                    "name": "blocklist",
-                    "doc": "Показать список заблокированных ботом",
-                    "usage": ""
-                },
-                {
-                    "name": "ct",
-                    "doc": "Добавить в контакты",
-                    "usage": "[@user/ID] <Имя>"
-                },
-                {
-                    "name": "mct",
-                    "doc": "Добавить в контакты взаимно",
-                    "usage": "[@user/ID] <Имя>"
-                },
-                {
-                    "name": "rct",
-                    "doc": "Удалить из контактов",
-                    "usage": "[@user/ID]"
-                }
-            ],
-            "size_arm64": 139352,
-            "sha256_arm64": "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
-            "size_arm32": 92876,
-            "sha256_arm32": "9717643685a8c9290d095ecd1b48749fbe5976859e45a5632e61fc4f78b45d95",
-            "abi": "arm64-v8a, armeabi-v7a"
-        },
-        {
-            "id": "poll",
-            "name": "poll",
-            "display_name": "Конструктор опросов",
-            "author": "Kote",
-            "description": "Создание опросов по шаблонам, сканер результатов и теги участников.",
-            "version": "3.4.1",
-            "kind": "so",
-            "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
-            "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
-            "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/poll.so",
-            "size": 331760,
-            "sha256": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
-            "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
-            "license": "MIT",
-            "min_host_version": 85,
-            "commands": [
-                {
-                    "name": "poll",
-                    "doc": "Создать опрос по шаблону",
-                    "usage": "<шаблон> <вопрос>"
-                },
-                {
-                    "name": "pollcfg",
-                    "doc": "Управление шаблонами опросов",
-                    "usage": "[list/add/del]"
-                },
-                {
-                    "name": "pollscan",
-                    "doc": "Сканировать результаты опроса (в ответ на опрос)",
-                    "usage": ""
-                },
-                {
-                    "name": "polltag",
-                    "doc": "Тегнуть проголосовавших или непроголосовавших",
-                    "usage": "<номер|novote> [текст]"
-                }
-            ],
-            "size_arm64": 331760,
-            "sha256_arm64": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
-            "size_arm32": 260264,
-            "sha256_arm32": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
-            "abi": "arm64-v8a, armeabi-v7a"
+          "name": "adminsettings",
+          "doc": "Открыть инлайн-панель настройки шаблона прав админа",
+          "usage": ""
         }
-    ]
+      ],
+      "size": 384104,
+      "sha256": "e9e596496cffe516c2d4efc2b1c8f2904c4073dfbfb6b0f9dc846c6c5ecfeb11",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/administration.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 384104,
+      "sha256_arm64": "e9e596496cffe516c2d4efc2b1c8f2904c4073dfbfb6b0f9dc846c6c5ecfeb11",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/administration.so",
+      "size_arm32": 218168,
+      "sha256_arm32": "d4617cc1a4e70bf986a786fbc4eaa66de6e123c56bbdfbec2dd03d49fe5894cd",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/administration.so"
+    },
+    {
+      "id": "afk",
+      "name": "afk",
+      "display_name": "Автоответчик (AFK)",
+      "author": "Kote",
+      "description": "Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' || AFK' в профиле Telegram.",
+      "version": "2.1.3",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "afk",
+          "doc": "Включить режим AFK или посмотреть статус",
+          "usage": "[причина]"
+        },
+        {
+          "name": "unafk",
+          "doc": "Выключить режим AFK",
+          "usage": ""
+        },
+        {
+          "name": "afkexc",
+          "doc": "Управление исключениями AFK (add/del/list)",
+          "usage": "<add/del/list> [user/id]"
+        },
+        {
+          "name": "setstatus",
+          "doc": "Добавить метку ' || AFK' к фамилии/имени профиля",
+          "usage": ""
+        },
+        {
+          "name": "removestatus",
+          "doc": "Убрать метку ' || AFK' из профиля",
+          "usage": ""
+        }
+      ],
+      "size": 93448,
+      "sha256": "a7463fd609e2b3da0246d3cc082202df31fe9086ecacc0e21ed429a67f21f598",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/afk.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/afk.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 93448,
+      "sha256_arm64": "a7463fd609e2b3da0246d3cc082202df31fe9086ecacc0e21ed429a67f21f598",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/afk.so",
+      "size_arm32": 36524,
+      "sha256_arm32": "89f9252aa154dcec86dd9bccf4bc5b15bb17dd61d87d37973ef3b99b4cfe92d7",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/afk.so"
+    },
+    {
+      "id": "aniliberty",
+      "name": "aniliberty",
+      "display_name": "AniLiberty (Аниме)",
+      "author": "Kote",
+      "description": "AniLiberty: поиск аниме по названию, случайные тайтлы и подробная информация о релизах.",
+      "version": "1.0.9",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "aniliberty",
+          "doc": "AniLiberty: случайное аниме или поиск по названию.",
+          "usage": "[название]"
+        },
+        {
+          "name": "arandom",
+          "doc": "Случайное аниме из базы AniLiberty.",
+          "usage": ""
+        },
+        {
+          "name": "anilib_search",
+          "doc": "Поиск аниме по названию в базе AniLiberty.",
+          "usage": "<название>"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/aniliberty.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/aniliberty.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 271384,
+      "sha256": "231fb60db585c7d141f29f68c8a265b3fc906890dd8e3f43e9b48935ad38014d",
+      "size_arm64": 271384,
+      "sha256_arm64": "231fb60db585c7d141f29f68c8a265b3fc906890dd8e3f43e9b48935ad38014d",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/aniliberty.so",
+      "size_arm32": 146440,
+      "sha256_arm32": "cb92412f0905e76d8db1da90c502c76123ff8f7718e04442ea44c6511ea95d57",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/aniliberty.so"
+    },
+    {
+      "id": "auto_manager",
+      "name": "auto_manager",
+      "display_name": "Менеджер автоматизации (AutoManager)",
+      "author": "Kote",
+      "description": "Авточтение с исключениями для отдельных чатов и управлением режимами аккаунтов.",
+      "version": "1.2.5",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "autread",
+          "doc": "Управление авточтением текущего или указанного чата.",
+          "usage": "<on|off> [this|ID]"
+        },
+        {
+          "name": "autreadlist",
+          "doc": "Список чатов с включенным авточтением.",
+          "usage": ""
+        },
+        {
+          "name": "autreadnow",
+          "doc": "Прочитать текущий чат и очистить непрочитанные упоминания прямо сейчас.",
+          "usage": ""
+        },
+        {
+          "name": "autoapprove",
+          "doc": "Управление автоодобрением заявок на вступление.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "autoapprovelist",
+          "doc": "Список чатов с автоодобрением заявок.",
+          "usage": ""
+        },
+        {
+          "name": "amtwins",
+          "doc": "Список и управление авточтением твинков",
+          "usage": "[list|on ID|off ID]"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/auto_manager.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/auto_manager.c",
+      "license": "MIT",
+      "min_host_version": 64,
+      "size": 21952,
+      "sha256": "32208334b6715116ffea8f67176932ea7c4bd34c345928925cf7107f6bb73417",
+      "size_arm64": 21952,
+      "sha256_arm64": "32208334b6715116ffea8f67176932ea7c4bd34c345928925cf7107f6bb73417",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/auto_manager.so",
+      "size_arm32": 17460,
+      "sha256_arm32": "e6add04d8551d1ac43d6b80c39ef1e4085c16e49de96060bd57d3a1a70a7e92b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/auto_manager.so"
+    },
+    {
+      "id": "autolast",
+      "name": "autolast",
+      "display_name": "Авто-ласт (AutoLast)",
+      "author": "Kote",
+      "description": "Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом.",
+      "version": "1.7.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "addlastchat",
+          "doc": "Добавить чат в белый список autolast.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "rmlastchat",
+          "doc": "Удалить чат из белого списка autolast.",
+          "usage": "[chat_id]"
+        },
+        {
+          "name": "addlastuser",
+          "doc": "Добавить юзера в белый список autolast.",
+          "usage": "[@user/id]"
+        },
+        {
+          "name": "rmlastuser",
+          "doc": "Удалить юзера из белого списка autolast.",
+          "usage": "[@user/id]"
+        },
+        {
+          "name": "lastadmin",
+          "doc": "Переключить режим ответа только админам.",
+          "usage": ""
+        },
+        {
+          "name": "lasthard",
+          "doc": "Переключить режим хардмода (отвечать на всё подряд).",
+          "usage": ""
+        },
+        {
+          "name": "listlast",
+          "doc": "Показать конфигурацию и списки autolast.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autolast.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autolast.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 81640,
+      "sha256": "5a4e006ea50d99f6aa13b24d88f77e41bf5d7fc104ac18cb49a0fc8833f87371",
+      "size_arm64": 81640,
+      "sha256_arm64": "5a4e006ea50d99f6aa13b24d88f77e41bf5d7fc104ac18cb49a0fc8833f87371",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autolast.so",
+      "size_arm32": 28632,
+      "sha256_arm32": "04cf01718b634da280d28053134b6882089922909b609dc41c33554b503f4fbf",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/autolast.so"
+    },
+    {
+      "id": "autoresponder",
+      "name": "autoresponder",
+      "display_name": "Автоответчик (AutoResponder)",
+      "author": "Kote",
+      "description": "Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов.",
+      "version": "2.4.4",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "pm",
+          "doc": "Главная панель настройки автоответчика в ЛС",
+          "usage": "[on|off|text|premtext|time|pic|nopic|cd|block|read|ghost|stats]"
+        },
+        {
+          "name": "pmignore",
+          "doc": "Добавить или удалить текущий чат из игнор-листа автоответчика",
+          "usage": ""
+        }
+      ],
+      "size": 87488,
+      "sha256": "0d895d9844fca9a05dfcb929d6a721d5cb560ef30c8fd66b45b3a026aebbf7aa",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autoresponder.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/autoresponder.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 87488,
+      "sha256_arm64": "0d895d9844fca9a05dfcb929d6a721d5cb560ef30c8fd66b45b3a026aebbf7aa",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/autoresponder.so",
+      "size_arm32": 34036,
+      "sha256_arm32": "04255c4e81dcacf1fb74d9e8e30872f46ad13d60de5f742a46996819ad1007dd",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/autoresponder.so"
+    },
+    {
+      "id": "bakusearch",
+      "name": "bakusearch",
+      "display_name": "BakuSearch (Помощник Baku Mafia)",
+      "author": "Kote",
+      "description": "Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue).",
+      "version": "1.0.4",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "baku",
+          "doc": "Поиск не проголосовавших игроков",
+          "usage": "[red/blue]"
+        }
+      ],
+      "size": 101536,
+      "sha256": "dcc915c4efbf63a996caf244267d9c2cc3ec6c547fb76e39ea712f1e8f2092e6",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/bakusearch.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/bakusearch.cpp",
+      "license": "MIT",
+      "min_host_version": 27,
+      "size_arm64": 101536,
+      "sha256_arm64": "dcc915c4efbf63a996caf244267d9c2cc3ec6c547fb76e39ea712f1e8f2092e6",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/bakusearch.so",
+      "size_arm32": 41924,
+      "sha256_arm32": "120cb9f261a58b3e62981eb0f1ef842101b758b70a47e0e0a78826b3c3f64318",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/bakusearch.so"
+    },
+    {
+      "id": "banall",
+      "name": "banall",
+      "display_name": "Массовая очистка (BanAll)",
+      "author": "Kote",
+      "description": "Бан или кик обычных участников с раздельными счётчиками и ID пропущенных; сообщает о неполном списке участников.",
+      "version": "1.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "banall",
+          "doc": "Забанить обычных участников; показать причины пропусков.",
+          "usage": ""
+        },
+        {
+          "name": "kickall",
+          "doc": "Исключить обычных участников; показать причины пропусков.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banall.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banall.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size": 263024,
+      "sha256": "bfea0824116a9ee310fecfe812194fbe79b9489cbff55ebac843e8f4a3dce883",
+      "size_arm64": 263024,
+      "sha256_arm64": "bfea0824116a9ee310fecfe812194fbe79b9489cbff55ebac843e8f4a3dce883",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banall.so",
+      "size_arm32": 140456,
+      "sha256_arm32": "683aa81cf919551db2985cf7a6bd6b0ef76590724bde36652c67a0822d4bdecf",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banall.so"
+    },
+    {
+      "id": "calculator",
+      "name": "calculator",
+      "display_name": "Калькулятор (Calc)",
+      "author": "Kote",
+      "description": "Безопасный математический калькулятор с парсером сложных выражений, степенями и функциями.",
+      "version": "1.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "calc",
+          "doc": "Вычислить математическое выражение.",
+          "usage": "<выражение>"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/calculator.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/calculator.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 78072,
+      "sha256": "44844125828340b9fafda929db0e852e809e6f140a03bc9f3599b48273ba536e",
+      "size_arm64": 78072,
+      "sha256_arm64": "44844125828340b9fafda929db0e852e809e6f140a03bc9f3599b48273ba536e",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/calculator.so",
+      "size_arm32": 27428,
+      "sha256_arm32": "b5499b77081531711e2aa2b27e19eca1c70f45884a44f69100aefabeaa684686",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/calculator.so"
+    },
+    {
+      "id": "chat",
+      "name": "chat",
+      "display_name": "Управление чатом (Chat)",
+      "author": "Kote",
+      "description": "Управление чатами, списки участников, администраторов и ботов, получение ID.",
+      "version": "1.0.6",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "userid",
+          "doc": "Информация и ID пользователя.",
+          "usage": "[@user/ID/ответ]"
+        },
+        {
+          "name": "chatid",
+          "doc": "Показывает название и ID текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "kickme",
+          "doc": "Выйти из текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "users",
+          "doc": "Список участников текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "admins",
+          "doc": "Список администраторов текущего чата.",
+          "usage": ""
+        },
+        {
+          "name": "bots",
+          "doc": "Список ботов в текущем чате.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chat.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chat.cpp",
+      "license": "MIT",
+      "min_host_version": 61,
+      "size": 278728,
+      "sha256": "ea4c20dcde6d8cb04cd833d285bb959bc0773f70384951f6d6bd8ccca8a75768",
+      "size_arm64": 278728,
+      "sha256_arm64": "ea4c20dcde6d8cb04cd833d285bb959bc0773f70384951f6d6bd8ccca8a75768",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chat.so",
+      "size_arm32": 153832,
+      "sha256_arm32": "eb7798715b703b3a0dc46b6671f1cab99537eb0dd69fc2e461f47241f5f13635",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/chat.so"
+    },
+    {
+      "id": "checkers",
+      "name": "checkers",
+      "display_name": "Шашки (Checkers PvP)",
+      "author": "Kote",
+      "description": "Русские шашки: полноценный PvP между любыми игроками, свободный выбор белых/чёрных, цветной покрас шашек и ходов, дамки, пат и ничья.",
+      "version": "2.2.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "checkers",
+          "doc": "Начать игру в русские шашки (инлайн)",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "шашки",
+          "doc": "Начать игру в русские шашки (псевдоним)",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "checkersend",
+          "doc": "Список активных партий или завершение игры по ID",
+          "usage": "[id]"
+        }
+      ],
+      "size": 27704,
+      "sha256": "3fc5dd557c115fbcce177ee47767b2cce3b39a84161c1213b82317e0a2d94d78",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/checkers.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/checkers.c",
+      "license": "MIT",
+      "min_host_version": 18,
+      "size_arm64": 27704,
+      "sha256_arm64": "3fc5dd557c115fbcce177ee47767b2cce3b39a84161c1213b82317e0a2d94d78",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/checkers.so",
+      "size_arm32": 25812,
+      "sha256_arm32": "076e851bf4548a7bcce91ed24591c18fb952d8e0913bdb7f4cb187a0f0335a7b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/checkers.so"
+    },
+    {
+      "id": "chess",
+      "name": "chess",
+      "display_name": "Шахматы",
+      "author": "Kote",
+      "description": "Шахматы PvP на кнопках: рокировка, взятие на проходе, превращение, мат, ничьи, реванш и обычные Unicode-фигуры.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "chess",
+          "doc": "Создать шахматный вызов",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "шахматы",
+          "doc": "Создать шахматный вызов",
+          "usage": "[white|black]"
+        },
+        {
+          "name": "chessend",
+          "doc": "Партии в чате / закрыть свою",
+          "usage": "[id]"
+        },
+        {
+          "name": "chesshelp",
+          "doc": "Управление и правила",
+          "usage": ""
+        }
+      ],
+      "size": 31896,
+      "sha256": "e05942ccb40153c172bf565f2787fcdd10e91ace79c28e7560d120d3f762aa6c",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chess.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/chess.c",
+      "license": "MIT",
+      "min_host_version": 56,
+      "size_arm64": 31896,
+      "sha256_arm64": "e05942ccb40153c172bf565f2787fcdd10e91ace79c28e7560d120d3f762aa6c",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/chess.so",
+      "size_arm32": 26760,
+      "sha256_arm32": "77a586c2fc9f658a9e2d68e5e6601aff0fea880f67644421e070fc24cc3b9799",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/chess.so"
+    },
+    {
+      "id": "copymessage",
+      "name": "copymessage",
+      "display_name": "CopyMessage",
+      "author": "Kote",
+      "description": "Сохранение текста и медиафайлов из защищенных чатов/каналов с запретом пересылки в Избранное (.copy и .hcopy).",
+      "version": "1.3.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "copy",
+          "doc": "Копирование сообщения в Избранное с отчетом",
+          "usage": "[в ответ на сообщение]"
+        },
+        {
+          "name": "hcopy",
+          "doc": "Тихое копирование сообщения в Избранное",
+          "usage": "[в ответ на сообщение]"
+        }
+      ],
+      "size": 7944,
+      "sha256": "9c5dfe682b1e9a9aa38badd0d45bf1eec024a6ab2229eb78c2216cd316a40ddc",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/copymessage.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/copymessage.c",
+      "license": "MIT",
+      "min_host_version": 0,
+      "size_arm64": 7944,
+      "sha256_arm64": "9c5dfe682b1e9a9aa38badd0d45bf1eec024a6ab2229eb78c2216cd316a40ddc",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/copymessage.so",
+      "size_arm32": 5012,
+      "sha256_arm32": "f18117530648965ec8da627979dac16e24ec824183e37d6181aa87c20484e79a",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/copymessage.so"
+    },
+    {
+      "id": "delme",
+      "name": "delme",
+      "display_name": "DelMe — Очистка своих сообщений",
+      "author": "KeyZenD / Kote",
+      "description": "Удаляет все ваши сообщения из текущего чата. Поддерживает подтверждение безопасности и моментальную зачистку.",
+      "version": "1.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "delme",
+          "doc": "Удаляет все сообщения от тебя с подтверждением",
+          "usage": "[код]"
+        },
+        {
+          "name": "delmenow",
+          "doc": "Удаляет все сообщения от тебя без вопросов",
+          "usage": ""
+        }
+      ],
+      "min_host_version": 71,
+      "size": 211864,
+      "sha256": "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/delme.cpp",
+      "license": "MIT",
+      "size_arm64": 211864,
+      "sha256_arm64": "054713b028e5fd33a407727facbed94fd3c798b522e64a794bdedad4ddf62b17",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/delme.so",
+      "size_arm32": 158336,
+      "sha256_arm32": "58e1db64f6da2d3d90dbd40a6a416683ef11caca4a4d8cc6fa7fbd6d2b768f66",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/delme.so"
+    },
+    {
+      "id": "dep",
+      "name": "dep",
+      "display_name": "Депозит / Ставки (Dep)",
+      "author": "Kote",
+      "description": "Эмуляция ставок и азартного броска в чате со слотами (🎰).",
+      "version": "1.0.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "депаю",
+          "doc": "Сделать ставку на всё что угодно (слот 🎰).",
+          "usage": "[сумма/текст]"
+        },
+        {
+          "name": "dep",
+          "doc": "Сделать ставку (псевдоним депаю).",
+          "usage": "[сумма/текст]"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dep.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dep.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 48680,
+      "sha256": "88696d4766506c5620d6e34d09a9fa46a73587d7af4c44606503041e2623234c",
+      "size_arm64": 48680,
+      "sha256_arm64": "88696d4766506c5620d6e34d09a9fa46a73587d7af4c44606503041e2623234c",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dep.so",
+      "size_arm32": 6792,
+      "sha256_arm32": "2d26dc8addb69fd90092dbe9c78aa48aab5667a60da5fc613d65768fa6cbd7ac",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dep.so"
+    },
+    {
+      "id": "dox",
+      "name": "dox",
+      "display_name": "Поиск данных (Dox)",
+      "author": "Kote",
+      "description": "Интеграция с Dox-ботами: автовыбор Telegram и поиск номера телефона (1:1 порт dox.py).",
+      "version": "1.0.10",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "dox",
+          "doc": "Ищет информацию о пользователе (1:1 как в dox.py).",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "setdoxbot",
+          "doc": "Устанавливает вашего Dox-бота (1:1 как в dox.py).",
+          "usage": "<@username_бота>"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dox.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/dox.cpp",
+      "license": "MIT",
+      "min_host_version": 28,
+      "size": 470904,
+      "sha256": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7",
+      "size_arm64": 470904,
+      "sha256_arm64": "db331d8901c87ea46951d5b203f68d5ee52dd391168c3df9014c8169aa4437b7",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/dox.so",
+      "size_arm32": 285744,
+      "sha256_arm32": "db88cae0de31ab3fbe952f2d6a0623136b5025d70b3afac3b5f3f66737e22d72",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dox.so"
+    },
+    {
+      "id": "gemini_web",
+      "name": "gemini_web",
+      "display_name": "Gemini Web AI",
+      "author": "Kote",
+      "description": "Клиент Gemini Web для Android с прямым защищённым HTTPS-транспортом, поддержкой cookies, выбором моделей и надёжной персистентной памятью диалогов.",
+      "version": "0.1.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "gweblogin",
+          "doc": "Сохранить cookies из reply на сообщение с PSID [PSIDTS] в Избранном",
+          "usage": "reply на cookies; без аргументов"
+        },
+        {
+          "name": "gweblogout",
+          "doc": "Удалить cookies и локальную память Gemini Web",
+          "usage": ""
+        },
+        {
+          "name": "gwebcookies",
+          "doc": "Инструкция по получению cookies Google",
+          "usage": ""
+        },
+        {
+          "name": "gweb",
+          "doc": "Спросить Gemini Web; текст и reply на текст, память диалога",
+          "usage": "[вопрос]"
+        },
+        {
+          "name": "gwebclear",
+          "doc": "Сбросить локальную память всех моделей в этом чате",
+          "usage": ""
+        },
+        {
+          "name": "gwebmodel",
+          "doc": "Список моделей аккаунта или выбор модели; auto — выбор Google",
+          "usage": "[auto|ключ|id]"
+        },
+        {
+          "name": "gwebstatus",
+          "doc": "Локальный статус Gemini Web без показа секретов",
+          "usage": ""
+        },
+        {
+          "name": "gwebtest",
+          "doc": "Проверить прямой HTTPS, затем вход и модели (без генерации)",
+          "usage": ""
+        },
+        {
+          "name": "gwebrefresh",
+          "doc": "Обновить cookies, токен и модели без сброса диалогов",
+          "usage": ""
+        },
+        {
+          "name": "gwebtimeout",
+          "doc": "Таймаут генерации в секундах (30–300)",
+          "usage": "[секунды]"
+        }
+      ],
+      "size": 5878752,
+      "sha256": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/tree/main/src/gemini_web",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 5878752,
+      "sha256_arm64": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
+      "size_arm32": 4280992,
+      "sha256_arm32": "30a3bc09411778573abeddf785174c64927bc66ef87e2214e6f96ee70d326978",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/gemini_web.so"
+    },
+    {
+      "id": "id",
+      "name": "id",
+      "display_name": "User ID & Link",
+      "author": "Kote",
+      "description": "Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3).",
+      "version": "1.0.6",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "ай",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе.",
+          "usage": "(в ответ или без)"
+        },
+        {
+          "name": "id",
+          "doc": "Показывает ваш ID, ID пользователя и ссылку в ответе (псевдоним).",
+          "usage": "(в ответ или без)"
+        }
+      ],
+      "size": 49912,
+      "sha256": "4b159cdddeab429a8a1dda0b2c532aaab9daf3a326fb7b361a6c8c16deeedd4e",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/id.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/id.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 49912,
+      "sha256_arm64": "4b159cdddeab429a8a1dda0b2c532aaab9daf3a326fb7b361a6c8c16deeedd4e",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/id.so",
+      "size_arm32": 8468,
+      "sha256_arm32": "2e617d93ee6be634b382a304c8d675a0ccf83828f118ff073b839d122772d096",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/id.so"
+    },
+    {
+      "id": "idprem",
+      "name": "idprem",
+      "display_name": "ID премиум-эмодзи",
+      "author": "Kote",
+      "description": "Утилита для получения document_id премиум-эмодзи из сообщения (в ответ или к своему). Удобно для настройки .setrpemoji / .setmodemoji.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "idprem",
+          "doc": "Показать ID премиум-эмодзи из сообщения",
+          "usage": "[в ответ на сообщение]"
+        }
+      ],
+      "size": 51032,
+      "sha256": "304ad1d6747f56bbe34913f5bfb38b37e940d774955cfd04ff31630bca1b3582",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/idprem.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/idprem.cpp",
+      "license": "MIT",
+      "min_host_version": 17,
+      "size_arm64": 51032,
+      "sha256_arm64": "304ad1d6747f56bbe34913f5bfb38b37e940d774955cfd04ff31630bca1b3582",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/idprem.so",
+      "size_arm32": 9332,
+      "sha256_arm32": "86afa712872cc43d88bdb44625df6e0d7f4163aaf7f780eb448dd99e4b78a9ae",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/idprem.so"
+    },
+    {
+      "id": "inviter",
+      "name": "inviter",
+      "display_name": "Инвайтер и рассылка (Inviter)",
+      "author": "Kote",
+      "description": "Массовая рассылка и инвайтинг с поддержкой твинков, настраиваемых задержек и фильтров.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "invite",
+          "doc": "Запустить добавление участников чата в очередь рассылки.",
+          "usage": "[chat_id|@username]"
+        },
+        {
+          "name": "inviter",
+          "doc": "Рассылка / инвайтинг (псевдоним invite).",
+          "usage": "[chat_id|@username]"
+        },
+        {
+          "name": "invsetmsg",
+          "doc": "Установить или просмотреть текст сообщения для рассылки.",
+          "usage": "[текст]"
+        },
+        {
+          "name": "invstatus",
+          "doc": "Просмотр статуса очереди и статистики отправленных сообщений.",
+          "usage": ""
+        },
+        {
+          "name": "invcfg",
+          "doc": "Настройки Inviter (delay, worker, admins, bots).",
+          "usage": "[параметр] [значение]"
+        },
+        {
+          "name": "invclear",
+          "doc": "Очистить очередь рассылки и сбросить счетчики.",
+          "usage": ""
+        },
+        {
+          "name": "invstop",
+          "doc": "Остановить текущий процесс рассылки.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/inviter.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/inviter.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 331832,
+      "sha256": "3ccbc033cc242eb4da4caabc334d7965cc51ac570180ddb102752f20ce44681b",
+      "size_arm64": 331832,
+      "sha256_arm64": "3ccbc033cc242eb4da4caabc334d7965cc51ac570180ddb102752f20ce44681b",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/inviter.so",
+      "size_arm32": 194512,
+      "sha256_arm32": "a23b2ab6a03394a689e7080092e99ddb67c23ac9b3e70fc188f540e07d206c0e",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/inviter.so"
+    },
+    {
+      "id": "kotserv",
+      "name": "kotserv",
+      "display_name": "Сервер Kote (KotServ)",
+      "author": "Kote",
+      "description": "Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации.",
+      "version": "2.0.4",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "serv",
+          "doc": "Статус и подключение к серверу Kote.",
+          "usage": ""
+        },
+        {
+          "name": "kscfg",
+          "doc": "Настройка параметров отображения модуля kotserv.",
+          "usage": "[ключ] [значение]"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/kotserv.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kotserv.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 111320,
+      "sha256": "245e7a0fba65a7adae9f29650b861009c525995f5fb6ba66d17d759e9a577d15",
+      "size_arm64": 111320,
+      "sha256_arm64": "245e7a0fba65a7adae9f29650b861009c525995f5fb6ba66d17d759e9a577d15",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/kotserv.so",
+      "size_arm32": 48372,
+      "sha256_arm32": "ba6f4f40d774e57f0a7e244f1ccb6e2598de122791f162ddd5fe02e2635c0166",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/kotserv.so"
+    },
+    {
+      "id": "mafia_multitool",
+      "name": "mafia_multitool",
+      "display_name": "Мафия Мульти-Тул (Mafia MultiTool)",
+      "author": "Kote",
+      "description": "Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf).",
+      "version": "1.2.9",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "mset",
+          "doc": "Установить лог-чат или арену",
+          "usage": "<tourney|arena> [id]"
+        },
+        {
+          "name": "mdelay",
+          "doc": "Задержка голосования (мс)",
+          "usage": "[мс]"
+        },
+        {
+          "name": "mhuman",
+          "doc": "Режим живых игроков",
+          "usage": "[on|off|status|set...]"
+        },
+        {
+          "name": "msettings",
+          "doc": "Текущие настройки и статус твинков",
+          "usage": ""
+        },
+        {
+          "name": "mfreeze",
+          "doc": "Заморозить/разморозить твинка",
+          "usage": "[имя]"
+        },
+        {
+          "name": "mcombat",
+          "doc": "Вкл/выкл Combat авто-голосование",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "mlast",
+          "doc": "Combat: голос в последнего врага",
+          "usage": ""
+        },
+        {
+          "name": "mprelast",
+          "doc": "Combat: голос в предпоследнего врага",
+          "usage": ""
+        },
+        {
+          "name": "mvesh",
+          "doc": "Combat: голос в конкретного игрока",
+          "usage": "<имя>"
+        },
+        {
+          "name": "mreg",
+          "doc": "Регистрация всех аккаунтов в игре",
+          "usage": "<ссылка/старт-параметр>"
+        },
+        {
+          "name": "mbvesh",
+          "doc": "Baku: голос за игрока через ЛС",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mblike",
+          "doc": "Baku: подтвердить линч (лайк)",
+          "usage": ""
+        },
+        {
+          "name": "mbdis",
+          "doc": "Baku: оправдать (дизлайк)",
+          "usage": ""
+        },
+        {
+          "name": "mrole",
+          "doc": "Скан ролей из ЛС в лог-чат",
+          "usage": "<combat|true|baku|koto|oso>"
+        },
+        {
+          "name": "mlike",
+          "doc": "Combat/Oso/True/Koto: подтвердить линч",
+          "usage": "[oso|true|koto]"
+        },
+        {
+          "name": "mdis",
+          "doc": "Combat/Oso/True/Koto: оправдать",
+          "usage": "[oso|true|koto]"
+        },
+        {
+          "name": "mprofile",
+          "doc": "Отправить /profile в Combat со всех акк.",
+          "usage": ""
+        },
+        {
+          "name": "mtrue",
+          "doc": "Вкл/выкл TrueMafia режим",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "mtvesh",
+          "doc": "TrueMafia: голос за игрока",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mkvesh",
+          "doc": "KotoMafia: голос за игрока через ЛС",
+          "usage": "<ник>"
+        },
+        {
+          "name": "mkgraf",
+          "doc": "KotoMafia: поиск не проголосовавших",
+          "usage": ""
+        },
+        {
+          "name": "mbaku",
+          "doc": "Baku: поиск не проголосовавших",
+          "usage": "[red/blue]"
+        },
+        {
+          "name": "movesh",
+          "doc": "Mafioso: голос за игрока через ЛС",
+          "usage": "<ник>"
+        }
+      ],
+      "size": 240344,
+      "sha256": "580123d15f93ee3cf31f24724f9c0faa910b1450d9c307b86544e5f066439c6b",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_multitool.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_multitool.cpp",
+      "license": "MIT",
+      "min_host_version": 28,
+      "size_arm64": 240344,
+      "sha256_arm64": "580123d15f93ee3cf31f24724f9c0faa910b1450d9c307b86544e5f066439c6b",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_multitool.so",
+      "size_arm32": 156868,
+      "sha256_arm32": "bf27b0133be28efdd73e7312087c16fbbd98980d5c4c2de6697f2840605c3667",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mafia_multitool.so"
+    },
+    {
+      "id": "mafia_triggers",
+      "name": "mafia_triggers",
+      "display_name": "Триггеры Мафии (MafiaTriggers)",
+      "author": "Kote",
+      "description": "Автоматические триггеры для игр Мафии: авто-варн и авто-мут игроков с настройкой длительности и пунктов правил.",
+      "version": "2.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "wtr",
+          "doc": "Вкл/Выкл Warn-триггер для Мафии (варнит вышедших/afk).",
+          "usage": ""
+        },
+        {
+          "name": "mtr",
+          "doc": "Вкл/Выкл Mute-триггер для Мафии (мутит вышедших/afk).",
+          "usage": ""
+        },
+        {
+          "name": "mtrcfg",
+          "doc": "Настройки MafiaTriggers: время мута, причины AFK и лива.",
+          "usage": "[time <время> | reason <причина> | leave <причина> | reset]"
+        },
+        {
+          "name": "mtrtime",
+          "doc": "Установить длительность мута (напр. .mtrtime 30m / 1h / 2h / 1d).",
+          "usage": "<время>"
+        },
+        {
+          "name": "mtrreason",
+          "doc": "Установить причину/пункт правил за AFK (напр. .mtrreason 1.2 АФК).",
+          "usage": "<причина>"
+        },
+        {
+          "name": "mtrleave",
+          "doc": "Установить причину/пункт правил за выход (напр. .mtrleave 1.3 Лив).",
+          "usage": "<причина>"
+        },
+        {
+          "name": "mtrsettings",
+          "doc": "Интерактивная панель настроек MafiaTriggers с кнопками.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_triggers.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mafia_triggers.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 128232,
+      "sha256": "824cfd15c3149c7aee7e7480a7c909732b5c009f6e0fd183e5beab8629048b6e",
+      "size_arm64": 128232,
+      "sha256_arm64": "824cfd15c3149c7aee7e7480a7c909732b5c009f6e0fd183e5beab8629048b6e",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mafia_triggers.so",
+      "size_arm32": 69652,
+      "sha256_arm32": "ada446956b2119a47cedfe48dddf357eec959886736df2845af76eca3dbebc3b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mafia_triggers.so"
+    },
+    {
+      "id": "mass_notifier",
+      "name": "mass_notifier",
+      "display_name": "Рассылка в ЛС (Mass Notifier)",
+      "author": "Kote",
+      "description": "Рассылка сообщений участникам чата в ЛС с сохранением форматирования, премиум-эмодзи и пересылкой реплаев.",
+      "version": "1.0.6",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "lsall",
+          "doc": "Рассылка сообщений участникам чата в ЛС",
+          "usage": "<текст / реплай на сообщение>"
+        }
+      ],
+      "size": 60960,
+      "sha256": "e722bb63f60f461feab2f9731b2fda1a4c64ad448d101a6f69f236d55c277b29",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mass_notifier.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mass_notifier.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 60960,
+      "sha256_arm64": "e722bb63f60f461feab2f9731b2fda1a4c64ad448d101a6f69f236d55c277b29",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mass_notifier.so",
+      "size_arm32": 16364,
+      "sha256_arm32": "927838b3bbe7303d86b18eb94faa0e6f7d75faea254ed8f83c3ee7122c84f320",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mass_notifier.so"
+    },
+    {
+      "id": "moderation",
+      "name": "moderation",
+      "display_name": "Модерация (Moderation)",
+      "author": "Kote",
+      "description": "Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное.",
+      "version": "1.1.8",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "ban",
+          "doc": "Забанить пользователя в чате",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "sban",
+          "doc": "Тихо забанить пользователя (без уведомления)",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unban",
+          "doc": "Разбанить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "kick",
+          "doc": "Кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "skick",
+          "doc": "Тихо кикнуть пользователя из чата",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "mute",
+          "doc": "Замутить пользователя в чате",
+          "usage": "[user/id] [время: 10m/1h/2d] [причина]"
+        },
+        {
+          "name": "smute",
+          "doc": "Тихо замутить пользователя",
+          "usage": "[user/id] [время] [причина]"
+        },
+        {
+          "name": "unmute",
+          "doc": "Размутить пользователя в чате",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warn",
+          "doc": "Выдать предупреждение (варн) с автобаном при лимите",
+          "usage": "[user/id] [причина]"
+        },
+        {
+          "name": "unwarn",
+          "doc": "Снять последнее предупреждение",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warns",
+          "doc": "Посмотреть варны пользователя",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "warnlimit",
+          "doc": "Установить лимит варнов для чата",
+          "usage": "<число>"
+        },
+        {
+          "name": "delusers",
+          "doc": "Удалить последние сообщения пользователя",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "modhistory",
+          "doc": "Посмотреть историю действий модерации",
+          "usage": "[user/id] [лимит]"
+        },
+        {
+          "name": "gameban",
+          "doc": "Игровой временный бан (серверный бан на 1 час)",
+          "usage": "[user/id]"
+        },
+        {
+          "name": "gset",
+          "doc": "Управление наборами глобальных чатов",
+          "usage": "add/rm/list <cat> [id]"
+        },
+        {
+          "name": "gban",
+          "doc": "Глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id] [причина]"
+        },
+        {
+          "name": "ungban",
+          "doc": "Снять глобальный бан пользователя в категории чатов",
+          "usage": "<категория> [user/id]"
+        },
+        {
+          "name": "gkick",
+          "doc": "Глобальный кик пользователя из категории чатов",
+          "usage": "<категория> [user/id] [причина]"
+        }
+      ],
+      "size": 289376,
+      "sha256": "35372e34244ae8fe7c7d5d6db9991b3a2b0d2eeafb844f8cfbfe52dc5a4db83f",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 289376,
+      "sha256_arm64": "35372e34244ae8fe7c7d5d6db9991b3a2b0d2eeafb844f8cfbfe52dc5a4db83f",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
+      "size_arm32": 228324,
+      "sha256_arm32": "aa29882e634e4014b3afd8dd033d76cea18fcba4b184c17cdc8be4ecd060f8c4",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/moderation.so"
+    },
+    {
+      "id": "music",
+      "name": "music",
+      "display_name": "Music Player (Telegram Bots)",
+      "author": "Kote",
+      "description": "Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства.",
+      "version": "3.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "mus",
+          "doc": "Поиск и отправка музыки через Telegram-ботов",
+          "usage": "<запрос>"
+        },
+        {
+          "name": "musconfig",
+          "doc": "Информация и конфигурация музыкального модуля",
+          "usage": ""
+        }
+      ],
+      "size": 47736,
+      "sha256": "d89d886c3e6e7a4e02b83672982f5e72b2663d1193f08187e9911e8664a595c2",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/music.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/music.cpp",
+      "license": "MIT",
+      "min_host_version": 13,
+      "size_arm64": 47736,
+      "sha256_arm64": "d89d886c3e6e7a4e02b83672982f5e72b2663d1193f08187e9911e8664a595c2",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/music.so",
+      "size_arm32": 6516,
+      "sha256_arm32": "e20434c39e0d16ef7488dfdcf123a28a19993bc43a932d8e597f20245af9a8f5",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/music.so"
+    },
+    {
+      "id": "pmbl",
+      "name": "pmbl",
+      "display_name": "PMBL — Защита ЛС",
+      "author": "Kote",
+      "description": "Нативная защита личных сообщений: фильтрация спама, белый список, проверка контактов и истории переписки, жалобы и автоматическая блокировка.",
+      "version": "0.2.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "pmbl",
+          "doc": "Включить/выключить PMBL; strict — явный режим только белого списка",
+          "usage": "[on|off|strict]"
+        },
+        {
+          "name": "pmblstatus",
+          "doc": "Статус защиты и настройки PMBL",
+          "usage": ""
+        },
+        {
+          "name": "allowpm",
+          "doc": "Разрешить пользователю писать в ЛС; снять блокировку PMBL",
+          "usage": "[ID|@username|reply]"
+        },
+        {
+          "name": "denypm",
+          "doc": "Удалить пользователя из белого списка PMBL",
+          "usage": "[ID|@username|reply]"
+        },
+        {
+          "name": "pmlist",
+          "doc": "Показать белый список PMBL текущего аккаунта",
+          "usage": ""
+        },
+        {
+          "name": "pmblsett",
+          "doc": "Настроить жалобы на спам и удаление диалога (0/1)",
+          "usage": "<report_spam> <delete_dialog>"
+        },
+        {
+          "name": "pmblcfg",
+          "doc": "Изменить настройку PMBL",
+          "usage": "<ключ> <значение>"
+        },
+        {
+          "name": "pmbanlast",
+          "doc": "Заблокировать и очистить у себя N последних начатых личных диалогов",
+          "usage": "<число>"
+        }
+      ],
+      "size": 654552,
+      "sha256": "4c3e935d6e0b604f42e47b4a9021a25f361a4ccb0d112215c2ed04e3539c3e71",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/pmbl.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/pmbl.cpp",
+      "license": "AGPL-3.0-only",
+      "min_host_version": 74,
+      "size_arm64": 654552,
+      "sha256_arm64": "4c3e935d6e0b604f42e47b4a9021a25f361a4ccb0d112215c2ed04e3539c3e71",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/pmbl.so",
+      "size_arm32": 261216,
+      "sha256_arm32": "b54fd95d4ef3249e041ca7fe118cf70fb5ebd27d24547f7c7eb8f24e9e49fc87",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/pmbl.so"
+    },
+    {
+      "id": "profile_manager",
+      "name": "profile_manager",
+      "display_name": "Profile Manager",
+      "author": "Kote",
+      "description": "Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3).",
+      "version": "1.2.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "name",
+          "doc": "Изменить имя профиля.",
+          "usage": "<новое_имя>"
+        },
+        {
+          "name": "sname",
+          "doc": "Сохранить текущее имя в историю.",
+          "usage": ""
+        },
+        {
+          "name": "lname",
+          "doc": "Показать историю сохранённых имён.",
+          "usage": ""
+        },
+        {
+          "name": "dname",
+          "doc": "Очистить историю имён.",
+          "usage": "<номер|all>"
+        },
+        {
+          "name": "namelist",
+          "doc": "Показать инлайн-меню с историей имён.",
+          "usage": ""
+        },
+        {
+          "name": "setava",
+          "doc": "Установить аватар из фото (ответ на фото или документ-изображение).",
+          "usage": ""
+        },
+        {
+          "name": "delava",
+          "doc": "Удалить текущий аватар профиля.",
+          "usage": ""
+        }
+      ],
+      "size": 84592,
+      "sha256": "04259d1712b1c036301a615c57145f6bb5978648fcda5879f3e5090d84ef8e8b",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/profile_manager.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/profile_manager.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 84592,
+      "sha256_arm64": "04259d1712b1c036301a615c57145f6bb5978648fcda5879f3e5090d84ef8e8b",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/profile_manager.so",
+      "size_arm32": 30312,
+      "sha256_arm32": "cd0613d96d43c6438af1cc898db5e0c0e9290ddafcfc77cc4cddc48564dc71e6",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/profile_manager.so"
+    },
+    {
+      "id": "rp",
+      "name": "rp",
+      "display_name": "Role-Play (РП команды)",
+      "author": "Kote",
+      "description": "Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji).",
+      "version": "3.0.3",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "rp",
+          "doc": "Управление RP-модулем в чате (on/off/access)",
+          "usage": "[on|off|access]"
+        },
+        {
+          "name": "addrp",
+          "doc": "Добавить новую RP-команду (с премиум-эмодзи)",
+          "usage": "<алиасы>|<действие>|<эмодзи/ID>"
+        },
+        {
+          "name": "delrp",
+          "doc": "Удалить RP-команду",
+          "usage": "<алиас|all|prem|simple>"
+        },
+        {
+          "name": "rplist",
+          "doc": "Список всех доступных RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpnick",
+          "doc": "Установить RP-ник пользователю",
+          "usage": "[-g] [@user] <ник>"
+        },
+        {
+          "name": "delrpnick",
+          "doc": "Удалить или скрыть RP-ник",
+          "usage": "[-g] [@user]"
+        },
+        {
+          "name": "rpnick",
+          "doc": "Посмотреть текущие RP-ники",
+          "usage": "[@user]"
+        },
+        {
+          "name": "addrpcreator",
+          "doc": "Назначить создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "delrpcreator",
+          "doc": "Снять права создателя RP-команд",
+          "usage": "[@user]"
+        },
+        {
+          "name": "listrpcreators",
+          "doc": "Список создателей RP-команд",
+          "usage": ""
+        },
+        {
+          "name": "setrpemoji",
+          "doc": "Кастомный статичный эмодзи интерфейса RP",
+          "usage": "<ключ> <эмодзи/ID> [| fallback]"
+        },
+        {
+          "name": "delrpemoji",
+          "doc": "Сбросить статичный эмодзи до дефолтного",
+          "usage": "<ключ>"
+        },
+        {
+          "name": "rpemojis",
+          "doc": "Список статичных эмодзи интерфейса RP",
+          "usage": ""
+        }
+      ],
+      "size": 168024,
+      "sha256": "d07fc8397c0badcb29f1087de8ceff2f666183811d3720701b988554835224a6",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rp.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rp.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 168024,
+      "sha256_arm64": "d07fc8397c0badcb29f1087de8ceff2f666183811d3720701b988554835224a6",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rp.so",
+      "size_arm32": 101268,
+      "sha256_arm32": "13a665a8f236615cba847d70ee55b7c5de02ed8aebd5342b62a103eaf34b66a0",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/rp.so"
+    },
+    {
+      "id": "scrapper",
+      "name": "scrapper",
+      "display_name": "Сбор участников (Scrapper)",
+      "author": "Kote",
+      "description": "Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации.",
+      "version": "1.0.5",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "scrap",
+          "doc": "Сбор участников чата в файл дампа с фильтрами.",
+          "usage": "[chat_id|@username]"
+        },
+        {
+          "name": "scrapper",
+          "doc": "Сбор участников (псевдоним scrap).",
+          "usage": "[chat_id|@username]"
+        },
+        {
+          "name": "scrapcfg",
+          "doc": "Настройки параметров сбора (method, limit, admins, bots, worker).",
+          "usage": "[параметр] [значение]"
+        },
+        {
+          "name": "stopscrap",
+          "doc": "Остановить текущий процесс сбора данных.",
+          "usage": ""
+        },
+        {
+          "name": "killscrap",
+          "doc": "Прервать сбор данных (псевдоним stopscrap).",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/scrapper.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/scrapper.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 350664,
+      "sha256": "a8f2f5f9fc60c0dfa5cb67e96b38f4bead378814e1c2347756da43535c1fc878",
+      "size_arm64": 350664,
+      "sha256_arm64": "a8f2f5f9fc60c0dfa5cb67e96b38f4bead378814e1c2347756da43535c1fc878",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/scrapper.so",
+      "size_arm32": 215192,
+      "sha256_arm32": "32ea231ec8b4151481f6ed3e481eba24011ddc314842c6164a2c48ea84c7b1ba",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/scrapper.so"
+    },
+    {
+      "id": "spam_ban",
+      "name": "spam_ban",
+      "display_name": "Spam Ban",
+      "author": "Kote",
+      "description": "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user/ID/ответ) и атаки с твинков (C++ ABI 3).",
+      "version": "1.6.2",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "spamtwins",
+          "doc": "Включить/выключить атаку с твинков.",
+          "usage": ""
+        },
+        {
+          "name": "spamban",
+          "doc": "Мощная жалоба (Спам) + Блок.",
+          "usage": "<@user/ID/ответ>"
+        }
+      ],
+      "size": 49224,
+      "sha256": "e76f0e2a7df21dc534d69cfc7606607fc843d2ed12d095c522c466bb2c87c69c",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spam_ban.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spam_ban.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 49224,
+      "sha256_arm64": "e76f0e2a7df21dc534d69cfc7606607fc843d2ed12d095c522c466bb2c87c69c",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spam_ban.so",
+      "size_arm32": 7372,
+      "sha256_arm32": "da1971f88907fa8283d2ca3b0653cf933da142013e0217cee892a3314961a683",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/spam_ban.so"
+    },
+    {
+      "id": "spammer",
+      "name": "spammer",
+      "display_name": "Спамер (Spammer)",
+      "author": "Kote",
+      "description": "Быстрый спам сообщениями с поддержкой форматирования Markdown/HTML, цитированием отвеченных сообщений, сохранением кастомных премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении.",
+      "version": "1.2.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "spam",
+          "doc": "Начать спам сообщениями (с поддержкой цитат, форматирования и премиум-эмодзи)",
+          "usage": "[количество] <текст>"
+        },
+        {
+          "name": "stopspam",
+          "doc": "Остановить задачу спама",
+          "usage": ""
+        }
+      ],
+      "size": 63208,
+      "sha256": "1fdc1684d7cf569f822d78a8b8223c66e74983b2fc461e70bdca2e12a2a2f868",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spammer.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spammer.cpp",
+      "license": "MIT",
+      "min_host_version": 24,
+      "size_arm64": 63208,
+      "sha256_arm64": "1fdc1684d7cf569f822d78a8b8223c66e74983b2fc461e70bdca2e12a2a2f868",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/spammer.so",
+      "size_arm32": 17984,
+      "sha256_arm32": "21fff346d82f6624caee4571a986d770a7a2b1ae03c403ab2120622b4f44f9ea",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/spammer.so"
+    },
+    {
+      "id": "stags",
+      "name": "stags",
+      "display_name": "Silent Tags",
+      "author": "Kote",
+      "description": "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов в отдельную группу, авто-скрытие уведомлений и поддержка твинков (C++ ABI 3).",
+      "version": "2.9.10",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "stags",
+          "doc": "Включить или выключить модуль Silent Tags.",
+          "usage": "<on/off>"
+        },
+        {
+          "name": "stconfig",
+          "doc": "Просмотр и детальная настройка модуля Silent Tags.",
+          "usage": "[help/key] [value]"
+        },
+        {
+          "name": "sttwins",
+          "doc": "Инлайн-панель управления режимами твинков для Silent Tags.",
+          "usage": ""
+        }
+      ],
+      "size": 318224,
+      "sha256": "a4ad51d70babf991547b4101a119018b3ae6b053fcc65a77c8070cdc2a8e0df7",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/stags.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/stags.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 318224,
+      "sha256_arm64": "a4ad51d70babf991547b4101a119018b3ae6b053fcc65a77c8070cdc2a8e0df7",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/stags.so",
+      "size_arm32": 190260,
+      "sha256_arm32": "4bce183d0dbc583c388986d616a04ae727e3ef78348781085bf2ecdf136376e3",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/stags.so"
+    },
+    {
+      "id": "sysinfo",
+      "name": "sysinfo",
+      "display_name": "Мониторинг сервера (SysInfo)",
+      "author": "Kote",
+      "description": "Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно.",
+      "version": "1.1.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "sys",
+          "doc": "Показывает точные метрики системы, нагрузку CPU, RAM, диска и процесса.",
+          "usage": ""
+        },
+        {
+          "name": "sysinfo",
+          "doc": "Полная системная панель мониторинга сервера и устройства.",
+          "usage": ""
+        },
+        {
+          "name": "neofetch",
+          "doc": "Красивый ASCII Neofetch с логотипом Kotogram и характеристиками системы.",
+          "usage": ""
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/sysinfo.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
+      "license": "MIT",
+      "min_host_version": 63,
+      "size": 321256,
+      "sha256": "5dba6ca79b493faae6d420629ddc4dbaa4c3262c9a0d8035418cd954a9283eb7",
+      "size_arm64": 321256,
+      "sha256_arm64": "5dba6ca79b493faae6d420629ddc4dbaa4c3262c9a0d8035418cd954a9283eb7",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/sysinfo.so",
+      "size_arm32": 180352,
+      "sha256_arm32": "bed0103f227b0c01d4ed70a8ccb26bd77584cef4eae5878c796675678814a897",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/sysinfo.so"
+    },
+    {
+      "id": "tagger",
+      "name": "tagger",
+      "display_name": "Tagger",
+      "author": "Kote",
+      "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
+      "version": "3.4.6",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "tag",
+          "doc": "Тегнуть участников чата (всех или указанное количество).",
+          "usage": "[число] [текст] [-id]"
+        },
+        {
+          "name": "itag",
+          "doc": "Тегнуть только указанных пользователей (include tag).",
+          "usage": "<id1 id2...> [текст]"
+        },
+        {
+          "name": "etag",
+          "doc": "Тегнуть всех за исключением указанных пользователей (exclude tag).",
+          "usage": "<id1 id2...> [текст]"
+        },
+        {
+          "name": "stoptag",
+          "doc": "Остановить текущий процесс тега участников.",
+          "usage": ""
+        },
+        {
+          "name": "cleartag",
+          "doc": "Очистить очередь и остановить процесс тега.",
+          "usage": ""
+        },
+        {
+          "name": "tagdelay",
+          "doc": "Установить диапазон задержки между сообщениями теггера (сек).",
+          "usage": "<min> [max]"
+        },
+        {
+          "name": "tagusers",
+          "doc": "Установить диапазон количества юзеров за раз.",
+          "usage": "<min> [max]"
+        },
+        {
+          "name": "add",
+          "doc": "Добавить пользователя в вайтлист чата (не тегать).",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "remove",
+          "doc": "Убрать пользователя из вайтлиста чата.",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "helps",
+          "doc": "Показать количество участников в вайтлисте чата.",
+          "usage": ""
+        },
+        {
+          "name": "nonick",
+          "doc": "Управление кастомными никами теггера (add/del/list, -g).",
+          "usage": "<add/del/list> [@user] [Name] [-g]"
+        },
+        {
+          "name": "tagbots",
+          "doc": "Включить или выключить тегирование ботов чата.",
+          "usage": "[on/off]"
+        },
+        {
+          "name": "tagadmins",
+          "doc": "Включить или выключить тегирование администраторов чата.",
+          "usage": "[on/off]"
+        },
+        {
+          "name": "tagsettings",
+          "doc": "Инлайн-панель настроек теггера.",
+          "usage": ""
+        }
+      ],
+      "size": 160280,
+      "sha256": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 160280,
+      "sha256_arm64": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
+      "size_arm32": 94504,
+      "sha256_arm32": "2dcece826a1adddf93398f6764d3818218b5c782081d9b50f86c8e853a55e86a",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tagger.so"
+    },
+    {
+      "id": "tt_dl",
+      "name": "tt_dl",
+      "display_name": "TikTok Downloader",
+      "author": "Коте",
+      "description": "Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album) через tikwm API с живым статусом и логами. Настройка подписи: полная или краткая (в приложении и через .tt caption).",
+      "version": "1.5.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "tt",
+          "doc": "Скачать контент из TikTok (видео/гиф/фото)",
+          "usage": "<ссылка> | caption [full|short]"
+        }
+      ],
+      "size": 62824,
+      "sha256": "47a934a27436eb8a0865dfdf06f5daca4dfbe34f58114ea1cade0037abc02025",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tt_dl.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
+      "license": "MIT",
+      "min_host_version": 24,
+      "size_arm64": 62824,
+      "sha256_arm64": "47a934a27436eb8a0865dfdf06f5daca4dfbe34f58114ea1cade0037abc02025",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tt_dl.so",
+      "size_arm32": 17736,
+      "sha256_arm32": "e95faa46b5eea6206baf5c3499801fbe8f1844e5c338021a0d96554b8a203ab9",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tt_dl.so"
+    },
+    {
+      "id": "weather",
+      "name": "weather",
+      "display_name": "Погода (Weather)",
+      "author": "Kote",
+      "description": "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени.",
+      "version": "1.1.3",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "weather",
+          "doc": "Показывает текущую погоду и прогноз наперёд в указанном городе.",
+          "usage": "<город>"
+        },
+        {
+          "name": "w",
+          "doc": "Погода (псевдоним weather).",
+          "usage": "<город>"
+        },
+        {
+          "name": "forecast",
+          "doc": "Подробный прогноз погоды на 3 или 7 дней наперёд.",
+          "usage": "<город> [7]"
+        },
+        {
+          "name": "fc",
+          "doc": "Прогноз погоды (псевдоним forecast).",
+          "usage": "<город> [7]"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/weather.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/weather.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 408152,
+      "sha256": "4f4666eaffaa5d7ec7744ef4af6965ad14413edda626759cc7068f818ab7aa02",
+      "size_arm64": 408152,
+      "sha256_arm64": "4f4666eaffaa5d7ec7744ef4af6965ad14413edda626759cc7068f818ab7aa02",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/weather.so",
+      "size_arm32": 248020,
+      "sha256_arm32": "b3930819ba7c9f8759ca1737b187b041116afbdaf050dc3eba77b7d46297bd75",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/weather.so"
+    },
+    {
+      "id": "whois",
+      "name": "whois",
+      "display_name": "Информация и анализ (WhoIs)",
+      "author": "Kote",
+      "description": "Подробная информация о пользователях (профиль, ID, bio, dc, premium) и глубокий анализ чатов (участники, админы, боты).",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "whois",
+          "doc": "Подробная информация о пользователе (по reply, ID, @username или о себе).",
+          "usage": "[id|@username]"
+        },
+        {
+          "name": "whoischat",
+          "doc": "Анализ чата или канала (участники, админы, боты, тип, права).",
+          "usage": "[chat_id|@username]"
+        },
+        {
+          "name": "chatanalysis",
+          "doc": "Анализ текущего или указанного чата (псевдоним whoischat).",
+          "usage": "[chat_id|@username]"
+        }
+      ],
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/whois.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/whois.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 279600,
+      "sha256": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5",
+      "size_arm64": 279600,
+      "sha256_arm64": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/whois.so",
+      "size_arm32": 156888,
+      "sha256_arm32": "d7e67abaeb926d086e48cbe14f82ec1d160d58c63d01cecc0b612ee2d2727a52",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/whois.so"
+    },
+    {
+      "id": "moomod",
+      "name": "moomod",
+      "display_name": "MooBot (Корова)",
+      "author": "Kote",
+      "description": "Взаимодействие с игрой @moolokobot (MooBot) с поддержкой форматирования и премиум-эмодзи.",
+      "version": "1.3.1",
+      "kind": "so",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moomod.so",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moomod.so",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/moomod.so",
+      "size": 41520,
+      "sha256": "677fa734e8d3246713c58771e6409a9b45dd2c5d66bfee27eb24c4c93b12dea0",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moomod.cpp",
+      "license": "MIT",
+      "min_host_version": 2,
+      "commands": [
+        {
+          "name": "лес",
+          "doc": "Отправить /forest боту",
+          "usage": ""
+        },
+        {
+          "name": "таск",
+          "doc": "Отправить /task боту",
+          "usage": ""
+        },
+        {
+          "name": "крафт",
+          "doc": "Отправить /craft боту",
+          "usage": ""
+        },
+        {
+          "name": "мун",
+          "doc": "Узнать количество муней",
+          "usage": ""
+        },
+        {
+          "name": "мукри",
+          "doc": "Узнать количество кристаллов",
+          "usage": ""
+        },
+        {
+          "name": "мукр",
+          "doc": "Узнать баланс крови",
+          "usage": ""
+        },
+        {
+          "name": "бб",
+          "doc": "Узнать профиль теленка",
+          "usage": ""
+        },
+        {
+          "name": "мудон",
+          "doc": "Узнать прайс доната",
+          "usage": "[число]"
+        }
+      ],
+      "size_arm64": 41520,
+      "sha256_arm64": "677fa734e8d3246713c58771e6409a9b45dd2c5d66bfee27eb24c4c93b12dea0",
+      "size_arm32": 12848,
+      "sha256_arm32": "e45f8714968fe152e6d199e31d676f295e1bc4b1c93b8178f370dee02f04a97e",
+      "abi": "arm64-v8a, armeabi-v7a"
+    },
+    {
+      "id": "usermanage",
+      "name": "usermanage",
+      "display_name": "Управление пользователями",
+      "author": "Kote",
+      "description": "Управление пользователями, черным списком и контактами.",
+      "version": "1.0.6",
+      "kind": "so",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/usermanage.so",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/usermanage.so",
+      "size": 139352,
+      "sha256": "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/usermanage.cpp",
+      "license": "MIT",
+      "min_host_version": 2,
+      "commands": [
+        {
+          "name": "block",
+          "doc": "Заблокировать пользователя",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "unblock",
+          "doc": "Разблокировать пользователя",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "blocklist",
+          "doc": "Показать список заблокированных ботом",
+          "usage": ""
+        },
+        {
+          "name": "ct",
+          "doc": "Добавить в контакты",
+          "usage": "[@user/ID] <Имя>"
+        },
+        {
+          "name": "mct",
+          "doc": "Добавить в контакты взаимно",
+          "usage": "[@user/ID] <Имя>"
+        },
+        {
+          "name": "rct",
+          "doc": "Удалить из контактов",
+          "usage": "[@user/ID]"
+        }
+      ],
+      "size_arm64": 139352,
+      "sha256_arm64": "ff4f813f505ca028af897f1b94f1f2a1b3750b73160d96643acd84a948b21157",
+      "size_arm32": 92876,
+      "sha256_arm32": "9717643685a8c9290d095ecd1b48749fbe5976859e45a5632e61fc4f78b45d95",
+      "abi": "arm64-v8a, armeabi-v7a"
+    },
+    {
+      "id": "poll",
+      "name": "poll",
+      "display_name": "Конструктор опросов",
+      "author": "Kote",
+      "description": "Создание опросов по шаблонам, сканер результатов и теги участников.",
+      "version": "3.4.1",
+      "kind": "so",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/poll.so",
+      "size": 331760,
+      "sha256": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
+      "license": "MIT",
+      "min_host_version": 85,
+      "commands": [
+        {
+          "name": "poll",
+          "doc": "Создать опрос по шаблону",
+          "usage": "<шаблон> <вопрос>"
+        },
+        {
+          "name": "pollcfg",
+          "doc": "Управление шаблонами опросов",
+          "usage": "[list/add/del]"
+        },
+        {
+          "name": "pollscan",
+          "doc": "Сканировать результаты опроса (в ответ на опрос)",
+          "usage": ""
+        },
+        {
+          "name": "polltag",
+          "doc": "Тегнуть проголосовавших или непроголосовавших",
+          "usage": "<номер|novote> [текст]"
+        }
+      ],
+      "size_arm64": 331760,
+      "sha256_arm64": "dc26d8d58ee9358d45886c4116dbbfda5a33409679d0e0adab857bce442245f9",
+      "size_arm32": 260264,
+      "sha256_arm32": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
+      "abi": "arm64-v8a, armeabi-v7a"
+    }
+  ]
 }
