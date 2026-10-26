@@ -1661,6 +1661,153 @@
       "min_host_version": 26,
       "size": 279600,
       "sha256": "78e34adb7e58b8259df8e0d1e8ae54c97490d79601d26fd929518d44dbc721f5"
+    },
+    {
+      "id": "moomod",
+      "name": "moomod",
+      "display_name": "MooBot (Корова)",
+      "author": "Kote",
+      "description": "Взаимодействие с игрой @moolokobot (MooBot) с поддержкой форматирования и премиум-эмодзи.",
+      "version": "1.3.0",
+      "kind": "so",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/moomod.so",
+      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/moomod.so",
+      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/moomod.so",
+      "size": 53288,
+      "sha256": "cdee5e1066b6cdaf136e6d5f83e3440fef4ffe86b0854ae3d076a0e7b7ab41d6",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moomod.cpp",
+      "license": "MIT",
+      "min_host_version": 2,
+      "commands": [
+        {
+          "name": "лес",
+          "doc": "Отправить /forest боту",
+          "usage": ""
+        },
+        {
+          "name": "таск",
+          "doc": "Отправить /task боту",
+          "usage": ""
+        },
+        {
+          "name": "крафт",
+          "doc": "Отправить /craft боту",
+          "usage": ""
+        },
+        {
+          "name": "мун",
+          "doc": "Узнать количество муней",
+          "usage": ""
+        },
+        {
+          "name": "мукри",
+          "doc": "Узнать количество кристаллов",
+          "usage": ""
+        },
+        {
+          "name": "мукр",
+          "doc": "Узнать баланс крови",
+          "usage": ""
+        },
+        {
+          "name": "бб",
+          "doc": "Узнать профиль теленка",
+          "usage": ""
+        },
+        {
+          "name": "мудон",
+          "doc": "Узнать прайс доната",
+          "usage": "[число]"
+        }
+      ]
+    },
+    {
+      "id": "usermanage",
+      "name": "usermanage",
+      "display_name": "Управление пользователями",
+      "author": "Kote",
+      "description": "Управление пользователями, черным списком и контактами.",
+      "version": "1.0.5",
+      "kind": "so",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/usermanage.so",
+      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/usermanage.so",
+      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/usermanage.so",
+      "size": 175344,
+      "sha256": "ae642b0e0b51055fc66fe61a1fc83017c18598e7c2f1daae699fd8c8ca88fb5b",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/usermanage.cpp",
+      "license": "MIT",
+      "min_host_version": 2,
+      "commands": [
+        {
+          "name": "block",
+          "doc": "Заблокировать пользователя",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "unblock",
+          "doc": "Разблокировать пользователя",
+          "usage": "[@user/ID]"
+        },
+        {
+          "name": "blocklist",
+          "doc": "Показать список заблокированных ботом",
+          "usage": ""
+        },
+        {
+          "name": "ct",
+          "doc": "Добавить в контакты",
+          "usage": "[@user/ID] <Имя>"
+        },
+        {
+          "name": "mct",
+          "doc": "Добавить в контакты взаимно",
+          "usage": "[@user/ID] <Имя>"
+        },
+        {
+          "name": "rct",
+          "doc": "Удалить из контактов",
+          "usage": "[@user/ID]"
+        }
+      ]
+    },
+    {
+      "id": "poll",
+      "name": "poll",
+      "display_name": "Конструктор опросов",
+      "author": "Kote",
+      "description": "Создание опросов по шаблонам, сканер результатов и теги участников.",
+      "version": "3.2.2",
+      "kind": "so",
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/poll.so",
+      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/poll.so",
+      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/poll.so",
+      "size": 192576,
+      "sha256": "e327f721114ae6b2041b12246a5b98fef28987e0cd2bf1c55230f402755a4ada",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
+      "license": "MIT",
+      "min_host_version": 2,
+      "commands": [
+        {
+          "name": "poll",
+          "doc": "Создать опрос по шаблону",
+          "usage": "<шаблон> <вопрос>"
+        },
+        {
+          "name": "pollcfg",
+          "doc": "Управление шаблонами опросов",
+          "usage": "[list/add/del]"
+        },
+        {
+          "name": "pollscan",
+          "doc": "Сканировать результаты опроса (в ответ на опрос)",
+          "usage": ""
+        },
+        {
+          "name": "polltag",
+          "doc": "Тегнуть проголосовавших или непроголосовавших",
+          "usage": "<номер|novote> [текст]"
+        }
+      ]
     }
   ]
 }
