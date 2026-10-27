@@ -445,6 +445,9 @@ typedef struct koto_api {
     int (*host_call_json)(koto_ctx*, const char* method, const char* request_json,
                           char* buf, int buflen);
     int (*host_action_json)(koto_ctx*, const char* method, const char* request_json);
+    /* 35. HTTP POST запрос (v0.4.2 / versionCode 92+) */
+    long long (*http_post)(koto_ctx*, const char* url, const char* body, const char* headers,
+                           unsigned char* buf, int buflen);
 } koto_api;
 /* ========================================================================== *
  *  Хэндлеры модуля. Все СИНХРОННЫЕ (как on_message в ABI 2): api передаётся    *

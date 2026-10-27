@@ -168,6 +168,43 @@ inline std::string http_get(const std::string& url, const std::vector<std::strin
     return http_get(nullptr, nullptr, url, headers, timeout_sec);
 }
 
+// HTTP POST запрос через хост-API (v0.4.2+) или fallback через curl
+inline std::string http_post(const koto_api* api, koto_ctx* ctx, const std::string& url, const std::string& body, const std::vector<std::string>& headers = {}, int timeout_sec = 15) {
+    if (api && api->http_post) {
+        std::string h_str;
+        for (const auto& h : headers) {
+            h_str += h + "\n";
+        }
+        std::vector<unsigned char> buf(512 * 1024);
+        long long n = api->http_post(ctx, url.c_str(), body.c_str(), h_str.c_str(), buf.data(), static_cast<int>(buf.size()));
+        if (n > 0) {
+            return std::string(reinterpret_cast<char*>(buf.data()), static_cast<size_t>(n));
+        }
+    }
+    std::string cmd = "curl -sL --max-time " + std::to_string(timeout_sec) + " -X POST";
+    for (const auto& h : headers) {
+        cmd += " -H " + shell_escape(h);
+    }
+    cmd += " -d " + shell_escape(body);
+    cmd += " " + shell_escape(url);
+
+    struct PipeCloser {
+        void operator()(FILE* fp) const { if (fp) pclose(fp); }
+    };
+    std::array<char, 4096> buffer;
+    std::string result;
+    std::unique_ptr<FILE, PipeCloser> pipe(popen(cmd.c_str(), "r"));
+    if (!pipe) return "";
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+inline std::string http_post(const std::string& url, const std::string& body, const std::vector<std::string>& headers = {}, int timeout_sec = 15) {
+    return http_post(nullptr, nullptr, url, body, headers, timeout_sec);
+}
+
 // Скачивание файла по URL через хост-API (NativeBridge.downloadFile) или fallback через curl
 inline bool download_file(const koto_api* api, koto_ctx* ctx, const std::string& url, const std::string& out_path, const std::vector<std::string>& headers = {}, int timeout_sec = 60) {
     if (api && api->download_file) {
