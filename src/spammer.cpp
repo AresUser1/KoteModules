@@ -154,27 +154,38 @@ static void cmd_spam(koto_ctx* ctx, const koto_api* api) {
 
     // Определяем UTF-16 смещение user_text внутри полного текста команды
     int user_text_u16_start = 0;
+    int user_text_u16_len = 0;
     if (!user_text.empty() && !full_msg.empty()) {
         size_t bpos = full_msg.rfind(user_text);
         if (bpos != std::string::npos) {
             user_text_u16_start = utf16_len(full_msg.c_str(), (int)bpos);
         }
+        user_text_u16_len = utf16_len(user_text.c_str(), (int)user_text.size());
     }
 
-    // Извлекаем сущности (жирный, курсив, премиум-эмодзи) из сообщения пользователя
+    // Извлекаем сущности (жирный, курсив, премиум-эмодзи, цитаты) из сообщения пользователя
     std::vector<SavedEntity> user_entities;
     int n_msg_ents = api->msg_entity_count ? api->msg_entity_count(ctx) : 0;
+    int range_start = user_text_u16_start;
+    int range_end = user_text_u16_start + user_text_u16_len;
+
     for (int i = 0; i < n_msg_ents; ++i) {
         int type = 0, off = 0, len = 0;
         long long docid = 0;
         char url[512] = {0};
         if (!api->msg_entity(ctx, i, &type, &off, &len, &docid, url, sizeof(url))) continue;
         if (type == KOTO_ENT_NONE) continue;
-        if (off >= user_text_u16_start) {
+
+        int ent_start = off;
+        int ent_end = off + len;
+        int clamped_start = std::max(ent_start, range_start);
+        int clamped_end = std::min(ent_end, range_end);
+
+        if (clamped_end > clamped_start) {
             SavedEntity se;
             se.type = type;
-            se.off = off - user_text_u16_start; // нормализуем к 0
-            se.len = len;
+            se.off = clamped_start - range_start;
+            se.len = clamped_end - clamped_start;
             se.docid = docid;
             se.url = url;
             user_entities.push_back(se);
@@ -308,7 +319,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spammer",
     "Быстрый спам сообщениями с поддержкой разметки, цитат, премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении. C++ ABI 3.",
-    "1.2.1",
+    "1.2.2",
     24,
     0,
     COMMANDS,

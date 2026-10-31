@@ -182,19 +182,196 @@ static std::string to_lower(std::string s) {
     return s;
 }
 
-static std::string normalize_nick(std::string nick) {
+static char decode_math_cp(uint32_t cp) {
+    static const struct { uint32_t start, end; char base; } r[] = {
+        {0x1D400, 0x1D419, 'a'}, {0x1D41A, 0x1D433, 'a'}, // Bold
+        {0x1D434, 0x1D44D, 'a'}, {0x1D44E, 0x1D467, 'a'}, // Italic
+        {0x1D468, 0x1D481, 'a'}, {0x1D482, 0x1D49B, 'a'}, // Bold Italic
+        {0x1D49C, 0x1D4B5, 'a'}, {0x1D4B6, 0x1D4CF, 'a'}, // Script
+        {0x1D4D0, 0x1D4E9, 'a'}, {0x1D4EA, 0x1D503, 'a'}, // Bold Script
+        {0x1D504, 0x1D51D, 'a'}, {0x1D51E, 0x1D537, 'a'}, // Fraktur
+        {0x1D538, 0x1D551, 'a'}, {0x1D552, 0x1D56B, 'a'}, // Double-struck
+        {0x1D56C, 0x1D585, 'a'}, {0x1D586, 0x1D59F, 'a'}, // Sans-serif
+        {0x1D5A0, 0x1D5B9, 'a'}, {0x1D5BA, 0x1D5D3, 'a'}, // Sans-serif Bold
+        {0x1D5D4, 0x1D5ED, 'a'}, {0x1D5EE, 0x1D607, 'a'}, // Sans-serif Italic
+        {0x1D608, 0x1D621, 'a'}, {0x1D622, 0x1D63B, 'a'}, // Sans Bold Italic
+        {0x1D63C, 0x1D655, 'a'}, {0x1D656, 0x1D66F, 'a'}, // Monospace
+        {0x1D670, 0x1D689, 'a'}, {0x1D68A, 0x1D6A3, 'a'}, // Monospace
+    };
+    for (const auto& item : r) {
+        if (cp >= item.start && cp <= item.end) {
+            return (char)(item.base + (cp - item.start) % 26);
+        }
+    }
+    static const struct { uint32_t start, end; } d[] = {
+        {0x1D7CE, 0x1D7D7}, {0x1D7D8, 0x1D7E1}, {0x1D7E2, 0x1D7EB},
+        {0x1D7EC, 0x1D7F5}, {0x1D7F6, 0x1D7FF}
+    };
+    for (const auto& item : d) {
+        if (cp >= item.start && cp <= item.end) {
+            return (char)('0' + (cp - item.start));
+        }
+    }
+    return 0;
+}
+
+static std::string normalize_small_caps_and_unicode(const std::string& str) {
     std::string out;
-    for (size_t i = 0; i < nick.size(); ++i) {
-        unsigned char c = (unsigned char)nick[i];
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ') {
+    size_t i = 0;
+    while (i < str.size()) {
+        unsigned char c = (unsigned char)str[i];
+        if (c < 0x80) {
             out += (char)std::tolower(c);
+            i++;
+            continue;
+        }
+        if (i + 3 < str.size() && (unsigned char)str[i] == 0xF0 && (unsigned char)str[i+1] == 0x9D) {
+            uint32_t b3 = (unsigned char)str[i+2];
+            uint32_t b4 = (unsigned char)str[i+3];
+            uint32_t cp = ((0xF0 & 0x07) << 18) | ((0x9D & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+            char mch = decode_math_cp(cp);
+            if (mch) {
+                out += mch;
+                i += 4;
+                continue;
+            }
+        }
+        if (i + 2 < str.size() && (unsigned char)str[i] == 0xE1 && (unsigned char)str[i+1] == 0xB4) {
+            unsigned char b3 = (unsigned char)str[i+2];
+            char repl = 0;
+            switch (b3) {
+                case 0x80: repl = 'a'; break;
+                case 0x84: repl = 'c'; break;
+                case 0x85: repl = 'd'; break;
+                case 0x87: repl = 'e'; break;
+                case 0x8A: repl = 'j'; break;
+                case 0x8B: repl = 'k'; break;
+                case 0x8D: repl = 'm'; break;
+                case 0x8F: repl = 'o'; break;
+                case 0x98: repl = 'p'; break;
+                case 0x9B: repl = 't'; break;
+                case 0x9C: repl = 'u'; break;
+                case 0xA1: repl = 'w'; break;
+                case 0xA2: repl = 'z'; break;
+            }
+            if (repl) { out += repl; i += 3; continue; }
+        }
+        if (i + 1 < str.size() && (unsigned char)str[i] == 0xCA) {
+            unsigned char b2 = (unsigned char)str[i+1];
+            char repl = 0;
+            switch (b2) {
+                case 0x99: repl = 'b'; break;
+                case 0x9C: repl = 'h'; break;
+                case 0x9F: repl = 'l'; break;
+                case 0x80: repl = 'r'; break;
+                case 0x93: repl = 's'; break;
+                case 0x8F: repl = 'y'; break;
+            }
+            if (repl) { out += repl; i += 2; continue; }
+        }
+        if (i + 1 < str.size() && (unsigned char)str[i] == 0xC9) {
+            unsigned char b2 = (unsigned char)str[i+1];
+            char repl = 0;
+            switch (b2) {
+                case 0xA2: repl = 'g'; break;
+                case 0xAA: repl = 'i'; break;
+                case 0xB4: repl = 'n'; break;
+            }
+            if (repl) { out += repl; i += 2; continue; }
+        }
+        if (i + 1 < str.size() && (unsigned char)str[i] == 0xD0) {
+            unsigned char b2 = (unsigned char)str[i+1];
+            if (b2 >= 0x90 && b2 <= 0x9F) {
+                out += (char)0xD0;
+                out += (char)(b2 + 0x20);
+                i += 2;
+                continue;
+            } else if (b2 >= 0xA0 && b2 <= 0xAF) {
+                out += (char)0xD1;
+                out += (char)(b2 - 0x20);
+                i += 2;
+                continue;
+            } else if (b2 == 0x81) {
+                out += (char)0xD1;
+                out += (char)(b2);
+                i += 2;
+                continue;
+            }
+        }
+        out += str[i];
+        i++;
+    }
+    return out;
+}
+
+static std::vector<std::string> extract_core_tokens(const std::string& raw) {
+    std::string s = normalize_small_caps_and_unicode(raw);
+    std::vector<std::string> tokens;
+    std::string cur;
+    for (size_t i = 0; i < s.size(); ++i) {
+        unsigned char c = (unsigned char)s[i];
+        bool is_letter_or_digit = false;
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+            is_letter_or_digit = true;
+            cur += (char)c;
+        } else if (c >= 0xC0 && i + 1 < s.size()) {
+            unsigned char c2 = (unsigned char)s[i+1];
+            if ((c == 0xD0 && c2 >= 0xB0) || (c == 0xD1 && c2 <= 0x9F) || (c == 0xD1 && c2 == 0x91)) {
+                is_letter_or_digit = true;
+                cur += (char)c;
+                cur += (char)c2;
+                i++;
+            }
+        }
+        if (!is_letter_or_digit) {
+            if (!cur.empty()) {
+                tokens.push_back(cur);
+                cur.clear();
+            }
+        }
+    }
+    if (!cur.empty()) {
+        tokens.push_back(cur);
+    }
+    std::vector<std::string> filtered;
+    for (const auto& t : tokens) {
+        if (t == "kt" || t == "кт" || t == "defbykote" || t == "bot" || t == "net" || t == "team") continue;
+        if (t.size() < 2) continue;
+        bool all_digits = true;
+        for (char ch : t) if (ch < '0' || ch > '9') { all_digits = false; break; }
+        if (all_digits) continue;
+        filtered.push_back(t);
+    }
+    return filtered;
+}
+
+static bool is_same_player(const std::string& name1, const std::string& name2) {
+    auto t1 = extract_core_tokens(name1);
+    auto t2 = extract_core_tokens(name2);
+    if (t1.empty() || t2.empty()) return false;
+    for (const auto& w1 : t1) {
+        for (const auto& w2 : t2) {
+            if (w1 == w2) return true;
+            if (w1.size() >= 4 && w2.find(w1) != std::string::npos) return true;
+            if (w2.size() >= 4 && w1.find(w2) != std::string::npos) return true;
+        }
+    }
+    return false;
+}
+
+static std::string normalize_nick(std::string nick) {
+    std::string norm = normalize_small_caps_and_unicode(nick);
+    std::string out;
+    for (size_t i = 0; i < norm.size(); ++i) {
+        unsigned char c = (unsigned char)norm[i];
+        if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == ' ') {
+            out += (char)c;
         } else if (c >= 0xC0) {
             out += (char)c;
         } else if (c >= 0x80) {
             out += (char)c;
         }
     }
-    // Схлопываем пробелы
     std::string res;
     bool sp = false;
     for (char c : out) {
@@ -413,22 +590,16 @@ static std::vector<AccountInfo> get_active_accounts(koto_ctx* ctx, const koto_ap
 
 // ── Проверка нахождения в лог-чате ───────────────────────────────────────────
 static bool check_tourney(koto_ctx* ctx, const koto_api* api, const Settings& s) {
-    if (s.tourney_chat_id == 0) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ ");
-        api->c_fmt(ctx, "Лог-чат не задан.", KOTO_ENT_BOLD);
-        api->c_text(ctx, " Установите: ");
-        api->c_fmt(ctx, ".mset tourney", KOTO_ENT_CODE);
-        api->c_edit(ctx, 0);
-        return false;
-    }
-    if (api->chat_id(ctx) != s.tourney_chat_id) {
-        api->c_reset(ctx);
-        api->c_text(ctx, "❌ Команда разрешена только в лог-чате.");
-        api->c_edit(ctx, 0);
-        return false;
-    }
-    return true;
+    long long cur = api->chat_id(ctx);
+    // Если команда из терминала KoteLoader (cur == 0) или лог-чат не задан — разрешаем
+    if (cur == 0 || s.tourney_chat_id == 0) return true;
+    // Если лог-чат задан — разрешаем команды в лог-чате и в арене
+    if (cur == s.tourney_chat_id || (s.arena_id != 0 && cur == s.arena_id)) return true;
+
+    api->c_reset(ctx);
+    api->c_text(ctx, "❌ Команда разрешена только в турнирном лог-чате или арене.");
+    api->c_edit(ctx, 0);
+    return false;
 }
 
 // ── Получение названия чата ──────────────────────────────────────────────────
@@ -835,6 +1006,37 @@ static void cmd_mvesh(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
+// ── Безопасный резолв бота с повторными попытками ────────────────────────────
+static long long safe_resolve_bot(koto_ctx* ctx, const koto_api* api, const std::string& username) {
+    if (username.empty()) return 0;
+    std::string u = to_lower(username);
+    if (u.front() == '@') u = u.substr(1);
+
+    // 1. Сначала пробуем динамический резолв через Telegram MTProto (кеширует access_hash)
+    if (api && api->resolve) {
+        long long id = api->resolve(ctx, u.c_str());
+        if (id > 0) return id;
+        id = api->resolve(ctx, username.c_str());
+        if (id > 0) return id;
+    }
+
+    // 2. Известные fallback ID ботов
+    if (u == "combatmafiasobot") return 1634167847LL;
+    if (u == "mafiabakublackbot" || u == "mafiabakublack1bot") return 850550410LL;
+    if (u == "truemafiablackbot" || u == "truemafiabot") return 731804554LL;
+    if (u == "mafiososbot" || u == "mafiozi") return 8173933680LL;
+
+    // 3. Повторные попытки резолва
+    if (api && api->resolve) {
+        for (int r = 0; r < 3; ++r) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            long long id = api->resolve(ctx, u.c_str());
+            if (id > 0) return id;
+        }
+    }
+    return 0;
+}
+
 // ── .mreg <ссылка или параметр> ──────────────────────────────────────────────
 static void cmd_mreg(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -846,8 +1048,9 @@ static void cmd_mreg(koto_ctx* ctx, const koto_api* api) {
     if (args.empty()) {
         api->c_reset(ctx);
         api->c_fmt(ctx, "❌ Укажите ссылку или старт-параметр.\n\n", KOTO_ENT_BOLD);
-        api->c_text(ctx, "Примеры:\n  .mreg https://t.me/KoteMafiaBot?start=jointeam_-100123_orange\n"
-                         "  .mreg https://t.me/CombatMafiaSOBot?start=abc123\n"
+        api->c_text(ctx, "Примеры:\n"
+                         "  .mreg https://t.me/KoteMafiaBot?start=jointeam_-100123_orange\n"
+                         "  .mreg https://t.me/CombatMafiaSOBot?start=vsrandom_-100123\n"
                          "  .mreg -1002404766570_1  (→ Baku)");
         api->c_edit(ctx, 0);
         return;
@@ -868,25 +1071,55 @@ static void cmd_mreg(koto_ctx* ctx, const koto_api* api) {
             size_t astart = args.rfind('@', qpos);
             if (astart != std::string::npos) {
                 bot_username = args.substr(astart + 1, qpos - astart - 1);
+            } else {
+                bot_username = args.substr(0, qpos);
             }
         }
     } else {
         if (args.rfind("jointeam", 0) == 0 || args.rfind("join_", 0) == 0) {
             bot_username = KOTO_BOT;
-        } else if (args.find("combat") != std::string::npos) {
+        } else if (args.find("combat") != std::string::npos || args.find("vsrandom") != std::string::npos) {
             bot_username = COMBAT_BOT;
         }
     }
 
+    // Очищаем bot_username от мусора (слеши, @, пробелы, ?)
+    while (!bot_username.empty() && (bot_username.front() == '@' || bot_username.front() == '/' || bot_username.front() == ' ')) {
+        bot_username.erase(bot_username.begin());
+    }
+    while (!bot_username.empty() && (bot_username.back() == '/' || bot_username.back() == '?' || bot_username.back() == ' ')) {
+        bot_username.pop_back();
+    }
+    if (bot_username.empty()) bot_username = BAKU_BOT;
+
     auto accounts = get_active_accounts(ctx, api, s);
+    if (accounts.empty()) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Нет активных аккаунтов (твинов) для регистрации.");
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    if (api->db_set) {
+        api->db_set(ctx, "last_registered_bot", bot_username.c_str());
+    }
     api->c_reset(ctx);
     api->c_text(ctx, ("⏳ Регистрирую " + std::to_string(accounts.size()) + " аккаунтов в @" +
                       bot_username + " (" + start_param + ")...").c_str());
     api->c_edit(ctx, 0);
 
-    long long bot_peer_id = api->resolve(ctx, bot_username.c_str());
-    int success_count = 0;
+    long long bot_peer_id = safe_resolve_bot(ctx, api, bot_username);
+    if (bot_peer_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка регистрации:\n", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + bot_username + " (ID = 0).\n"
+                          "⚠️ Отправка отменена, чтобы не спамить /start в турнирный чат!\n"
+                          "💡 Напишите боту @" + bot_username + " любое сообщение в ЛС и повторите .mreg.").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
 
+    int success_count = 0;
     human_scatter(accounts, s, [&](const AccountInfo& acc) {
         std::string cmd = "/start " + start_param;
         api->twin_send(ctx, acc.uid, bot_peer_id, cmd.c_str());
@@ -898,7 +1131,7 @@ static void cmd_mreg(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
-// ── .mbvesh <ник> ────────────────────────────────────────────────────────────
+// ── .mbvesh <ник или номер> ──────────────────────────────────────────────────
 static void cmd_mbvesh(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
     Settings s = load_settings(ctx, api);
@@ -908,50 +1141,127 @@ static void cmd_mbvesh(koto_ctx* ctx, const koto_api* api) {
     std::string target_raw = args_ptr ? trim(args_ptr) : "";
     if (target_raw.empty()) {
         api->c_reset(ctx);
-        api->c_text(ctx, "❌ Укажите ник: .mbvesh <ник>");
+        api->c_text(ctx, "❌ Укажите ник или номер: .mbvesh <ник/номер/UID>");
         api->c_edit(ctx, 0);
         return;
     }
 
-    std::string target_norm = normalize_baku_btn(target_raw);
     auto accounts = get_active_accounts(ctx, api, s);
+    if (accounts.empty()) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Нет активных аккаунтов.");
+        api->c_edit(ctx, 0);
+        return;
+    }
 
-    api->c_reset(ctx);
-    api->c_text(ctx, ("🗳 Baku: голос за " + target_raw + " (" + std::to_string(accounts.size()) + " акк.)...").c_str());
-    api->c_edit(ctx, 0);
-
-    long long bot_id = api->resolve(ctx, BAKU_BOT);
-    int voted_count = 0;
-
-    human_scatter(accounts, s, [&](const AccountInfo& acc) {
-        char hbuf[65536];
-        int hlen = api->twin_get_history_json(ctx, acc.uid, bot_id, 0, 30, 0, hbuf, sizeof(hbuf));
-        if (hlen <= 0) return;
-        auto msgs = parse_history_json(std::string(hbuf, hlen));
-        for (const auto& m : msgs) {
-            if (m.text.find("линчевать") == std::string::npos && m.text.find("виновных") == std::string::npos) {
-                continue;
-            }
-            const MsgButton* best_btn = nullptr;
-            int best_score = -1;
-            for (const auto& btn : m.buttons) {
-                std::string btn_norm = normalize_baku_btn(btn.text);
-                int score = baku_match_score(target_norm, btn_norm);
-                if (score > best_score) {
-                    best_score = score;
-                    best_btn = &btn;
-                }
-            }
-            if (best_btn && best_score > 0) {
-                api->twin_click_button(ctx, acc.uid, bot_id, m.id, best_btn->data.c_str());
-                voted_count++;
+    // Определяем целевой UID игрока, если указан прямой ID или имя одного из наших аккаунтов
+    long long target_uid = 0;
+    if (isdigit((unsigned char)target_raw[0])) {
+        char* end_p = nullptr;
+        long long parsed_id = std::strtoll(target_raw.c_str(), &end_p, 10);
+        if (parsed_id > 1000000LL) target_uid = parsed_id;
+    }
+    if (target_uid == 0) {
+        for (const auto& a : accounts) {
+            if (is_same_player(a.name, target_raw)) {
+                target_uid = a.uid;
                 break;
             }
         }
-    });
+    }
+    std::string target_uid_str = (target_uid > 0) ? std::to_string(target_uid) : "";
 
     api->c_reset(ctx);
-    api->c_text(ctx, ("✅ Baku vesh: проголосовало " + std::to_string(voted_count) + " акк.").c_str());
+    api->c_text(ctx, ("🗳 [MultiTool v1.3.11] Baku: голос за " + target_raw + " (" + std::to_string(accounts.size()) + " акк.)...").c_str());
+    api->c_edit(ctx, 0);
+
+    long long bot_id = safe_resolve_bot(ctx, api, BAKU_BOT);
+    if (bot_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(BAKU_BOT) + ".").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    int voted_count = 0;
+    std::string matched_target_name;
+
+    for (const auto& acc : accounts) {
+        char hbuf[65536];
+        int hlen = api->twin_get_history_json(ctx, acc.uid, bot_id, 0, 30, 0, hbuf, sizeof(hbuf));
+        if (hlen <= 0) continue;
+
+        auto msgs = parse_history_json(std::string(hbuf, hlen));
+        int target_msg_id = 0;
+        std::string target_btn_data;
+
+        for (const auto& m : msgs) {
+            if (m.buttons.empty()) continue;
+
+            for (const auto& btn : m.buttons) {
+                // Защита: нельзя голосовать за самого себя
+                if (!btn.data.empty() && btn.data.find(std::to_string(acc.uid)) != std::string::npos) {
+                    continue;
+                }
+                if (is_same_player(acc.name, btn.text)) {
+                    continue;
+                }
+
+                bool match = false;
+
+                // 1. Точное совпадение по целевому UID в callback (a:game_id:target_uid:vote:1)
+                if (!target_uid_str.empty() && btn.data.find(target_uid_str) != std::string::npos) {
+                    match = true;
+                }
+
+                // 2. Совпадение по имени игрока (is_same_player нормализует шрифты, значки 🔴/🔵/🌝/🌚 и клантеги)
+                if (!match && is_same_player(target_raw, btn.text)) {
+                    match = true;
+                }
+
+                // 3. Совпадение по тексту кнопки
+                if (!match) {
+                    std::string btn_norm = normalize_baku_btn(btn.text);
+                    std::string t_norm = normalize_baku_btn(target_raw);
+                    if (!t_norm.empty() && btn_norm.find(t_norm) != std::string::npos) {
+                        match = true;
+                    }
+                }
+
+                // 4. Если аргумент — номер позиции в списке (напр. "4" или "4.")
+                if (!match && isdigit((unsigned char)target_raw[0]) && target_raw.size() <= 2) {
+                    std::string pfx1 = target_raw + ".";
+                    std::string pfx2 = target_raw + " ";
+                    if (btn.text.rfind(pfx1, 0) == 0 || btn.text.rfind(pfx2, 0) == 0 ||
+                        btn.text.find(" " + pfx1) != std::string::npos) {
+                        match = true;
+                    }
+                }
+
+                if (match) {
+                    target_msg_id = m.id;
+                    target_btn_data = btn.data;
+                    if (matched_target_name.empty()) matched_target_name = btn.text;
+                    break;
+                }
+            }
+
+            if (target_msg_id != 0) break;
+        }
+
+        if (target_msg_id != 0 && !target_btn_data.empty()) {
+            api->twin_click_button(ctx, acc.uid, bot_id, target_msg_id, target_btn_data.c_str());
+            voted_count++;
+        }
+    }
+
+    api->c_reset(ctx);
+    std::string res_msg = "✅ [MultiTool v1.3.11] Baku vesh: проголосовало " + std::to_string(voted_count) + " акк.";
+    if (!matched_target_name.empty()) {
+        res_msg += "\n🎯 Цель: " + matched_target_name;
+    }
+    api->c_text(ctx, res_msg.c_str());
     api->c_edit(ctx, 0);
 }
 
@@ -964,29 +1274,61 @@ static void baku_confirm(koto_ctx* ctx, const koto_api* api, const Settings& s, 
     api->c_text(ctx, ("⏳ Baku " + (action == "like" ? std::string("👍") : std::string("👎")) + "...").c_str());
     api->c_edit(ctx, 0);
 
-    int count = 0;
-    human_scatter(accounts, s, [&](const AccountInfo& acc) {
-        char hbuf[65536];
-        int hlen = api->twin_get_history_json(ctx, acc.uid, arena_id, 0, 20, 0, hbuf, sizeof(hbuf));
-        if (hlen <= 0) return;
+    int target_msg_id = 0;
+    std::string target_btn_data;
+    long long rep_id = api->reply_msg_id ? api->reply_msg_id(ctx) : 0;
+
+    char hbuf[65536];
+    int hlen = api->get_history_json ? api->get_history_json(ctx, arena_id, 0, 15, 0, hbuf, sizeof(hbuf)) : 0;
+    if (hlen > 0) {
         auto msgs = parse_history_json(std::string(hbuf, hlen));
-        for (const auto& m : msgs) {
-            if (m.text.find("Уверены") == std::string::npos && m.text.find("линчевать") == std::string::npos) {
-                continue;
-            }
-            for (const auto& btn : m.buttons) {
-                if (btn.data.rfind(action + ":", 0) == 0) {
-                    api->twin_click_button(ctx, acc.uid, arena_id, m.id, btn.data.c_str());
-                    count++;
-                    return;
+        if (rep_id != 0) {
+            for (const auto& m : msgs) {
+                if (m.id == rep_id) {
+                    for (const auto& btn : m.buttons) {
+                        if (btn.data.rfind(action + ":", 0) == 0 ||
+                            (action == "like" && btn.text.find("👍") != std::string::npos) ||
+                            (action != "like" && btn.text.find("👎") != std::string::npos)) {
+                            target_msg_id = m.id;
+                            target_btn_data = btn.data;
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
         }
-    });
+
+        if (target_msg_id == 0) {
+            for (const auto& m : msgs) {
+                for (const auto& btn : m.buttons) {
+                    if (btn.data.rfind(action + ":", 0) == 0 ||
+                        btn.data.find(action) != std::string::npos ||
+                        (action == "like" && btn.text.find("👍") != std::string::npos) ||
+                        (action != "like" && btn.text.find("👎") != std::string::npos)) {
+                        target_msg_id = m.id;
+                        target_btn_data = btn.data;
+                        break;
+                    }
+                }
+                if (target_msg_id != 0) break;
+            }
+        }
+    }
+
+    if (target_msg_id == 0 || target_btn_data.empty()) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Кнопка Baku-голосования не найдена в арене.");
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    api->twin_click_button(ctx, 0, arena_id, target_msg_id, target_btn_data.c_str());
+    int count = (int)accounts.size();
 
     api->c_reset(ctx);
-    api->c_text(ctx, ("✅ Baku " + (action == "like" ? std::string("линч") : std::string("отмена")) +
-                      ": " + std::to_string(count) + " акк.").c_str());
+    api->c_text(ctx, ("✅ [MultiTool v1.3.11] Baku " + (action == "like" ? std::string("линч 👍") : std::string("отмена 👎")) +
+                      ": нажато с " + std::to_string(count) + " акк.").c_str());
     api->c_edit(ctx, 0);
 }
 
@@ -1004,7 +1346,58 @@ static void cmd_mbdis(koto_ctx* ctx, const koto_api* api) {
     baku_confirm(ctx, api, s, "dislike");
 }
 
-// ── .mrole <combat|true|baku|koto|oso> ───────────────────────────────────────
+struct RoleBotConfig {
+    std::string key;
+    std::string username;
+};
+
+static bool is_allies_text(const std::string& text) {
+    if (text.empty()) return false;
+    if (text.find("союзник") != std::string::npos ||
+        text.find("Союзник") != std::string::npos ||
+        text.find("напарник") != std::string::npos ||
+        text.find("Напарник") != std::string::npos ||
+        text.find("Запомни своих") != std::string::npos ||
+        text.find("запомни своих") != std::string::npos) {
+        return true;
+    }
+    return false;
+}
+
+bool is_role_text(const std::string& text, const std::string& bot_key) {
+    if (text.empty()) return false;
+
+    // Исключаем игровые и системные сообщения, которые бот шлёт в ЛС, но которые НЕ являются ролью
+    if (text.find("присоединился") != std::string::npos) return false;
+    if (text.find("Голосование") != std::string::npos) return false;
+    if (text.find("голосование") != std::string::npos) return false;
+    if (text.find("проголосовал за") != std::string::npos) return false;
+    if (text.find("принесла в жертву") != std::string::npos) return false;
+    if (text.find("изменены права") != std::string::npos) return false;
+    if (text.find("Кого бы хотел убить?") != std::string::npos) return false;
+    if (text.find("Живые игроки:") != std::string::npos) return false;
+    if (text.find("Итоги голосования") != std::string::npos) return false;
+    if (text.find("В игре начался") != std::string::npos) return false;
+    if (text.find("Игра началась") != std::string::npos) return false;
+    if (text.find("разошлись, не повесив") != std::string::npos) return false;
+
+    if (bot_key == "combat" || bot_key == "true") {
+        return text.find("Твоя роль в игре:") != std::string::npos;
+    }
+    if (bot_key == "baku") {
+        return (text.find("Твоя роль") != std::string::npos ||
+                text.find("твоя роль") != std::string::npos);
+    }
+    if (bot_key == "koto") {
+        return text.find("Твоя роль:") != std::string::npos;
+    }
+    if (bot_key == "oso") {
+        return (text.rfind("Ты —", 0) == 0 || text.rfind("Ты -", 0) == 0 || text.find("\nТы —") != std::string::npos);
+    }
+    return false;
+}
+
+// ── .mrole [combat|true|baku|koto|oso] ───────────────────────────────────────
 static void cmd_mrole(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
     Settings s = load_settings(ctx, api);
@@ -1013,59 +1406,139 @@ static void cmd_mrole(koto_ctx* ctx, const koto_api* api) {
     const char* args_ptr = api->cmd_args(ctx);
     std::string bot_choice = args_ptr ? to_lower(trim(args_ptr)) : "";
 
-    std::string bot_username = COMBAT_BOT;
-    std::string role_trigger = "Твоя роль в игре:";
+    std::string target_bot_username;
+    std::string target_bot_key;
     if (bot_choice == "combat") {
-        bot_username = COMBAT_BOT;
-        role_trigger = "Твоя роль в игре:";
+        target_bot_username = COMBAT_BOT;
+        target_bot_key = "combat";
     } else if (bot_choice == "true") {
-        bot_username = TRUE_BOT;
-        role_trigger = "Твоя роль в игре:";
+        target_bot_username = TRUE_BOT;
+        target_bot_key = "true";
     } else if (bot_choice == "baku") {
-        bot_username = BAKU_BOT;
-        role_trigger = "Твоя роль -";
+        target_bot_username = BAKU_BOT;
+        target_bot_key = "baku";
     } else if (bot_choice == "koto") {
-        bot_username = KOTO_BOT;
-        role_trigger = "Твоя роль:";
+        target_bot_username = KOTO_BOT;
+        target_bot_key = "koto";
     } else if (bot_choice == "oso") {
-        bot_username = OSO_BOT;
-        role_trigger = "Ты —";
+        target_bot_username = OSO_BOT;
+        target_bot_key = "oso";
+    } else if (bot_choice.empty()) {
+        char reg_bot_buf[128] = {0};
+        int rlen = api->db_get ? api->db_get(ctx, "last_registered_bot", reg_bot_buf, sizeof(reg_bot_buf)) : 0;
+        std::string reg_bot = (rlen > 0) ? to_lower(trim(reg_bot_buf)) : "";
+        if (!reg_bot.empty()) {
+            if (reg_bot.find("baku") != std::string::npos) {
+                target_bot_username = BAKU_BOT;
+                target_bot_key = "baku";
+            } else if (reg_bot.find("true") != std::string::npos) {
+                target_bot_username = TRUE_BOT;
+                target_bot_key = "true";
+            } else if (reg_bot.find("koto") != std::string::npos) {
+                target_bot_username = KOTO_BOT;
+                target_bot_key = "koto";
+            } else if (reg_bot.find("oso") != std::string::npos || reg_bot.find("mafioso") != std::string::npos) {
+                target_bot_username = OSO_BOT;
+                target_bot_key = "oso";
+            } else {
+                target_bot_username = COMBAT_BOT;
+                target_bot_key = "combat";
+            }
+        } else {
+            if (s.enabled_true) {
+                target_bot_username = TRUE_BOT;
+                target_bot_key = "true";
+            } else {
+                target_bot_username = COMBAT_BOT;
+                target_bot_key = "combat";
+            }
+        }
     } else {
         api->c_reset(ctx);
-        api->c_text(ctx, "❌ Укажите бота: .mrole <combat|true|baku|koto|oso>");
+        api->c_text(ctx, "❌ Укажите бота: .mrole [combat|true|baku|koto|oso]");
         api->c_edit(ctx, 0);
         return;
     }
 
+    long long cur_chat = api->chat_id(ctx);
+    long long dest_chat = s.tourney_chat_id ? s.tourney_chat_id : cur_chat;
+    if (dest_chat == 0) dest_chat = cur_chat;
+
     auto accounts = get_active_accounts(ctx, api, s);
     api->c_reset(ctx);
-    api->c_text(ctx, ("🕵️ Сканирую роли из ЛС @" + bot_username + "...").c_str());
+    std::string scan_msg = "🕵️ [MultiTool v1.3.11] Сканирую роли из ЛС @" + target_bot_username + "...";
+    api->c_text(ctx, scan_msg.c_str());
     api->c_edit(ctx, 0);
 
-    long long bot_id = api->resolve(ctx, bot_username.c_str());
+    long long bot_id = safe_resolve_bot(ctx, api, target_bot_username);
+    if (bot_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + target_bot_username).c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
+
     int forwarded_count = 0;
+    time_t now_ts = std::time(nullptr);
 
     for (const auto& acc : accounts) {
         char hbuf[65536];
-        int hlen = api->twin_get_history_json(ctx, acc.uid, bot_id, 0, 20, 0, hbuf, sizeof(hbuf));
+        int hlen = api->twin_get_history_json(ctx, acc.uid, bot_id, 0, 50, 0, hbuf, sizeof(hbuf));
         if (hlen <= 0) continue;
+
         auto msgs = parse_history_json(std::string(hbuf, hlen));
+        int role_mid = 0;
+        int allies_mid = 0;
+
         for (const auto& m : msgs) {
-            if (m.text.find(role_trigger) != std::string::npos) {
-                int msg_id = m.id;
-                api->twin_forward_messages(ctx, acc.uid, bot_id, &msg_id, 1, s.tourney_chat_id);
-                forwarded_count++;
-                std::this_thread::sleep_for(std::chrono::milliseconds(150));
-                break;
+            if (m.out) continue;
+            // В ЛС с ботом все входящие сообщения гарантированно от этого бота
+            if (m.sender_id != 0 && bot_id == 0) {
+                bot_id = m.sender_id;
             }
+            if (m.date > 0 && (now_ts - m.date > 7200)) continue;
+
+            if (role_mid == 0 && is_role_text(m.text, target_bot_key)) {
+                role_mid = m.id;
+            }
+            if (allies_mid == 0 && is_allies_text(m.text)) {
+                allies_mid = m.id;
+            }
+            if (role_mid != 0 && allies_mid != 0) break;
+        }
+
+        if (role_mid != 0 || allies_mid != 0) {
+            std::vector<int> fwd_ids;
+            // Пересылаем в хронологическом порядке: сначала роль, затем союзников
+            if (role_mid != 0 && allies_mid != 0) {
+                if (allies_mid < role_mid) {
+                    fwd_ids.push_back(allies_mid);
+                    fwd_ids.push_back(role_mid);
+                } else {
+                    fwd_ids.push_back(role_mid);
+                    fwd_ids.push_back(allies_mid);
+                }
+            } else if (role_mid != 0) {
+                fwd_ids.push_back(role_mid);
+            } else {
+                fwd_ids.push_back(allies_mid);
+            }
+            api->twin_forward_messages(ctx, acc.uid, bot_id, fwd_ids.data(), (int)fwd_ids.size(), dest_chat);
+            forwarded_count++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
     api->c_reset(ctx);
     if (forwarded_count > 0) {
-        api->c_text(ctx, ("✅ Роли пересланы в лог-чат с " + std::to_string(forwarded_count) + " акк.").c_str());
+        std::string res_text = "✅ [MultiTool v1.3.11] Роли пересланы с " + std::to_string(forwarded_count) + " акк. (из @" + target_bot_username + ")";
+        if (dest_chat != cur_chat) {
+            res_text += "\n📍 Отправлены в лог-чат: " + get_chat_title(ctx, api, dest_chat);
+        }
+        api->c_text(ctx, res_text.c_str());
     } else {
-        api->c_text(ctx, "❌ Свежие роли в ЛС бота не найдены.");
+        api->c_text(ctx, ("❌ Свежие роли в ЛС @" + target_bot_username + " не найдены (проверьте, началась ли игра и выдана ли роль).").c_str());
     }
     api->c_edit(ctx, 0);
 }
@@ -1073,47 +1546,118 @@ static void cmd_mrole(koto_ctx* ctx, const koto_api* api) {
 // ── .mlike / .mdis ───────────────────────────────────────────────────────────
 static void combat_or_bot_confirm(koto_ctx* ctx, const koto_api* api, const Settings& s, bool is_like, const std::string& target_bot) {
     long long arena = s.arena_id ? s.arena_id : api->chat_id(ctx);
+    if (arena == 0) arena = api->chat_id(ctx);
     auto accounts = get_active_accounts(ctx, api, s);
 
     api->c_reset(ctx);
     api->c_text(ctx, ("⏳ Нажимаю " + (is_like ? std::string("👍") : std::string("👎")) + "...").c_str());
     api->c_edit(ctx, 0);
 
-    int count = 0;
-    human_scatter(accounts, s, [&](const AccountInfo& acc) {
-        char hbuf[65536];
-        int hlen = api->twin_get_history_json(ctx, acc.uid, arena, 0, 20, 0, hbuf, sizeof(hbuf));
-        if (hlen <= 0) return;
+    int target_msg_id = 0;
+    std::string target_btn_data;
+    long long rep_id = api->reply_msg_id ? api->reply_msg_id(ctx) : 0;
+
+    // Сканируем последние сообщения арены ОДИН РАЗ через историю основного клиента
+    char hbuf[65536];
+    int hlen = api->get_history_json ? api->get_history_json(ctx, arena, 0, 15, 0, hbuf, sizeof(hbuf)) : 0;
+    if (hlen > 0) {
         auto msgs = parse_history_json(std::string(hbuf, hlen));
-        for (const auto& m : msgs) {
-            for (const auto& btn : m.buttons) {
-                bool match = false;
-                if (target_bot == "oso") {
-                    std::string pfx = is_like ? "like_" : "dislike_";
-                    if (btn.data.rfind(pfx, 0) == 0) match = true;
-                } else if (target_bot == "true") {
-                    std::string sub = is_like ? "yes" : "no";
-                    if (btn.data.find("lynch_confirm") != std::string::npos && btn.data.find(sub) != std::string::npos) match = true;
-                } else if (target_bot == "koto") {
-                    std::string suf = is_like ? ":like" : ":dislike";
-                    if (btn.data.size() >= suf.size() && btn.data.compare(btn.data.size() - suf.size(), suf.size(), suf) == 0) match = true;
-                } else {
-                    // Combat default
-                    std::string key = is_like ? "like_asilan" : "diss_asilan";
-                    if (btn.data.find(key) != std::string::npos) match = true;
-                }
-                if (match) {
-                    api->twin_click_button(ctx, acc.uid, arena, m.id, btn.data.c_str());
-                    count++;
-                    return;
+
+        // Если команда отправлена в ответ на сообщение бота, ищем сначала в нём
+        if (rep_id != 0) {
+            for (const auto& m : msgs) {
+                if (m.id == rep_id) {
+                    for (const auto& btn : m.buttons) {
+                        bool match = false;
+                        if (target_bot == "oso") {
+                            std::string pfx = is_like ? "like_" : "dislike_";
+                            if (btn.data.rfind(pfx, 0) == 0 || (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                        } else if (target_bot == "true") {
+                            std::string sub = is_like ? "yes" : "no";
+                            if ((btn.data.find("lynch_confirm") != std::string::npos && btn.data.find(sub) != std::string::npos) ||
+                                (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                        } else if (target_bot == "koto") {
+                            std::string suf = is_like ? ":like" : ":dislike";
+                            if ((btn.data.size() >= suf.size() && btn.data.compare(btn.data.size() - suf.size(), suf.size(), suf) == 0) ||
+                                (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                        } else if (target_bot == "baku") {
+                            std::string pfx = is_like ? "like:" : "dislike:";
+                            if (btn.data.rfind(pfx, 0) == 0 || (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                        } else {
+                            std::string key = is_like ? "like_" : "diss_";
+                            if (btn.data.find(key) != std::string::npos || (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                        }
+                        if (match) {
+                            target_msg_id = m.id;
+                            target_btn_data = btn.data;
+                            break;
+                        }
+                    }
+                    break;
                 }
             }
         }
-    });
+
+        // Если не реплай или в реплае кнопки не нашлись, ищем в последних сообщениях
+        if (target_msg_id == 0) {
+            for (const auto& m : msgs) {
+                for (const auto& btn : m.buttons) {
+                    bool match = false;
+                    if (target_bot == "oso") {
+                        std::string pfx = is_like ? "like_" : "dislike_";
+                        if (btn.data.rfind(pfx, 0) == 0 || (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                    } else if (target_bot == "true") {
+                        std::string sub = is_like ? "yes" : "no";
+                        if ((btn.data.find("lynch_confirm") != std::string::npos && btn.data.find(sub) != std::string::npos) ||
+                            (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                    } else if (target_bot == "koto") {
+                        std::string suf = is_like ? ":like" : ":dislike";
+                        if ((btn.data.size() >= suf.size() && btn.data.compare(btn.data.size() - suf.size(), suf.size(), suf) == 0) ||
+                            (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                    } else {
+                        // Combat default
+                        std::string key = is_like ? "like_" : "diss_";
+                        if (btn.data.find(key) != std::string::npos || (is_like && btn.text.find("👍") != std::string::npos) || (!is_like && btn.text.find("👎") != std::string::npos)) match = true;
+                    }
+                    if (match) {
+                        target_msg_id = m.id;
+                        target_btn_data = btn.data;
+                        break;
+                    }
+                }
+                if (target_msg_id != 0) break;
+            }
+        }
+    }
+
+    if (target_msg_id == 0 || target_btn_data.empty()) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Кнопка голосования не найдена в арене.\n(Используйте команду в ответ на сообщение бота или повторите).");
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    api->twin_click_button(ctx, 0, arena, target_msg_id, target_btn_data.c_str());
+    int count = (int)accounts.size();
 
     api->c_reset(ctx);
-    api->c_text(ctx, ("✅ Нажато с " + std::to_string(count) + " аккаунтов.").c_str());
+    api->c_text(ctx, ("✅ [MultiTool v1.3.11] Нажато " + (is_like ? std::string("👍") : std::string("👎")) + " с " + std::to_string(count) + " акк.").c_str());
     api->c_edit(ctx, 0);
+}
+
+static std::string detect_target_bot(koto_ctx* ctx, const koto_api* api, const std::string& explicit_arg) {
+    if (!explicit_arg.empty()) return explicit_arg;
+    char reg_bot_buf[128] = {0};
+    int rlen = api->db_get ? api->db_get(ctx, "last_registered_bot", reg_bot_buf, sizeof(reg_bot_buf)) : 0;
+    std::string reg_bot = (rlen > 0) ? to_lower(trim(reg_bot_buf)) : "";
+    if (!reg_bot.empty()) {
+        if (reg_bot.find("baku") != std::string::npos) return "baku";
+        if (reg_bot.find("true") != std::string::npos) return "true";
+        if (reg_bot.find("koto") != std::string::npos) return "koto";
+        if (reg_bot.find("oso") != std::string::npos || reg_bot.find("mafioso") != std::string::npos) return "oso";
+        return "combat";
+    }
+    return "combat";
 }
 
 static void cmd_mlike(koto_ctx* ctx, const koto_api* api) {
@@ -1121,7 +1665,7 @@ static void cmd_mlike(koto_ctx* ctx, const koto_api* api) {
     Settings s = load_settings(ctx, api);
     if (!check_tourney(ctx, api, s)) return;
     const char* args_ptr = api->cmd_args(ctx);
-    std::string arg = args_ptr ? to_lower(trim(args_ptr)) : "";
+    std::string arg = detect_target_bot(ctx, api, args_ptr ? to_lower(trim(args_ptr)) : "");
     combat_or_bot_confirm(ctx, api, s, true, arg);
 }
 
@@ -1130,7 +1674,7 @@ static void cmd_mdis(koto_ctx* ctx, const koto_api* api) {
     Settings s = load_settings(ctx, api);
     if (!check_tourney(ctx, api, s)) return;
     const char* args_ptr = api->cmd_args(ctx);
-    std::string arg = args_ptr ? to_lower(trim(args_ptr)) : "";
+    std::string arg = detect_target_bot(ctx, api, args_ptr ? to_lower(trim(args_ptr)) : "");
     combat_or_bot_confirm(ctx, api, s, false, arg);
 }
 
@@ -1141,7 +1685,14 @@ static void cmd_mprofile(koto_ctx* ctx, const koto_api* api) {
     if (!check_tourney(ctx, api, s)) return;
     auto accounts = get_active_accounts(ctx, api, s);
 
-    long long combat_id = api->resolve(ctx, COMBAT_BOT);
+    long long combat_id = safe_resolve_bot(ctx, api, COMBAT_BOT);
+    if (combat_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(COMBAT_BOT) + ".").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
     int count = 0;
     for (const auto& a : accounts) {
         api->twin_send(ctx, a.uid, combat_id, "/profile");
@@ -1198,7 +1749,14 @@ static void cmd_mtvesh(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, ("🔫 TrueMafia: Голосую за " + target_raw + "...").c_str());
     api->c_edit(ctx, 0);
 
-    long long bot_id = api->resolve(ctx, TRUE_BOT);
+    long long bot_id = safe_resolve_bot(ctx, api, TRUE_BOT);
+    if (bot_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(TRUE_BOT) + ".").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
     int count = 0;
     human_scatter(accounts, s, [&](const AccountInfo& acc) {
         char hbuf[65536];
@@ -1241,7 +1799,14 @@ static void cmd_mkvesh(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, ("🗳 KotoMafia: голос за " + target_raw + "...").c_str());
     api->c_edit(ctx, 0);
 
-    long long bot_id = api->resolve(ctx, KOTO_BOT);
+    long long bot_id = safe_resolve_bot(ctx, api, KOTO_BOT);
+    if (bot_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(KOTO_BOT) + ".").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
     int count = 0;
     human_scatter(accounts, s, [&](const AccountInfo& acc) {
         char hbuf[65536];
@@ -1286,7 +1851,14 @@ static void cmd_movesh(koto_ctx* ctx, const koto_api* api) {
     api->c_text(ctx, ("🗳 Mafioso: голос за " + target_raw + "...").c_str());
     api->c_edit(ctx, 0);
 
-    long long bot_id = api->resolve(ctx, OSO_BOT);
+    long long bot_id = safe_resolve_bot(ctx, api, OSO_BOT);
+    if (bot_id <= 0) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
+        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(OSO_BOT) + ".").c_str());
+        api->c_edit(ctx, 0);
+        return;
+    }
     int count = 0;
     human_scatter(accounts, s, [&](const AccountInfo& acc) {
         char hbuf[65536];
@@ -1584,8 +2156,9 @@ static void cmd_mbaku(koto_ctx* ctx, const koto_api* api) {
 
 static int on_watch(koto_ctx* ctx, const koto_api* api) {
     Settings s = load_settings(ctx, api);
-    if (!s.enabled_combat || s.arena_id == 0) return 0;
-    if (api->chat_id(ctx) != s.arena_id) return 0;
+    long long cur_chat = api->chat_id(ctx);
+    if (!s.enabled_combat) return 0;
+    if (s.arena_id != 0 && cur_chat != s.arena_id) return 0;
 
     const char* txt_ptr = api->msg_text(ctx);
     if (!txt_ptr || !*txt_ptr) return 0;
@@ -1593,14 +2166,13 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
 
     // 1. Определение своего цвета ("Живые игроки:")
     if (text.find("Живые игроки:") != std::string::npos) {
-        char me_name[256];
-        int me_len = api->get_me_name(ctx, me_name, sizeof(me_name));
-        std::string my_nick = me_len > 0 ? normalize_nick(me_name) : "";
-
+        auto accounts = get_active_accounts(ctx, api, s);
         size_t start = text.find("Живые игроки:");
         size_t end = text.find("Из них:");
-        if (start != std::string::npos && end != std::string::npos && end > start) {
-            std::string section = text.substr(start, end - start);
+        if (start != std::string::npos) {
+            std::string section = (end != std::string::npos && end > start)
+                                  ? text.substr(start, end - start)
+                                  : text.substr(start);
             std::stringstream ss(section);
             std::string line;
             while (std::getline(ss, line)) {
@@ -1608,11 +2180,15 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
                 std::string color;
                 if (line.find("🌝") != std::string::npos) color = "🌝";
                 else if (line.find("🌚") != std::string::npos) color = "🌚";
-                if (!color.empty() && !my_nick.empty()) {
-                    std::string norm_l = normalize_nick(line);
-                    if (norm_l.find(my_nick) != std::string::npos || my_nick.find(norm_l) != std::string::npos) {
-                        api->db_set(ctx, "my_combat_color", color.c_str());
-                        break;
+                if (color.empty()) continue;
+
+                for (const auto& acc : accounts) {
+                    if (is_same_player(acc.name, line)) {
+                        std::string k = "combat_color_" + std::to_string(acc.uid);
+                        api->db_set(ctx, k.c_str(), color.c_str());
+                        if (acc.is_main) {
+                            api->db_set(ctx, "my_combat_color", color.c_str());
+                        }
                     }
                 }
             }
@@ -1620,52 +2196,108 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     }
     // 2. Голосование ("Кого бы хотел убить?")
     else if (text.find("Кого бы хотел убить?") != std::string::npos) {
-        char my_cbuf[32];
-        int clen = api->db_get(ctx, "my_combat_color", my_cbuf, sizeof(my_cbuf));
-        std::string my_color = clen > 0 ? std::string(my_cbuf, clen) : "";
-        std::string opp_color = (my_color == "🌝") ? "🌚" : "🌝";
-
         char bbuf[16384];
         int blen = api->msg_buttons_json ? api->msg_buttons_json(ctx, bbuf, sizeof(bbuf)) : 0;
         if (blen <= 0) return 0;
         auto buttons = parse_buttons_json(std::string(bbuf, blen));
         if (buttons.empty()) return 0;
 
-        const MsgButton* target_btn = nullptr;
-        if (s.combat_mode == "name") {
-            if (!s.combat_target_name.empty()) {
-                std::string tnorm = normalize_nick(s.combat_target_name);
+        auto accounts = get_active_accounts(ctx, api, s);
+        if (accounts.empty()) return 0;
+
+        // Разделяем кнопки на желтые и черные
+        std::vector<const MsgButton*> yellow_btns; // кнопки с 🌝
+        std::vector<const MsgButton*> black_btns;  // кнопки с 🌚
+        for (const auto& btn : buttons) {
+            if (btn.text.find("🌝") != std::string::npos) yellow_btns.push_back(&btn);
+            else if (btn.text.find("🌚") != std::string::npos) black_btns.push_back(&btn);
+        }
+
+        // Определяем команду каждого аккаунта
+        std::map<long long, std::string> acc_colors;
+        for (const auto& acc : accounts) {
+            std::string c;
+            std::string uid_str = std::to_string(acc.uid);
+            for (const auto& btn : buttons) {
+                // Если callback_data содержит UID аккаунта или ник совпадает
+                if ((!btn.data.empty() && btn.data.find(uid_str) != std::string::npos) ||
+                    is_same_player(acc.name, btn.text)) {
+                    if (btn.text.find("🌝") != std::string::npos) c = "🌝";
+                    else if (btn.text.find("🌚") != std::string::npos) c = "🌚";
+                    break;
+                }
+            }
+            if (c.empty()) {
+                char cbuf[32] = {0};
+                std::string k = "combat_color_" + uid_str;
+                int clen = api->db_get(ctx, k.c_str(), cbuf, sizeof(cbuf));
+                if (clen > 0) c = std::string(cbuf, clen);
+            }
+            if (c.empty() && acc.is_main) {
+                char cbuf[32] = {0};
+                int clen = api->db_get(ctx, "my_combat_color", cbuf, sizeof(cbuf));
+                if (clen > 0) c = std::string(cbuf, clen);
+            }
+            if (c.empty()) c = "🌚"; // по умолчанию
+            acc_colors[acc.uid] = c;
+        }
+
+        if (s.vote_delay_ms > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(s.vote_delay_ms));
+        }
+
+        int voted_count = 0;
+        for (const auto& acc : accounts) {
+            if (acc.uid <= 0) continue;
+            std::string my_c = acc_colors[acc.uid];
+            // Жёлтые бьют по Чёрным, Чёрные бьют по Жёлтым!
+            const auto& candidate_pool = (my_c == "🌝") ? black_btns : yellow_btns;
+
+            // Фильтруем: исключаем себя (сам в себя голосовать нельзя!)
+            std::vector<const MsgButton*> valid_targets;
+            std::string uid_str = std::to_string(acc.uid);
+            for (const auto* b : candidate_pool) {
+                if (!b->data.empty() && b->data.find(uid_str) != std::string::npos) continue;
+                if (is_same_player(acc.name, b->text)) continue;
+                valid_targets.push_back(b);
+            }
+
+            // Если в целевом пуле никого не осталось — берём любые кнопки кроме себя И кроме союзников по цвету!
+            if (valid_targets.empty()) {
                 for (const auto& btn : buttons) {
-                    if (normalize_nick(btn.text).find(tnorm) != std::string::npos) {
-                        target_btn = &btn;
+                    if (!btn.data.empty() && btn.data.find(uid_str) != std::string::npos) continue;
+                    if (is_same_player(acc.name, btn.text)) continue;
+                    if (!my_c.empty() && btn.text.find(my_c) != std::string::npos) continue;
+                    valid_targets.push_back(&btn);
+                }
+            }
+
+            if (valid_targets.empty()) continue;
+
+            const MsgButton* target_btn = nullptr;
+            if (s.combat_mode == "name" && !s.combat_target_name.empty()) {
+                for (const auto* b : valid_targets) {
+                    if (is_same_player(s.combat_target_name, b->text)) {
+                        target_btn = b;
                         break;
                     }
                 }
             }
-        } else {
-            // "last" или "prelast"
-            std::vector<const MsgButton*> enemies;
-            for (const auto& btn : buttons) {
-                if (btn.text.find(opp_color) != std::string::npos) {
-                    enemies.push_back(&btn);
+            if (!target_btn) {
+                if (s.combat_mode == "prelast" && valid_targets.size() >= 2) {
+                    target_btn = valid_targets[valid_targets.size() - 2];
+                } else {
+                    target_btn = valid_targets.back();
                 }
             }
-            if (!enemies.empty()) {
-                if (s.combat_mode == "prelast" && enemies.size() >= 2) {
-                    target_btn = enemies[enemies.size() - 2];
-                } else {
-                    target_btn = enemies.back();
-                }
+
+            if (target_btn && !target_btn->data.empty()) {
+                api->twin_click_button(ctx, acc.uid, cur_chat, api->msg_id(ctx), target_btn->data.c_str());
+                voted_count++;
             }
         }
 
-        if (target_btn && !target_btn->data.empty()) {
-            if (s.vote_delay_ms > 0) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(s.vote_delay_ms));
-            }
-            api->twin_click_button(ctx, 0, api->chat_id(ctx), api->msg_id(ctx), target_btn->data.c_str());
-            return 1;
-        }
+        return voted_count > 0 ? 1 : 0;
     }
 
     return 0;
@@ -1686,7 +2318,7 @@ static const koto_command MAFIA_COMMANDS[] = {
     {"mbvesh",    cmd_mbvesh,    KOTO_LEVEL_TRUSTED, "Baku: голос за игрока через ЛС", "<ник>"},
     {"mblike",    cmd_mblike,    KOTO_LEVEL_TRUSTED, "Baku: подтвердить линч (лайк)", NULL},
     {"mbdis",     cmd_mbdis,     KOTO_LEVEL_TRUSTED, "Baku: оправдать (дизлайк)", NULL},
-    {"mrole",     cmd_mrole,     KOTO_LEVEL_TRUSTED, "Скан ролей из ЛС в лог-чат", "<combat|true|baku|koto|oso>"},
+    {"mrole",     cmd_mrole,     KOTO_LEVEL_TRUSTED, "Скан ролей из ЛС в лог-чат", "[combat|true|baku|koto|oso]"},
     {"mlike",     cmd_mlike,     KOTO_LEVEL_TRUSTED, "Combat/Oso/True/Koto: подтвердить линч", "[oso|true|koto]"},
     {"mdis",      cmd_mdis,      KOTO_LEVEL_TRUSTED, "Combat/Oso/True/Koto: оправдать", "[oso|true|koto]"},
     {"mprofile",  cmd_mprofile,  KOTO_LEVEL_TRUSTED, "Отправить /profile в Combat со всех акк.", NULL},
@@ -1749,7 +2381,7 @@ static const koto_module MAFIA_MODULE = {
     KOTO_MODULE_ABI,
     MODULE_NAME,
     "Мафия Мульти-Тул — боевой комбайн для мафиозных ботов (Combat, TrueMafia, Baku, Koto, Mafioso).",
-    "1.2.9",
+    "1.3.11",
     28, // min_host_version 28 (0.3.8+)
     0,
     MAFIA_COMMANDS,

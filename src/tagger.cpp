@@ -57,6 +57,21 @@ static void send_result(koto_ctx* ctx, const koto_api* api) {
     }
 }
 
+// Helper to extract -id flag only as a standalone word
+static bool extract_flag_id(std::string& s) {
+    size_t pos = 0;
+    while ((pos = s.find("-id", pos)) != std::string::npos) {
+        bool left_ok = (pos == 0 || std::isspace((unsigned char)s[pos - 1]));
+        bool right_ok = (pos + 3 == s.size() || std::isspace((unsigned char)s[pos + 3]));
+        if (left_ok && right_ok) {
+            s.erase(pos, 3);
+            return true;
+        }
+        pos += 3;
+    }
+    return false;
+}
+
 static std::string trim(const std::string& s) {
     size_t first = s.find_first_not_of(" \t\r\n");
     if (first == std::string::npos) return "";
@@ -652,17 +667,23 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
         int template_u16_len = utf16_len(template_text.c_str(), (int)template_text.size());
 
         int n_ents = api->msg_entity_count(ctx);
+        int range_start = template_u16_start;
+        int range_end = template_u16_start + template_u16_len;
         for (int i = 0; i < n_ents; ++i) {
             int type = 0, off = 0, len = 0;
             long long docid = 0;
             char url[512] = {0};
             if (!api->msg_entity(ctx, i, &type, &off, &len, &docid, url, sizeof(url))) continue;
             if (type == KOTO_ENT_NONE) continue;
-            if (off >= template_u16_start && (off + len) <= (template_u16_start + template_u16_len)) {
+            int ent_start = off;
+            int ent_end = off + len;
+            int clamped_start = std::max(ent_start, range_start);
+            int clamped_end = std::min(ent_end, range_end);
+            if (clamped_end > clamped_start) {
                 SavedEntity se;
                 se.type = type;
-                se.off = off - template_u16_start;
-                se.len = len;
+                se.off = clamped_start - range_start;
+                se.len = clamped_end - clamped_start;
                 se.docid = docid;
                 se.url = url;
                 template_entities.push_back(se);
@@ -711,7 +732,8 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
 
         api->c_reset(ctx);
 
-        if (config.position == "after" && !final_template.empty()) {
+        bool text_after = (config.position == "after");
+        if (!text_after && !final_template.empty()) {
             int base_off = api->c_mark(ctx);
             api->c_text(ctx, final_template.c_str());
             if (!template_entities.empty()) {
@@ -738,7 +760,7 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
             first_user = false;
         }
 
-        if (config.position == "before" && !final_template.empty()) {
+        if (text_after && !final_template.empty()) {
             api->c_text(ctx, "\n");
             int base_off = api->c_mark(ctx);
             api->c_text(ctx, final_template.c_str());
@@ -775,56 +797,85 @@ static void cmd_tag(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     const char* raw = api->cmd_args(ctx);
-    std::string full_args = raw ? trim(raw) : "";
-
-    bool force_id = false;
-    size_t id_pos = full_args.find("-id");
-    if (id_pos != std::string::npos) {
-        force_id = true;
-        full_args.erase(id_pos, 3);
-        full_args = trim(full_args);
-    }
+    std::string full_args = raw ? raw : "";
+    bool force_id = extract_flag_id(full_args);
+    full_args = trim(full_args);
 
     long long target_chat = api->chat_id(ctx);
     std::string mode = "all";
     int random_limit = 0;
-
-    std::istringstream iss(full_args);
-    std::string first_word;
     std::string template_text;
 
-    if (iss >> first_word) {
-        char* end = nullptr;
-        long long maybe_cid = strtoll(first_word.c_str(), &end, 10);
-        if (end != first_word.c_str() && std::abs(maybe_cid) >= 100000) {
+    size_t cursor = 0;
+    auto skip_ws = [&](size_t pos) -> size_t {
+        while (pos < full_args.size() && (full_args[pos] == ' ' || full_args[pos] == '\t')) pos++;
+        return pos;
+    };
+    auto get_token = [&](size_t pos, std::string& token, size_t& next_pos) -> bool {
+        pos = skip_ws(pos);
+        if (pos >= full_args.size()) return false;
+        size_t end = pos;
+        while (end < full_args.size() && !std::isspace((unsigned char)full_args[end])) end++;
+        token = full_args.substr(pos, end - pos);
+        next_pos = end;
+        return true;
+    };
+
+    std::string tok1;
+    size_t next_cur = 0;
+    if (get_token(cursor, tok1, next_cur)) {
+        char* endp = nullptr;
+        long long maybe_cid = strtoll(tok1.c_str(), &endp, 10);
+        if (endp != tok1.c_str() && *endp == '\0' && std::abs(maybe_cid) >= 100000) {
             target_chat = maybe_cid;
-            std::string next_word;
-            if (iss >> next_word) {
-                if (next_word == "admins") {
+            cursor = next_cur;
+            std::string tok2;
+            if (get_token(cursor, tok2, next_cur)) {
+                if (tok2 == "admins") {
                     mode = "admins";
-                } else if (next_word == "random") {
+                    cursor = next_cur;
+                } else if (tok2 == "random") {
                     mode = "random";
-                    iss >> random_limit;
-                } else {
-                    std::string rest;
-                    std::getline(iss, rest);
-                    template_text = next_word + rest;
+                    cursor = next_cur;
+                    std::string tok3;
+                    if (get_token(cursor, tok3, next_cur)) {
+                        char* endp2 = nullptr;
+                        int rl = (int)strtol(tok3.c_str(), &endp2, 10);
+                        if (endp2 != tok3.c_str() && *endp2 == '\0' && rl > 0) {
+                            random_limit = rl;
+                            cursor = next_cur;
+                        }
+                    }
                 }
             }
-        } else if (first_word == "admins") {
+        } else if (tok1 == "admins") {
             mode = "admins";
-        } else if (first_word == "random") {
+            cursor = next_cur;
+        } else if (tok1 == "random") {
             mode = "random";
-            iss >> random_limit;
-        } else {
-            std::string rest;
-            std::getline(iss, rest);
-            template_text = first_word + rest;
+            cursor = next_cur;
+            std::string tok2;
+            if (get_token(cursor, tok2, next_cur)) {
+                char* endp2 = nullptr;
+                int rl = (int)strtol(tok2.c_str(), &endp2, 10);
+                if (endp2 != tok2.c_str() && *endp2 == '\0' && rl > 0) {
+                    random_limit = rl;
+                    cursor = next_cur;
+                }
+            }
         }
-        if (template_text.empty()) {
-            std::string rest;
-            std::getline(iss, rest);
-            template_text = trim(rest);
+    }
+
+    if (cursor < full_args.size()) {
+        while (cursor < full_args.size() && (full_args[cursor] == ' ' || full_args[cursor] == '\t' || full_args[cursor] == '\r' || full_args[cursor] == '\n')) {
+            cursor++;
+        }
+        if (cursor < full_args.size()) {
+            template_text = full_args.substr(cursor);
+            size_t last = template_text.find_last_not_of(" \t\r\n");
+            if (last != std::string::npos) {
+                template_text = template_text.substr(0, last + 1);
+            }
         }
     }
 
@@ -836,15 +887,9 @@ static void cmd_itag(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     const char* raw = api->cmd_args(ctx);
-    std::string full_args = raw ? trim(raw) : "";
-
-    bool force_id = false;
-    size_t id_pos = full_args.find("-id");
-    if (id_pos != std::string::npos) {
-        force_id = true;
-        full_args.erase(id_pos, 3);
-        full_args = trim(full_args);
-    }
+    std::string full_args = raw ? raw : "";
+    bool force_id = extract_flag_id(full_args);
+    full_args = trim(full_args);
 
     execute_tagging(ctx, api, api->chat_id(ctx), "all", 0, full_args, "include", force_id);
 }
@@ -854,15 +899,9 @@ static void cmd_etag(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
     const char* raw = api->cmd_args(ctx);
-    std::string full_args = raw ? trim(raw) : "";
-
-    bool force_id = false;
-    size_t id_pos = full_args.find("-id");
-    if (id_pos != std::string::npos) {
-        force_id = true;
-        full_args.erase(id_pos, 3);
-        full_args = trim(full_args);
-    }
+    std::string full_args = raw ? raw : "";
+    bool force_id = extract_flag_id(full_args);
+    full_args = trim(full_args);
 
     execute_tagging(ctx, api, api->chat_id(ctx), "all", 0, full_args, "exclude", force_id);
 }
@@ -1523,7 +1562,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tagger",
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
-    "3.4.6",
+    "3.4.7",
     26,
     0,
     COMMANDS,
