@@ -12,6 +12,7 @@
 
 #include "module_abi.h"
 #include <string>
+#include <fstream>
 #include <vector>
 #include <set>
 #include <map>
@@ -779,7 +780,7 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
             }
         }
 
-        api->c_send(ctx, target_chat_id, 0);
+        api->c_send(ctx, target_chat_id, KOTO_NO_LINK_PREVIEW);
 
         if (idx < targets.size() && g_active_tag_chats.find(target_chat_id) != g_active_tag_chats.end()) {
             int d_min = std::max(0, config.delay_min);
@@ -1399,7 +1400,70 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
 }
 
 // ── Список команд ────────────────────────────────────────────────────────────
+static void cmd_tagdebug(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    std::string path = "/data/data/dev.kotogram.loader/files/tagger_debug.log";
+    std::ifstream f(path);
+    if (!f.is_open()) {
+        path = "/data/user/0/dev.kotogram.loader/files/tagger_debug.log";
+        f.open(path);
+    }
+    if (!f.is_open()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "ℹ️ Лог теггера пока пуст (файл не найден).", KOTO_ENT_BOLD);
+        api->c_reply(ctx, 0);
+        return;
+    }
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(f, line)) {
+        if (!line.empty()) {
+            lines.push_back(line);
+        }
+    }
+    if (lines.empty()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "ℹ️ Лог теггера пока пуст.", KOTO_ENT_BOLD);
+        api->c_reply(ctx, 0);
+        return;
+    }
+    size_t take = std::min<size_t>(lines.size(), 30);
+    std::string buf;
+    for (size_t i = lines.size() - take; i < lines.size(); ++i) {
+        if (!buf.empty()) buf += "\n";
+        buf += lines[i];
+    }
+    if (buf.size() > 3500) {
+        buf = buf.substr(buf.size() - 3500);
+    }
+
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "📝 Диагностический лог теггера:\n\n", KOTO_ENT_BOLD);
+    int p_off = api->c_mark(ctx);
+    api->c_text(ctx, buf.c_str());
+    int p_len = api->c_mark(ctx) - p_off;
+    if (p_len > 0) {
+        api->c_entity(ctx, KOTO_ENT_PRE, p_off, p_len, 0, nullptr);
+    }
+    api->c_reply(ctx, 0);
+}
+
 static const koto_command COMMANDS[] = {
+    {
+        "tagdebug",
+        &cmd_tagdebug,
+        KOTO_LEVEL_TRUSTED,
+        "Показать последние записи диагностического лога теггера.",
+        nullptr
+    },
+    {
+        "taglog",
+        &cmd_tagdebug,
+        KOTO_LEVEL_TRUSTED,
+        "Показать последние записи диагностического лога теггера.",
+        nullptr
+    },
+
     {
         "tag",
         &cmd_tag,

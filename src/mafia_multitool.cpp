@@ -1024,7 +1024,7 @@ static long long safe_resolve_bot(koto_ctx* ctx, const koto_api* api, const std:
     if (u == "combatmafiasobot") return 1634167847LL;
     if (u == "mafiabakublackbot" || u == "mafiabakublack1bot") return 850550410LL;
     if (u == "truemafiablackbot" || u == "truemafiabot") return 731804554LL;
-    if (u == "mafiososbot" || u == "mafiozi") return 8173933680LL;
+    if (u == "mafiososbot" || u == "mafiozi" || u == "mafioso" || u == "oso") return 5424831786LL;
 
     // 3. Повторные попытки резолва
     if (api && api->resolve) {
@@ -1831,55 +1831,213 @@ static void cmd_mkvesh(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 }
 
-// ── .movesh <ник> ────────────────────────────────────────────────────────────
+// ── .movesh <ник/номер/UID/callback> ─────────────────────────────────────────
 static void cmd_movesh(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
     Settings s = load_settings(ctx, api);
     if (!check_tourney(ctx, api, s)) return;
+
     const char* args_ptr = api->cmd_args(ctx);
     std::string target_raw = args_ptr ? trim(args_ptr) : "";
+
+    long long target_uid = 0;
+    int target_num = 0;
+    std::string callback_needle;
+
+    // Поддержка ответа на сообщение (reply)
+    if (target_raw.empty()) {
+        long long rep_sender = api->reply_sender_id ? api->reply_sender_id(ctx) : 0;
+        if (rep_sender > 0) {
+            target_uid = rep_sender;
+            char nbuf[128] = {0};
+            if (api->user_name && api->user_name(ctx, rep_sender, nbuf, sizeof(nbuf)) > 0) {
+                target_raw = nbuf;
+            } else {
+                target_raw = std::to_string(rep_sender);
+            }
+        }
+    }
+
     if (target_raw.empty()) {
         api->c_reset(ctx);
-        api->c_text(ctx, "❌ Укажите ник: .movesh <ник>");
+        api->c_fmt(ctx, "❌ Укажите цель для голосования в Mafioso:\n\n", KOTO_ENT_BOLD);
+        api->c_text(ctx, "Форматы:\n"
+                         "  .movesh <ник>       — по имени/нику (например, .movesh Nexus)\n"
+                         "  .movesh <номер>     — по номеру кнопки (например, .movesh 4)\n"
+                         "  .movesh <UID>       — по ID игрока (например, .movesh 7165828293)\n"
+                         "  .movesh <callback>  — по callback (например, .movesh bpvote_-1002404766570_7165828293)\n"
+                         "  .movesh (в reply)   — ответ на сообщение игрока в чате");
         api->c_edit(ctx, 0);
         return;
     }
-    std::string target_norm = normalize_nick(target_raw);
+
     auto accounts = get_active_accounts(ctx, api, s);
+    if (accounts.empty()) {
+        api->c_reset(ctx);
+        api->c_text(ctx, "❌ Нет активных аккаунтов (твинов).");
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    // Если передан полный или частичный callback: bpvote_-1002404766570_7165828293
+    if (target_raw.find("bpvote_") != std::string::npos) {
+        callback_needle = target_raw;
+        size_t last_underscore = target_raw.rfind('_');
+        if (last_underscore != std::string::npos && last_underscore + 1 < target_raw.size()) {
+            char* end_p = nullptr;
+            long long parsed_id = std::strtoll(target_raw.c_str() + last_underscore + 1, &end_p, 10);
+            if (parsed_id > 1000000LL) target_uid = parsed_id;
+        }
+    } else if (isdigit((unsigned char)target_raw[0])) {
+        char* end_p = nullptr;
+        long long parsed_num = std::strtoll(target_raw.c_str(), &end_p, 10);
+        if (parsed_num > 1000000LL) {
+            target_uid = parsed_num;
+        } else if (parsed_num >= 1 && parsed_num <= 50 && target_raw.size() <= 2) {
+            target_num = (int)parsed_num;
+        }
+    }
+
+    // Если указано имя одного из наших аккаунтов
+    if (target_uid == 0 && target_num == 0) {
+        for (const auto& a : accounts) {
+            if (is_same_player(a.name, target_raw)) {
+                target_uid = a.uid;
+                break;
+            }
+        }
+    }
+
+    std::string target_uid_str = (target_uid > 0) ? std::to_string(target_uid) : "";
+    std::string target_norm = normalize_nick(target_raw);
+    std::string target_raw_lower = to_lower(target_raw);
 
     api->c_reset(ctx);
-    api->c_text(ctx, ("🗳 Mafioso: голос за " + target_raw + "...").c_str());
+    api->c_text(ctx, ("🗳 Mafioso: голос за " + target_raw + " (" + std::to_string(accounts.size()) + " акк.)...").c_str());
     api->c_edit(ctx, 0);
 
     long long bot_id = safe_resolve_bot(ctx, api, OSO_BOT);
-    if (bot_id <= 0) {
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "❌ Ошибка: ", KOTO_ENT_BOLD);
-        api->c_text(ctx, ("Не удалось определить ID бота @" + std::string(OSO_BOT) + ".").c_str());
-        api->c_edit(ctx, 0);
-        return;
-    }
+    if (bot_id <= 0) bot_id = 5424831786LL; // Официальный ID бота Mafioso
+
     int count = 0;
+    std::string matched_target_name;
+
     human_scatter(accounts, s, [&](const AccountInfo& acc) {
         char hbuf[65536];
         int hlen = api->twin_get_history_json(ctx, acc.uid, bot_id, 0, 30, 0, hbuf, sizeof(hbuf));
         if (hlen <= 0) return;
         auto msgs = parse_history_json(std::string(hbuf, hlen));
+
+        int target_msg_id = 0;
+        std::string target_btn_data;
+        std::string cur_btn_name;
+
         for (const auto& m : msgs) {
+            if (m.buttons.empty()) continue;
+
+            bool is_vote_msg = false;
             std::string ltxt = to_lower(m.text);
-            if (ltxt.find("повесить") == std::string::npos && ltxt.find("виноватых") == std::string::npos) continue;
-            for (const auto& btn : m.buttons) {
-                if (normalize_nick(btn.text).find(target_norm) != std::string::npos) {
-                    api->twin_click_button(ctx, acc.uid, bot_id, m.id, btn.data.c_str());
-                    count++;
-                    return;
+            if (ltxt.find("повесить") != std::string::npos ||
+                ltxt.find("виноватых") != std::string::npos ||
+                ltxt.find("голосован") != std::string::npos ||
+                ltxt.find("казн") != std::string::npos) {
+                is_vote_msg = true;
+            }
+            if (!is_vote_msg) {
+                for (const auto& btn : m.buttons) {
+                    if (btn.data.rfind("bpvote_", 0) == 0 || btn.data.find("bpvote") != std::string::npos) {
+                        is_vote_msg = true;
+                        break;
+                    }
                 }
+            }
+            if (!is_vote_msg) continue;
+
+            int btn_idx = 0;
+            for (const auto& btn : m.buttons) {
+                if (btn.data.empty()) continue;
+                btn_idx++;
+
+                // Защита: нельзя голосовать за себя
+                if (!btn.data.empty() && btn.data.find(std::to_string(acc.uid)) != std::string::npos) {
+                    continue;
+                }
+                if (is_same_player(acc.name, btn.text)) {
+                    continue;
+                }
+
+                bool match = false;
+
+                // 1. Точное совпадение по callback
+                if (!callback_needle.empty() && btn.data.find(callback_needle) != std::string::npos) {
+                    match = true;
+                }
+
+                // 2. Совпадение по целевому UID в callback
+                if (!match && !target_uid_str.empty() && btn.data.find(target_uid_str) != std::string::npos) {
+                    match = true;
+                }
+
+                // 3. Совпадение по порядковому номеру кнопки (например, .movesh 4)
+                if (!match && target_num > 0) {
+                    if (btn_idx == target_num) {
+                        match = true;
+                    }
+                    std::string pfx1 = std::to_string(target_num) + ".";
+                    std::string pfx2 = std::to_string(target_num) + " ";
+                    if (btn.text.rfind(pfx1, 0) == 0 || btn.text.rfind(pfx2, 0) == 0 ||
+                        btn.text.find(" " + pfx1) != std::string::npos) {
+                        match = true;
+                    }
+                }
+
+                // 4. Нечеткое совпадение по имени игрока (фильтрация клантегов/эмодзи/шрифтов)
+                if (!match && is_same_player(target_raw, btn.text)) {
+                    match = true;
+                }
+
+                // 5. Совпадение по нормализованному нику
+                if (!match && !target_norm.empty()) {
+                    std::string bnorm = normalize_nick(btn.text);
+                    if (bnorm.find(target_norm) != std::string::npos) {
+                        match = true;
+                    }
+                }
+
+                // 6. Подстрока в нижнем регистре
+                if (!match && !target_raw_lower.empty()) {
+                    std::string bl = to_lower(btn.text);
+                    if (bl.find(target_raw_lower) != std::string::npos) {
+                        match = true;
+                    }
+                }
+
+                if (match) {
+                    target_msg_id = m.id;
+                    target_btn_data = btn.data;
+                    cur_btn_name = btn.text;
+                    break;
+                }
+            }
+
+            if (target_msg_id != 0) break;
+        }
+
+        if (target_msg_id != 0 && !target_btn_data.empty()) {
+            api->twin_click_button(ctx, acc.uid, bot_id, target_msg_id, target_btn_data.c_str());
+            count++;
+            if (matched_target_name.empty()) {
+                matched_target_name = cur_btn_name;
             }
         }
     });
 
     api->c_reset(ctx);
-    api->c_text(ctx, ("✅ Mafioso vesh: проголосовало " + std::to_string(count) + " акк.").c_str());
+    std::string res_msg = "✅ [MultiTool v1.3.11] Mafioso vesh: проголосовало " + std::to_string(count) + " акк.";
+    if (!matched_target_name.empty()) {
+        res_msg += "\n🎯 Цель: " + matched_target_name;
+    }
+    api->c_text(ctx, res_msg.c_str());
     api->c_edit(ctx, 0);
 }
 
@@ -2327,7 +2485,8 @@ static const koto_command MAFIA_COMMANDS[] = {
     {"mkvesh",    cmd_mkvesh,    KOTO_LEVEL_TRUSTED, "KotoMafia: голос за игрока через ЛС", "<ник>"},
     {"mkgraf",    cmd_mkgraf,    KOTO_LEVEL_TRUSTED, "KotoMafia: поиск не проголосовавших", NULL},
     {"mbaku",     cmd_mbaku,     KOTO_LEVEL_TRUSTED, "Baku: поиск не проголосовавших", "[red/blue]"},
-    {"movesh",    cmd_movesh,    KOTO_LEVEL_TRUSTED, "Mafioso: голос за игрока через ЛС", "<ник>"}
+    {"movesh",    cmd_movesh,    KOTO_LEVEL_TRUSTED, "Mafioso: голос за игрока через ЛС", "<ник/номер/UID/callback>"},
+    {"mosh",      cmd_movesh,    KOTO_LEVEL_TRUSTED, "Mafioso: голос за игрока (алиас .movesh)", "<ник/номер/UID/callback>"}
 };
 
 // ── Обработчик нажатий inline-кнопок (on_callback) ───────────────────────────
