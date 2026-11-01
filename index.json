@@ -1847,7 +1847,7 @@
       "display_name": "Tagger",
       "author": "Kote",
       "description": "Продвинутый теггер участников чата с вайтлистами, кастомными никами, диапазонами, задержкой и интерактивной панелью настроек (C++ ABI 3).",
-      "version": "3.4.7",
+      "version": "3.4.8",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -1922,17 +1922,17 @@
           "usage": ""
         }
       ],
-      "size": 159944,
-      "sha256": "1add766ef2d3aba547c9cd8d6641a023e744ce9f160f04a34d2ebf2c022b0e1d",
+      "size": 160456,
+      "sha256": "59fc12f9ac05eb6fbf803e364780ecfe29c34e704bc1126c871fb3bb2def3c53",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tagger.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 160280,
-      "sha256_arm64": "991c4852cf76de6e00091e4d76d3ad9d3064507a33237c401cfa91bc63ac67ed",
+      "size_arm64": 160456,
+      "sha256_arm64": "59fc12f9ac05eb6fbf803e364780ecfe29c34e704bc1126c871fb3bb2def3c53",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/tagger.so",
-      "size_arm32": 94504,
-      "sha256_arm32": "2dcece826a1adddf93398f6764d3818218b5c782081d9b50f86c8e853a55e86a",
+      "size_arm32": 118304,
+      "sha256_arm32": "3a0cd685c5ccdc0ea423fc5bdabfcae631eb303e467e44525930dbf125c82b1e",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tagger.so"
     },
     {

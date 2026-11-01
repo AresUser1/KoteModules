@@ -311,6 +311,10 @@ static std::string get_tag_display_name(koto_ctx* ctx, const koto_api* api, long
     if (api->user_name && api->user_name(ctx, uid, n_buf, sizeof(n_buf)) > 0 && n_buf[0]) {
         return n_buf;
     }
+    char un_buf[128] = {0};
+    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
+        return "@" + std::string(un_buf);
+    }
     return "User " + std::to_string(uid);
 }
 
@@ -756,7 +760,11 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
             int u_off = api->c_mark(ctx);
             api->c_text(ctx, dname.c_str());
             int u_len = api->c_mark(ctx) - u_off;
-            api->c_entity(ctx, KOTO_ENT_URL, u_off, u_len, 0, link.c_str());
+            if (!dname.empty() && dname[0] == '@') {
+                api->c_entity(ctx, KOTO_ENT_MENTION, u_off, u_len, 0, nullptr);
+            } else {
+                api->c_entity(ctx, KOTO_ENT_URL, u_off, u_len, 0, link.c_str());
+            }
             first_user = false;
         }
 
