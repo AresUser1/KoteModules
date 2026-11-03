@@ -120,9 +120,93 @@ struct QuotesConfig {
 
 static const char* const FALLBACK_ENDPOINTS[] = {
     "https://quote.yuri.ly/generate",
-    "https://kok.gay/gayotes/generate",
-    "https://quotes.fl1yd.su/generate"
+    "https://kok.gay/gayotes/generate"
 };
+
+static bool base64_decode(const std::string& in, std::vector<unsigned char>& out) {
+    static const int T[256] = {
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,62,-1,-1,-1,63,
+        52,53,54,55,56,57,58,59,60,61,-1,-1,-1, 0,-1,-1,
+        -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,
+        15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,
+        -1,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,
+        41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+    };
+    out.clear();
+    out.reserve((in.size() * 3) / 4);
+    int val = 0, valb = -8;
+    for (unsigned char c : in) {
+        if (c == '=') break;
+        int d = T[c];
+        if (d == -1) continue;
+        val = (val << 6) + d;
+        valb += 6;
+        if (valb >= 0) {
+            out.push_back(static_cast<unsigned char>((val >> valb) & 0xFF));
+            valb -= 8;
+        }
+    }
+    return !out.empty();
+}
+
+static bool extract_image(const unsigned char* raw, size_t len, std::vector<unsigned char>& out, bool& is_png) {
+    if (!raw || len < 8) return false;
+
+    // 1. Прямой бинарный ответ (WEBP или PNG)
+    if (len >= 12 && memcmp(raw, "RIFF", 4) == 0 && memcmp(raw + 8, "WEBP", 4) == 0) {
+        out.assign(raw, raw + len);
+        is_png = false;
+        return true;
+    }
+    if (len >= 8 && memcmp(raw, "\x89PNG\r\n\x1a\n", 8) == 0) {
+        out.assign(raw, raw + len);
+        is_png = true;
+        return true;
+    }
+
+    // 2. JSON-ответ: {"ok":true,"result":{"image":"<base64>","type":"quote"}}
+    const char* text = reinterpret_cast<const char*>(raw);
+    std::string_view s(text, len);
+    size_t k = s.find("\"image\"");
+    if (k == std::string_view::npos) k = s.find("\"img\"");
+    if (k != std::string_view::npos) {
+        size_t col = s.find(':', k);
+        if (col != std::string_view::npos) {
+            size_t q1 = s.find('"', col);
+            if (q1 != std::string_view::npos) {
+                size_t q2 = s.find('"', q1 + 1);
+                if (q2 != std::string_view::npos && q2 > q1 + 1) {
+                    std::string b64(s.substr(q1 + 1, q2 - q1 - 1));
+                    if (base64_decode(b64, out)) {
+                        if (out.size() >= 8 && memcmp(out.data(), "\x89PNG\r\n\x1a\n", 8) == 0) {
+                            is_png = true;
+                            return true;
+                        }
+                        if (out.size() >= 12 && memcmp(out.data(), "RIFF", 4) == 0 && memcmp(out.data() + 8, "WEBP", 4) == 0) {
+                            is_png = false;
+                            return true;
+                        }
+                        if (out.size() > 100) {
+                            is_png = false;
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
 
 static QuotesConfig load_config(koto_ctx* ctx, const koto_api* api) {
     QuotesConfig c;
@@ -150,7 +234,9 @@ static QuotesConfig load_config(koto_ctx* ctx, const koto_api* api) {
     get_int("max_messages", c.max_messages);
     get_str("endpoint", c.endpoint);
 
-    if (c.endpoint.empty() || c.endpoint == "https://kok.gay/gayotes/generate") c.endpoint = "https://quote.yuri.ly/generate";
+    if (c.endpoint.empty() || c.endpoint.find("fl1yd.su") != std::string::npos || c.endpoint.find("kok.gay") != std::string::npos) {
+        c.endpoint = "https://quote.yuri.ly/generate";
+    }
     return c;
 }
 
@@ -361,29 +447,36 @@ static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    std::vector<unsigned char> resp(1024 * 1024); // 1 MB буфер под стикер/картинку
-    long long got = 0;
-    bool is_valid_img = false;
+    std::vector<unsigned char> resp(2 * 1024 * 1024); // 2 MB буфер под ответ
+    std::vector<unsigned char> final_img;
+    bool is_png = false;
+    bool success = false;
+    std::string last_err;
 
     for (const auto& ep : endpoints) {
+        // 1. Сначала пробуем прямой эндпоинт (JSON Base64) - гарантирует проход через JNI без усечения NUL-байтами
+        long long got = api->http_post(ctx, ep.c_str(), payload.str().c_str(), "Content-Type: application/json", resp.data(), (int)resp.size());
+        if (got > 0 && extract_image(resp.data(), (size_t)got, final_img, is_png)) {
+            success = true;
+            break;
+        } else if (got > 0 && got < 256) {
+            last_err.assign(reinterpret_cast<char*>(resp.data()), (size_t)got);
+        }
+
+        // 2. Фоллбэк: бинарный эндпоинт с расширением (.webp или .png)
         std::string req_url = ep + "." + ext;
         got = api->http_post(ctx, req_url.c_str(), payload.str().c_str(), "Content-Type: application/json", resp.data(), (int)resp.size());
-
-        if (got >= 8) {
-            if ((got >= 12 && memcmp(resp.data(), "RIFF", 4) == 0 && memcmp(resp.data() + 8, "WEBP", 4) == 0) ||
-                (memcmp(resp.data(), "\x89PNG\r\n\x1a\n", 8) == 0)) {
-                is_valid_img = true;
-                break;
-            }
+        if (got > 0 && extract_image(resp.data(), (size_t)got, final_img, is_png)) {
+            success = true;
+            break;
         }
     }
 
-    if (!is_valid_img) {
+    if (!success || final_img.empty()) {
         api->c_reset(ctx);
-        if (got > 0) {
-            std::string err_text(reinterpret_cast<char*>(resp.data()), std::min((size_t)got, (size_t)256));
+        if (!last_err.empty()) {
             api->c_fmt(ctx, "❌ Ошибка сервиса цитат: ", KOTO_ENT_BOLD);
-            api->c_fmt(ctx, err_text.c_str(), KOTO_ENT_CODE);
+            api->c_fmt(ctx, last_err.c_str(), KOTO_ENT_CODE);
         } else {
             api->c_fmt(ctx, "❌ Ошибка сетевого запроса к генератору цитат.", KOTO_ENT_BOLD);
         }
@@ -396,9 +489,10 @@ static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
 
     // Отправляем готовую цитату в чат
     long long cid = api->chat_id(ctx);
-    std::string fname = as_file ? "Quote.png" : "Quote.webp";
+    std::string fname = as_file ? (is_png ? "Quote.png" : "Quote.webp") : (is_png ? "Quote.png" : "Quote.webp");
+    int flags = as_file ? 2 /* KOTO_SEND_AS_FILE */ : 0;
     api->c_reset(ctx);
-    api->c_send_bytes(ctx, cid, fname.c_str(), resp.data(), (int)got, 0);
+    api->c_send_bytes(ctx, cid, fname.c_str(), final_img.data(), (int)final_img.size(), flags);
 }
 
 // ── .fq (Fake Quote) ────────────────────────────────────────────────────────
@@ -532,26 +626,36 @@ static void cmd_fake_quote(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    std::vector<unsigned char> resp(1024 * 1024);
-    long long got = 0;
-    bool is_valid_img = false;
+    std::vector<unsigned char> resp(2 * 1024 * 1024);
+    std::vector<unsigned char> final_img;
+    bool is_png = false;
+    bool success = false;
+    std::string last_err;
 
     for (const auto& ep : endpoints) {
+        // 1. Сначала пробуем прямой эндпоинт (JSON Base64)
+        long long got = api->http_post(ctx, ep.c_str(), payload.str().c_str(), "Content-Type: application/json", resp.data(), (int)resp.size());
+        if (got > 0 && extract_image(resp.data(), (size_t)got, final_img, is_png)) {
+            success = true;
+            break;
+        } else if (got > 0 && got < 256) {
+            last_err.assign(reinterpret_cast<char*>(resp.data()), (size_t)got);
+        }
+
+        // 2. Фоллбэк: бинарный .webp
         std::string req_url = ep + ".webp";
         got = api->http_post(ctx, req_url.c_str(), payload.str().c_str(), "Content-Type: application/json", resp.data(), (int)resp.size());
-
-        if (got >= 12 && memcmp(resp.data(), "RIFF", 4) == 0 && memcmp(resp.data() + 8, "WEBP", 4) == 0) {
-            is_valid_img = true;
+        if (got > 0 && extract_image(resp.data(), (size_t)got, final_img, is_png)) {
+            success = true;
             break;
         }
     }
 
-    if (!is_valid_img) {
+    if (!success || final_img.empty()) {
         api->c_reset(ctx);
-        if (got > 0) {
-            std::string err_text(reinterpret_cast<char*>(resp.data()), std::min((size_t)got, (size_t)256));
+        if (!last_err.empty()) {
             api->c_fmt(ctx, "❌ Ошибка сервиса цитат: ", KOTO_ENT_BOLD);
-            api->c_fmt(ctx, err_text.c_str(), KOTO_ENT_CODE);
+            api->c_fmt(ctx, last_err.c_str(), KOTO_ENT_CODE);
         } else {
             api->c_fmt(ctx, "❌ Ошибка сетевого запроса к генератору цитат.", KOTO_ENT_BOLD);
         }
@@ -562,8 +666,9 @@ static void cmd_fake_quote(koto_ctx* ctx, const koto_api* api) {
     api->delete_msg(ctx);
 
     long long cid = api->chat_id(ctx);
+    std::string fname = is_png ? "FakeQuote.png" : "FakeQuote.webp";
     api->c_reset(ctx);
-    api->c_send_bytes(ctx, cid, "FakeQuote.webp", resp.data(), (int)got, 0);
+    api->c_send_bytes(ctx, cid, fname.c_str(), final_img.data(), (int)final_img.size(), 0);
 }
 
 // ── .qcfg ───────────────────────────────────────────────────────────────────
@@ -658,7 +763,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "quotes",
     "Создание стикеров-цитат и фейк-цитат из сообщений Telegram через сервис Quotes API. C++ ABI 3.",
-    "1.0.1",
+    "1.0.2",
     24,
     0,
     COMMANDS,

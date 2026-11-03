@@ -2109,7 +2109,7 @@
       "id": "quotes",
       "name": "Quotes",
       "description": "Генерация красивых стикеров и PNG-картинок из цитат сообщений (C++ ABI 3). Поддержка .q, .fq (фейк-цитаты) и .qcfg.",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "type": "native",
       "author": "Kote",
       "commands": [
@@ -2122,12 +2122,12 @@
         "android-armeabi-v7a"
       ],
       "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/quotes.so",
-      "size": 115080,
-      "sha256": "b45708a8d16c414cfd4604921a9fa00a8fa41a5b291be97ba72d7afdffd9eca1",
-      "size_arm64": 115080,
-      "sha256_arm64": "b45708a8d16c414cfd4604921a9fa00a8fa41a5b291be97ba72d7afdffd9eca1",
-      "size_arm32": 71376,
-      "sha256_arm32": "85adec8fe25dafac9c653adf85c70a685eb16c7ab209910eae399ac8462ccf35"
+      "size": 119712,
+      "sha256": "4ed9647b016e554b655bd1f9c1cf4810d03f26760ccfd4c804f5bfec38d79b55",
+      "size_arm64": 119712,
+      "sha256_arm64": "4ed9647b016e554b655bd1f9c1cf4810d03f26760ccfd4c804f5bfec38d79b55",
+      "size_arm32": 75492,
+      "sha256_arm32": "b42bfee4db42cb0b956cce4118e6b7afaf083209a15503406534ef60d488cca4"
     }
   ]
 }
