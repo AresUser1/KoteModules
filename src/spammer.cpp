@@ -1,15 +1,18 @@
 // spammer.cpp
 // Нативный C++ модуль для быстрого спама сообщениями с полной поддержкой
-// форматирования, цитирования ответов, кастомных премиум-эмодзи и настройки
-// количества сообщений по умолчанию в приложении.
+// форматирования, цитирования ответов, кастомных премиум-эмодзи, остановкой (.stop)
+// и гибкой настройкой количества сообщений (до 10000) в приложении.
 // Автор: Kote.
 //
 // Команды:
 // .spam [количество] <текст> — начать спам (число опционально, по умолчанию из настроек)
-// .stopspam                  — остановить активный спам
+// .stopspam [chat_id]        — остановить активный спам в чате
+// .stop [chat_id]            — алиас для остановки активного спама
+// .sstop [chat_id]           — быстрый алиас для остановки спама
 //
 // Настройки:
 // default_count              — количество сообщений по умолчанию (настраивается в UI приложения и .cfg)
+// max_count                  — максимальный лимит сообщений за раз (по умолчанию 10000)
 
 #include "module_abi.h"
 #include <string>
@@ -17,6 +20,7 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <algorithm>
 
 // --- ПРЕМИУМ ЭМОДЗИ (из оригинального модуля Spammer) ---
 static const long long ROCKET_EMOJI_ID  = 5445284980978621387LL;
@@ -60,6 +64,13 @@ static const koto_setting_field SETTINGS[] = {
         KOTO_FIELD_INT,
         "20",
         nullptr
+    },
+    {
+        "max_count",
+        "Максимальный лимит сообщений",
+        KOTO_FIELD_INT,
+        "10000",
+        nullptr
     }
 };
 
@@ -79,6 +90,22 @@ static long long get_default_count(koto_ctx* ctx, const koto_api* api) {
     return def;
 }
 
+static long long get_max_count(koto_ctx* ctx, const koto_api* api) {
+    long long max_c = 10000;
+    if (api && api->cfg_get) {
+        char buf[32] = {0};
+        int n = api->cfg_get(ctx, "max_count", buf, sizeof(buf) - 1);
+        if (n > 0) {
+            buf[n] = '\0';
+            try {
+                long long v = std::stoll(buf);
+                if (v > 0) max_c = v;
+            } catch (...) {}
+        }
+    }
+    return max_c;
+}
+
 struct SavedEntity {
     int type;
     int off;
@@ -93,6 +120,7 @@ static void cmd_spam(koto_ctx* ctx, const koto_api* api) {
     std::string args = raw ? trim(raw) : "";
 
     long long default_cnt = get_default_count(ctx, api);
+    long long max_cnt = get_max_count(ctx, api);
     long long count = default_cnt;
     std::string user_text = "";
 
@@ -144,9 +172,9 @@ static void cmd_spam(koto_ctx* ctx, const koto_api* api) {
         }
     }
 
-    // Разумные ограничения для защиты
+    // Применяем лимиты
     if (count <= 0) count = default_cnt;
-    if (count > 500) count = 500;
+    if (count > max_cnt) count = max_cnt;
 
     // --- 2. Определение текста и стилей (entities, премиум-эмодзи) для спама ---
     const char* mt = api->msg_text ? api->msg_text(ctx) : nullptr;
@@ -264,15 +292,25 @@ static void cmd_spam(koto_ctx* ctx, const koto_api* api) {
     // 1. Удаляем сообщение команды
     api->delete_msg(ctx);
 
-    // 2. Отправляем подтверждение старта с премиум-эмодзи ракеты
+    // 2. Отправляем подтверждение старта с премиум-эмодзи ракеты и подсказкой .stop
     api->c_reset(ctx);
     api->c_emoji(ctx, "🚀", ROCKET_EMOJI_ID);
     api->c_fmt(ctx, " Спам запущен! ", KOTO_ENT_BOLD);
     api->c_fmt(ctx, "Количество: ", KOTO_ENT_BOLD);
     api->c_fmt(ctx, std::to_string(count).c_str(), KOTO_ENT_CODE);
+    api->c_fmt(ctx, " (Остановить: ", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, ".stop", KOTO_ENT_CODE);
+    api->c_fmt(ctx, ")", KOTO_ENT_BOLD);
     api->c_send(ctx, cid, 0);
 
-    // 3. Формируем тело сообщения со всеми сохраненными премиум-эмодзи и сущностями
+    // 3. Записываем активность спама для возможности отмены через .stop / .stopspam
+    if (api->db_set) {
+        api->db_set(ctx, ("active_" + std::to_string(cid)).c_str(), "1");
+        api->db_set(ctx, "last_active_chat", std::to_string(cid).c_str());
+        api->db_del(ctx, ("stop_" + std::to_string(cid)).c_str());
+    }
+
+    // 4. Формируем тело сообщения со всеми сохраненными премиум-эмодзи и сущностями
     api->c_reset(ctx);
     api->c_text(ctx, text_to_spam.c_str());
     if (!entities_to_spam.empty()) {
@@ -285,16 +323,66 @@ static void cmd_spam(koto_ctx* ctx, const koto_api* api) {
         api->c_markdown(ctx, text_to_spam.c_str());
     }
 
-    // 4. Очередь на отправку сообщений
+    // 5. Очередь на отправку сообщений
     for (long long i = 0; i < count; ++i) {
         api->c_send(ctx, cid, 0);
     }
 }
 
 static void cmd_stopspam(koto_ctx* ctx, const koto_api* api) {
+    if (!api) return;
+    long long cid = api->chat_id(ctx);
+
+    const char* raw = api->cmd_args(ctx);
+    std::string args = raw ? trim(raw) : "";
+    if (!args.empty()) {
+        try {
+            long long maybe_id = std::stoll(args);
+            if (maybe_id != 0) cid = maybe_id;
+        } catch (...) {}
+    }
+
+    char active_buf[32] = {0};
+    int n = (api->db_get) ? api->db_get(ctx, ("active_" + std::to_string(cid)).c_str(), active_buf, sizeof(active_buf) - 1) : -1;
+    bool is_active = (n > 0 && active_buf[0] == '1');
+
+    if (!is_active) {
+        // Проверяем fallback на последний активный чат спама
+        char any_buf[64] = {0};
+        int any_n = (api->db_get) ? api->db_get(ctx, "last_active_chat", any_buf, sizeof(any_buf) - 1) : -1;
+        if (any_n > 0) {
+            try {
+                long long last_cid = std::stoll(any_buf);
+                if (last_cid != 0) {
+                    char last_act[32] = {0};
+                    int ln = api->db_get(ctx, ("active_" + std::to_string(last_cid)).c_str(), last_act, sizeof(last_act) - 1);
+                    if (ln > 0 && last_act[0] == '1') {
+                        cid = last_cid;
+                        is_active = true;
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    if (!is_active) {
+        api->c_reset(ctx);
+        api->c_emoji(ctx, "ℹ️", INFO_EMOJI_ID);
+        api->c_fmt(ctx, " Активных задач спама нет.", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+        return;
+    }
+
+    // Сигнал на остановку спама в чате cid
+    if (api->db_set) {
+        api->db_set(ctx, ("stop_" + std::to_string(cid)).c_str(), "1");
+        api->db_del(ctx, ("active_" + std::to_string(cid)).c_str());
+        api->db_del(ctx, "last_active_chat");
+    }
+
     api->c_reset(ctx);
-    api->c_emoji(ctx, "ℹ️", INFO_EMOJI_ID);
-    api->c_fmt(ctx, " Активных задач спама нет.", KOTO_ENT_BOLD);
+    api->c_emoji(ctx, "🛑", ERROR_EMOJI_ID);
+    api->c_fmt(ctx, (" Спам в чате " + std::to_string(cid) + " успешно остановлен!").c_str(), KOTO_ENT_BOLD);
     api->c_edit(ctx, 0);
 }
 
@@ -310,16 +398,30 @@ static const koto_command COMMANDS[] = {
         "stopspam",
         &cmd_stopspam,
         KOTO_LEVEL_TRUSTED,
-        "Остановить текущую задачу спама.",
-        nullptr
+        "Остановить текущую задачу спама в чате.",
+        "[chat_id]"
+    },
+    {
+        "stop",
+        &cmd_stopspam,
+        KOTO_LEVEL_TRUSTED,
+        "Остановить текущую задачу спама в чате.",
+        "[chat_id]"
+    },
+    {
+        "sstop",
+        &cmd_stopspam,
+        KOTO_LEVEL_TRUSTED,
+        "Остановить текущую задачу спама в чате.",
+        "[chat_id]"
     }
 };
 
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spammer",
-    "Быстрый спам сообщениями с поддержкой разметки, цитат, премиум-эмодзи и настройкой количества сообщений по умолчанию в приложении. C++ ABI 3.",
-    "1.2.3",
+    "Быстрый спам сообщениями с поддержкой разметки, цитат, премиум-эмодзи, остановкой (.stop) и настройкой количества сообщений (до 10000). C++ ABI 3.",
+    "1.3.0",
     24,
     0,
     COMMANDS,

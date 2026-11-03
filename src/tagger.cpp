@@ -641,84 +641,58 @@ static std::string get_tag_display_name(koto_ctx* ctx, const koto_api* api, long
 
 
 // ── Проверка, является ли пользователь ботом (MTProto флаг is_bot) ───────────
-
 static bool is_user_bot(koto_ctx* ctx, const koto_api* api, long long uid) {
-
     if (uid <= 0) return false;
 
-
-
-    // 1. Быстрая проверка username: в Telegram ВСЕ официальные боты (BotFather)
-
-    // обязаны иметь username, оканчивающийся строго на "bot" (например: @spambot, @my_bot).
-
-    // Если у пользователя нет юзернейма или он не оканчивается на "bot" — это 100% человек!
-
-    // Это выполняется мгновенно (0 мс) из локального кэша и исключает блокирующие сетевые запросы.
-
-    char un_buf[128] = {0};
-
-    bool has_username = (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]);
-
-    if (!has_username) {
-
-        // Нет юзернейма -> бот в Telegram не может быть без юзернейма! Это человек!
-
-        return false;
-
+    // Известные боты (Mafioso ID 5424831786, TrueMafia, Baku и т.д.)
+    if (uid == 5424831786LL || uid == 7165828293LL || uid == 1985737506LL) {
+        return true;
     }
 
-
-
-    std::string un = un_buf;
-
-    for (char& c : un) c = (char)std::tolower((unsigned char)c);
-
-    if (un.size() < 3 || un.rfind("bot") != un.size() - 3) {
-
-        // Юзернейм НЕ оканчивается на "bot" (например: @Antihristbotnet, @CROVAETelo, @zxc_xlebyshek) -> 100% человек!
-
-        return false;
-
-    }
-
-
-
-    // 2. Если юзернейм оканчивается строго на "bot" (например: @Raspgamebot, @poebalkabot):
-
-    // Проверяем MTProto флаг is_bot через user_full_json, чтобы убедиться, что это не человек с редким ником
-
+    // 1. Проверяем MTProto флаг is_bot через user_full_json
+    // В Kotogram этот вызов синхронно берет данные из локального кэша g_user_cache (0 мс)
     if (api->user_full_json) {
-
         char buf[2048] = {0};
-
         int len = api->user_full_json(ctx, uid, buf, sizeof(buf) - 1);
-
         if (len > 0) {
-
             buf[len] = '\0';
-
             std::string j(buf);
-
-            if (j.find("\"is_bot\":false") != std::string::npos ||
-
-                j.find("\"is_bot\": false") != std::string::npos) {
-
-                return false; // MTProto подтвердил, что это человек
-
+            if (j.find("\"is_bot\":true") != std::string::npos ||
+                j.find("\"is_bot\": true") != std::string::npos) {
+                return true; // 100% бот по MTProto (включая Fragment юзернеймы, например @MafiososGame)
             }
-
+            if (j.find("\"is_bot\":false") != std::string::npos ||
+                j.find("\"is_bot\": false") != std::string::npos) {
+                return false; // MTProto подтвердил, что это человек
+            }
         }
-
     }
 
+    // 2. Вторичная проверка username: боты оканчиваются на "bot", либо содержат bot/mafioso
+    char un_buf[128] = {0};
+    if (api->user_username && api->user_username(ctx, uid, un_buf, sizeof(un_buf)) > 0 && un_buf[0]) {
+        std::string un = un_buf;
+        for (char& c : un) c = (char)std::tolower((unsigned char)c);
+        if (un.size() >= 3 && un.rfind("bot") == un.size() - 3) {
+            return true;
+        }
+        if (un.find("bot") != std::string::npos || un.find("mafioso") != std::string::npos) {
+            return true;
+        }
+    }
 
+    // 3. Проверка по имени (display name)
+    char dn_buf[128] = {0};
+    if (api->user_name && api->user_name(ctx, uid, dn_buf, sizeof(dn_buf)) > 0 && dn_buf[0]) {
+        std::string dn = dn_buf;
+        for (char& c : dn) c = (char)std::tolower((unsigned char)c);
+        if (dn == "mafioso" || dn == "мафиозо" || dn.find("bot") != std::string::npos) {
+            return true;
+        }
+    }
 
-    return true; // Юзернейм оканчивается на "bot" -> бот!
-
+    return false;
 }
-
-
 
 // ── Извлечение участников из реплая (reply_mode = include / exclude) ──────────
 
@@ -833,56 +807,46 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
 
 
     std::set<long long> admin_ids;
-
+    std::set<long long> bot_ids;
     std::string cj;
-
     if (api->chat_full_json) {
-
         char cbuf[32768];
-
         int clen = api->chat_full_json(ctx, cid, cbuf, sizeof(cbuf) - 1);
-
         if (clen > 0) {
-
             cbuf[clen] = '\0';
-
             cj = cbuf;
-
             size_t apos = cj.find("\"admin_ids\"");
-
             if (apos != std::string::npos) {
-
                 size_t abracket = cj.find('[', apos);
-
                 size_t aend = (abracket != std::string::npos) ? cj.find(']', abracket) : std::string::npos;
-
                 if (abracket != std::string::npos && aend != std::string::npos) {
-
                     std::string aids_str = cj.substr(abracket + 1, aend - abracket - 1);
-
                     std::stringstream ass(aids_str);
-
                     std::string aitem;
-
                     while (std::getline(ass, aitem, ',')) {
-
                         char* ae = nullptr;
-
                         long long auid = strtoll(aitem.c_str(), &ae, 10);
-
                         if (auid > 0) admin_ids.insert(auid);
-
                     }
-
                 }
-
             }
-
+            size_t bpos = cj.find("\"bot_ids\"");
+            if (bpos != std::string::npos) {
+                size_t bbracket = cj.find('[', bpos);
+                size_t bend = (bbracket != std::string::npos) ? cj.find(']', bbracket) : std::string::npos;
+                if (bbracket != std::string::npos && bend != std::string::npos) {
+                    std::string bids_str = cj.substr(bbracket + 1, bend - bbracket - 1);
+                    std::stringstream bss(bids_str);
+                    std::string bitem;
+                    while (std::getline(bss, bitem, ',')) {
+                        char* be = nullptr;
+                        long long buid = strtoll(bitem.c_str(), &be, 10);
+                        if (buid > 0) bot_ids.insert(buid);
+                    }
+                }
+            }
         }
-
     }
-
-
 
     if (rmode == "include" && !reply_uids.empty()) {
 
@@ -890,7 +854,7 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
 
             if (uid != me_id && seen.insert(uid).second) {
 
-                if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
+                if (!config.tag_bots && (bot_ids.find(uid) != bot_ids.end() || is_user_bot(ctx, api, uid))) continue;
 
                 if (!config.tag_admins && admin_ids.find(uid) != admin_ids.end()) continue;
 
@@ -932,7 +896,7 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
 
                             if (rmode == "exclude" && reply_uids.find(uid) != reply_uids.end()) continue;
 
-                            if (!config.tag_bots && is_user_bot(ctx, api, uid)) continue;
+                            if (!config.tag_bots && (bot_ids.find(uid) != bot_ids.end() || is_user_bot(ctx, api, uid))) continue;
 
                             if (!config.tag_admins && admin_ids.find(uid) != admin_ids.end()) continue;
 
@@ -994,7 +958,7 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
 
                                     // Пропускаем исключенных
 
-                                } else if (!config.tag_bots && is_user_bot(ctx, api, uid)) {
+                                } else if (!config.tag_bots && (bot_ids.find(uid) != bot_ids.end() || is_user_bot(ctx, api, uid))) {
 
                                     // Пропускаем ботов!
 
@@ -1027,26 +991,16 @@ static std::vector<long long> collect_tag_targets(koto_ctx* ctx, const koto_api*
 
 
     // Финальная фильтрация ботов (если выключено tag_bots)
-
     if (!config.tag_bots && !users.empty()) {
-
         std::vector<long long> filtered;
-
         for (long long uid : users) {
-
-            if (!is_user_bot(ctx, api, uid)) {
-
+            bool is_bot = (bot_ids.find(uid) != bot_ids.end()) || is_user_bot(ctx, api, uid);
+            if (!is_bot) {
                 filtered.push_back(uid);
-
             }
-
         }
-
         users = filtered;
-
     }
-
-
 
     // Финальная фильтрация админов (если выключено tag_admins)
 
@@ -1154,7 +1108,7 @@ static void build_settings_panel(koto_ctx* ctx, const koto_api* api) {
 
 
 
-    std::string pos_icon = (config.position == "before") ? "Начало" : "Конец";
+    std::string pos_icon = (config.position == "before") ? "Текст сверху" : "Текст снизу";
 
     std::string adm_icon = config.tag_admins ? "✅ Вкл" : "❌ Выкл";
 
@@ -1476,91 +1430,52 @@ static void execute_tagging(koto_ctx* ctx, const koto_api* api, long long target
 
 
 
-        bool text_after = (config.position == "after");
+        // Позиция текста сообщения относительно тегов:
+        // config.position == "before" -> текст сообщения сверху (перед тегами), теги снизу
+        // config.position == "after"  -> теги сверху, текст сообщения снизу (после тегов)
+        bool text_first = (config.position == "before");
 
-        if (!text_after && !final_template.empty()) {
-
+        if (text_first && !final_template.empty()) {
             int base_off = api->c_mark(ctx);
-
             api->c_text(ctx, final_template.c_str());
-
             if (!template_entities.empty()) {
-
                 for (const auto& se : template_entities) {
-
                     api->c_entity(ctx, se.type, base_off + se.off, se.len, se.docid, se.url.empty() ? nullptr : se.url.c_str());
-
                 }
-
             }
-
             api->c_text(ctx, "\n");
-
         }
-
-
 
         bool first_user = true;
-
         for (int i = 0; i < current_chunk_size && idx < targets.size(); ++i, ++idx) {
-
             long long uid = targets[idx];
-
             std::string dname = get_tag_display_name(ctx, api, target_chat_id, uid, force_id, config.priority);
-
             std::string link = "tg://user?id=" + std::to_string(uid);
 
-
-
             if (!first_user) {
-
                 api->c_text(ctx, " ");
-
             }
-
             int u_off = api->c_mark(ctx);
-
             api->c_text(ctx, dname.c_str());
-
             int u_len = api->c_mark(ctx) - u_off;
-
             if (!dname.empty() && dname[0] == '@') {
-
                 api->c_entity(ctx, KOTO_ENT_MENTION, u_off, u_len, 0, nullptr);
-
             } else {
-
                 api->c_entity(ctx, KOTO_ENT_URL, u_off, u_len, 0, link.c_str());
-
             }
-
             first_user = false;
-
         }
 
-
-
-        if (text_after && !final_template.empty()) {
-
+        if (!text_first && !final_template.empty()) {
             api->c_text(ctx, "\n");
-
             int base_off = api->c_mark(ctx);
-
             api->c_text(ctx, final_template.c_str());
-
             if (!template_entities.empty()) {
-
                 for (const auto& se : template_entities) {
-
                     api->c_entity(ctx, se.type, base_off + se.off, se.len, se.docid, se.url.empty() ? nullptr : se.url.c_str());
-
                 }
-
             }
-
         }
-
-
 
         api->c_send(ctx, target_chat_id, KOTO_NO_LINK_PREVIEW);
 
@@ -2696,7 +2611,7 @@ static void on_callback(koto_ctx* ctx, const koto_api* api) {
 
         api->c_edit_message(ctx, api->chat_id(ctx), api->cb_message_id(ctx), 0);
 
-        if (api->cb_answer) api->cb_answer(ctx, ("Позиция: " + config.position).c_str(), 0);
+        if (api->cb_answer) api->cb_answer(ctx, ("Позиция текста: " + std::string(config.position == "before" ? "Сверху" : "Снизу")).c_str(), 0);
 
         return;
 
@@ -3070,7 +2985,7 @@ static const koto_setting_field SETTINGS[] = {
 
         "position",
 
-        "Позиция текста сообщения",
+        "Позиция текста сообщения (before - сверху/до тегов, after - снизу/после тегов)",
 
         KOTO_FIELD_CHOICE,
 
@@ -3190,7 +3105,7 @@ static const koto_module MODULE = {
 
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
 
-    "3.4.8",
+    "3.4.10",
 
     26,
 
