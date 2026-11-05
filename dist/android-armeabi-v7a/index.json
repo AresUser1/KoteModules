@@ -2128,6 +2128,60 @@
       "sha256_arm64": "b45708a8d16c414cfd4604921a9fa00a8fa41a5b291be97ba72d7afdffd9eca1",
       "size_arm32": 71376,
       "sha256_arm32": "85adec8fe25dafac9c653adf85c70a685eb16c7ab209910eae399ac8462ccf35"
+    },
+    {
+      "id": "banword",
+      "name": "banword",
+      "display_name": "BanWord",
+      "author": "dend1yya (@AuroraModules) / Ported to C++ ABI 3 by Kote",
+      "description": "Модуль для управления запрещёнными словами в чате (kick, mute, delete, авто-фильтрация).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "bwadd",
+          "doc": "Добавляет запрещённое слово",
+          "usage": "<слово>"
+        },
+        {
+          "name": "bwdel",
+          "doc": "Удаляет запрещённое слово",
+          "usage": "<слово>"
+        },
+        {
+          "name": "bwon",
+          "doc": "Включает банворды в чате",
+          "usage": ""
+        },
+        {
+          "name": "bwoff",
+          "doc": "Отключает банворды в чате",
+          "usage": ""
+        },
+        {
+          "name": "bword",
+          "doc": "Устанавливает действие при нахождении запрещённого слова (kick, mute, delete)",
+          "usage": "<kick|mute|delete>"
+        },
+        {
+          "name": "bwlist",
+          "doc": "Выводит список запрещённых слов",
+          "usage": ""
+        }
+      ],
+      "size": 89592,
+      "sha256": "c911d91f341f461469493a50968fad42ef8b37c1a5264b73e58fd44c46f4210b",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banword.cpp",
+      "license": "GNU AGPLv3",
+      "min_host_version": 60,
+      "size_arm64": 89592,
+      "sha256_arm64": "c911d91f341f461469493a50968fad42ef8b37c1a5264b73e58fd44c46f4210b",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
+      "size_arm32": 47080,
+      "sha256_arm32": "b031f9480f67a744d909b79030a092106ac6e6fef928ab059fd3a134c7e26090",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banword.so"
     }
   ]
 }
