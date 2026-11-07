@@ -528,7 +528,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "dox",
     "Интеграция с Dox-ботами: автовыбор Telegram и поиск номера (C++ ABI 3).",
-    "1.0.10",
+    "1.1.0",
     28,
     0,
     COMMANDS,

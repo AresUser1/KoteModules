@@ -462,7 +462,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "whois",
     "Подробная информация о пользователях и глубокий анализ чатов (C++ ABI 3).",
-    "1.0.1",
+    "1.1.0",
     26,
     0,
     COMMANDS,

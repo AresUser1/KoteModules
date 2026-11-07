@@ -371,7 +371,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "chat",
     "Управление чатами и получение информации об участниках/админах (C++ ABI 3).",
-    "1.0.6",
+    "1.1.0",
     61,
     0,
     COMMANDS,

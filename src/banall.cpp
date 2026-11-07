@@ -119,7 +119,7 @@ const koto_command COMMANDS[] = {
 };
 const koto_module MODULE = {
     KOTO_MODULE_ABI, "banall", "Очистка чата с отчётом по участникам и причинам пропуска.",
-    "1.0.2", 60, 0, COMMANDS, sizeof(COMMANDS) / sizeof(COMMANDS[0]),
+    "1.1.0", 60, 0, COMMANDS, sizeof(COMMANDS) / sizeof(COMMANDS[0]),
     nullptr, 0, nullptr, nullptr, 0, nullptr
 };
 }

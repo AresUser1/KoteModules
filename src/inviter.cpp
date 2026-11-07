@@ -543,7 +543,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "inviter",
     "Массовая рассылка и инвайтинг с поддержкой твинков и фильтров (C++ ABI 3).",
-    "1.0.1",
+    "1.1.0",
     26,
     0,
     COMMANDS,

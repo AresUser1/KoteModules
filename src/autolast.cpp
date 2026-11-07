@@ -402,7 +402,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "autolast",
     "Продвинутый 'ласт' автоответчик для игр (готовы / го) с хардмодом (C++ ABI 3).",
-    "1.7.1",
+    "1.8.0",
     26,
     0,
     COMMANDS,

@@ -3,6 +3,7 @@
 // Поддерживает фильтрацию запрещённых слов, действия delete/kick/mute, кастомные премиум-эмодзи и защиту владельца.
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -507,7 +508,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "BanWord",
     "Модуль для управления запрещёнными словами в чате.",
-    "1.0.0",
+    "1.1.0",
     60,
     0,
     COMMANDS,

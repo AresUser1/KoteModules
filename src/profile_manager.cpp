@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -393,7 +394,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "profile_manager",
     "Управление профилем (имя, аватар, история имён) (C++ ABI 3).",
-    "1.2.2",
+    "1.3.0",
     26,
     0,
     COMMANDS,

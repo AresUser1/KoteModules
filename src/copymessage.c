@@ -128,7 +128,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "copymessage",
     "Копирование сообщений и медиа из защищенных чатов в Избранное",
-    "1.3.0",
+    "1.4.0",
     0,
     0,
     COMMANDS,

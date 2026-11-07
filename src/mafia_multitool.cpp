@@ -9,6 +9,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -2543,7 +2544,7 @@ static const koto_module MAFIA_MODULE = {
     KOTO_MODULE_ABI,
     MODULE_NAME,
     "Мафия Мульти-Тул — боевой комбайн для мафиозных ботов (Combat, TrueMafia, Baku, Koto, Mafioso).",
-    "1.3.13",
+    "1.4.0",
     28, // min_host_version 28 (0.3.8+)
     0,
     MAFIA_COMMANDS,

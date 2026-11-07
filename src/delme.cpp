@@ -176,7 +176,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "delme",
     "Удаляет все сообщения от вас в текущем чате (KeyZenD port).",
-    "1.0.2",
+    "1.1.0",
     71,
     0,
     COMMANDS,

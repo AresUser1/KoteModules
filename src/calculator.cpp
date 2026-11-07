@@ -413,7 +413,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "calculator",
     "Безопасный математический калькулятор с парсером выражений (C++ ABI 3).",
-    "1.2.0",
+    "1.3.0",
     26,
     0,
     COMMANDS,

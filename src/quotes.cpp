@@ -4,6 +4,7 @@
 // C++ ABI 3. Автор: Kote.
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -763,7 +764,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "quotes",
     "Создание стикеров-цитат и фейк-цитат из сообщений Telegram через сервис Quotes API. C++ ABI 3.",
-    "1.0.2",
+    "1.1.0",
     24,
     0,
     COMMANDS,

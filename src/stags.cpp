@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -1130,7 +1131,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "stags",
     "Модуль Silent Tags (Тихие теги): перехват упоминаний и закреплений с отправкой логов и поддержкой твинков (C++ ABI 3).",
-    "2.9.10", 60,
+    "2.10.0", 60,
     KOTO_MOD_TWINS,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

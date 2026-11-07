@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <map>
@@ -530,7 +531,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "autoresponder",
     "Продвинутый автоответчик для ЛС с Rich Text, медиа и кулдауном (C++ ABI 3).",
-    "2.4.4", 60,
+    "2.5.0", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

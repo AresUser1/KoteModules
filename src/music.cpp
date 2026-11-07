@@ -13,6 +13,7 @@
 // .musconfig     - Статус модуля и список ботов
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 
 namespace {
@@ -105,7 +106,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "music",
     "Музыкальный плеер: поиск трека через Telegram-ботов (C++ ABI 3)",
-    "3.0.0",
+    "3.1.0",
     13, // inline-боты требуют KoteLoader с host v13+
     0,
     COMMANDS,

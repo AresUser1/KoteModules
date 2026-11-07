@@ -956,7 +956,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mafia_triggers",
     "Триггеры для Мафии: авто-наказание (Warn/Mute) за AFK и лив с выбором времени и правил (C++ ABI 3).",
-    "2.2.0",
+    "2.3.0",
     26,
     0,
     COMMANDS,

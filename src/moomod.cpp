@@ -194,7 +194,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "moomod",
     "Взаимодействие с игрой @moolokobot (MooBot) (C++ ABI 3).",
-    "1.3.1",
+    "1.4.0",
     26,
     0,
     COMMANDS,

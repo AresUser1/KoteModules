@@ -770,7 +770,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "scrapper",
     "Сбор участников и активности чатов в файл с поддержкой твинков (C++ ABI 3).",
-    "1.0.5",
+    "1.1.0",
     26,
     0,
     COMMANDS,

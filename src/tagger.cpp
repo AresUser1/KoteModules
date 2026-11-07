@@ -23,6 +23,7 @@
 
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 
 #include <string>
 
@@ -3105,7 +3106,7 @@ static const koto_module MODULE = {
 
     "Продвинутый теггер участников чата с вайтлистами, кастомными никами и инлайн-панелью (C++ ABI 3).",
 
-    "3.4.10",
+    "3.5.0",
 
     26,
 

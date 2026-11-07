@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <cstring>
@@ -107,7 +108,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spam_ban",
     "Мощный Спам-Репорт + Блок. Поддержка аргументов (@user) (C++ ABI 3).",
-    "1.6.2", 60,
+    "1.7.0", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

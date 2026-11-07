@@ -10,6 +10,7 @@
 // шлёт через MTProto). JSON tikwm парсится точечно под известную схему.
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <cstring>
@@ -287,7 +288,7 @@ static const koto_command COMMANDS[] = {
         "tt",
         &cmd_tt,
         KOTO_LEVEL_TRUSTED,
-        "\xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB0\xD1\x82\xD1\x8C \xD0\xBA\xD0\xBE\xD0\xBD\xD1\x82\xD0\xB5\xD0\xBD\xD1\x82 \xD0\xB8\xD0\xB7 TikTok (\xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE, GIF, \xD1\x84\xD0\xBE\xD1\x82\xD0\xBE).", // "Скачать контент из TikTok (видео, GIF, фото)."
+        "[ru] Скачать контент из TikTok (видео, GIF, фото). [en] Download content from TikTok (video, GIF, photo).", // "Скачать контент из TikTok (видео, GIF, фото)."
         "<\xD1\x81\xD1\x81\xD1\x8B\xD0\xBB\xD0\xBA\xD0\xB0> | caption [full|short]" // "<ссылка> | caption [full|short]"
     }
 };
@@ -295,8 +296,8 @@ static const koto_command COMMANDS[] = {
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tt_dl",
-    "\xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5 \xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE \xD0\xB8\xD0\xB7 TikTok (\xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE, \xD0\xB3\xD0\xB8\xD1\x84\xD0\xBA\xD0\xB8, \xD1\x84\xD0\xBE\xD1\x82\xD0\xBE-\xD0\xB0\xD0\xBB\xD1\x8C\xD0\xB1\xD0\xBE\xD0\xBC\xD1\x8B). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
-    "1.5.0",
+    "[ru] Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3. [en] Download TikTok content (video, GIF, photo albums). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
+    "1.6.0",
     24,
     0,
     COMMANDS,

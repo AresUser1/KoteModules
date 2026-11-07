@@ -1,5 +1,6 @@
 // Administration port for Kotogram. Real operations are executed by host 60+.
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include "nlohmann/json.hpp"
 #include <algorithm>
 #include <charconv>
@@ -256,7 +257,7 @@ const koto_command COMMANDS[]={
     {"adminsettings",cmd_adminsettings,KOTO_LEVEL_TRUSTED,"Открыть шаблон прав",nullptr}
 };
 const koto_module MODULE={KOTO_MODULE_ABI,"administration","Управление администраторами через реальные MTProto-запросы, шаблоны и панели",
-    "1.2.1",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
+    "1.3.0",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so"};
 }
 extern "C" const koto_module* koto_module_register(void) { return &MODULE; }

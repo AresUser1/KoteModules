@@ -73,7 +73,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "dep",
     "Лудомания: Депни всё, квартиру, яхту, своё достоинство (C++ ABI 3).",
-    "1.0.2",
+    "1.1.0",
     26,
     0,
     COMMANDS,

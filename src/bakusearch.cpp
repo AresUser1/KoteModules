@@ -8,6 +8,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -430,7 +431,7 @@ static const koto_module BAKUSEARCH_MODULE = {
     KOTO_MODULE_ABI,
     "bakusearch",
     "Помощник для ведущих мафии (Baku). Поиск не проголосовавших игроков.",
-    "1.0.4",
+    "1.1.0",
     27, // min_host_version 27 (0.3.7+)
     0,  // flags
     BAKUSEARCH_COMMANDS,

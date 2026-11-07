@@ -336,7 +336,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "usermanage",
     "Управление пользователями и контактами (C++ ABI 3).",
-    "1.0.6",
+    "1.1.0",
     26,
     0,
     COMMANDS,

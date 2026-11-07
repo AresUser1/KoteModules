@@ -10,6 +10,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include "nlohmann/json.hpp"
 #include <string>
 #include <vector>
@@ -1019,7 +1020,7 @@ static const koto_module MODERATION_MODULE = {
     KOTO_MODULE_ABI,
     "moderation",
     "Мощный модуль для администрирования чатов (бан, мут, варны, gameban, gban/gkick).",
-    "1.1.8", 60, // min_host_version: resolved peer API
+    "1.2.0", 60, // min_host_version: resolved peer API
     0,  // flags
     MODERATION_COMMANDS,
     sizeof(MODERATION_COMMANDS) / sizeof(MODERATION_COMMANDS[0]),

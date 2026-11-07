@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <set>
@@ -310,7 +311,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "mass_notifier",
     "Модуль для рассылки сообщений участникам чата в ЛС (C++ ABI 3).",
-    "1.0.6", 60,
+    "1.1.0", 60,
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

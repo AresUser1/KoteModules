@@ -922,7 +922,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "weather",
     "Текущая погода и прогноз наперёд через wttr.in и Open-Meteo (C++ ABI 3).",
-    "1.1.3",
+    "1.2.0",
     26,
     0,
     COMMANDS,

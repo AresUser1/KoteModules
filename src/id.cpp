@@ -3,6 +3,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <cstring>
 
@@ -102,7 +103,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "id",
     "Показывает ID, юзернейм и ссылку на пользователя (C++ ABI 3).",
-    "1.0.6",
+    "1.1.0",
     26,
     0,
     COMMANDS,

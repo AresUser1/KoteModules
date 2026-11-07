@@ -8,6 +8,7 @@
 // Автор: Kote
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -626,7 +627,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "afk",
     "Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений.",
-    "2.1.3", 60, // min_host_version (требует v0.3.6+ для api->set_name)
+    "2.2.0", 60, // min_host_version (требует v0.3.6+ для api->set_name)
     0,
     COMMANDS,
     sizeof(COMMANDS) / sizeof(COMMANDS[0]),

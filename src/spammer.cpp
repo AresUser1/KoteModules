@@ -15,6 +15,7 @@
 // max_count                  — максимальный лимит сообщений за раз (по умолчанию 10000)
 
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include <string>
 #include <vector>
 #include <cctype>
@@ -421,7 +422,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "spammer",
     "Быстрый спам сообщениями с поддержкой разметки, цитат, премиум-эмодзи, остановкой (.stop) и настройкой количества сообщений (до 10000). C++ ABI 3.",
-    "1.3.0",
+    "1.4.0",
     24,
     0,
     COMMANDS,

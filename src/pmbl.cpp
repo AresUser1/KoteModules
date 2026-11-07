@@ -2,6 +2,7 @@
 // Original: Copyright 2022 hikariatama, GNU AGPLv3.
 // SPDX-License-Identifier: AGPL-3.0-only
 #include "module_abi.h"
+#include "koto_utils.hpp"
 #include "nlohmann/json.hpp"
 #include "policy.hpp"
 
@@ -16,7 +17,7 @@
 namespace {
 using Json = nlohmann::json;
 using namespace pmbl;
-constexpr const char* version = "0.2.0";
+constexpr const char* version = "0.3.0";
 std::mutex mutex;
 
 struct Error : std::runtime_error { using std::runtime_error::runtime_error; };

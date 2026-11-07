@@ -95,6 +95,19 @@ inline std::string trim(const std::string& s) {
     return s.substr(start, end - start + 1);
 }
 
+// Мультиязычность (RU / EN)
+inline bool is_en(koto_ctx* ctx, const koto_api* api) {
+    return koto_is_lang_en(ctx, api) != 0;
+}
+
+inline const char* tr(koto_ctx* ctx, const koto_api* api, const char* ru_text, const char* en_text) {
+    return is_en(ctx, api) ? en_text : ru_text;
+}
+
+inline std::string tr(koto_ctx* ctx, const koto_api* api, const std::string& ru_text, const std::string& en_text) {
+    return is_en(ctx, api) ? en_text : ru_text;
+}
+
 // Замена всех вхождений подстроки
 inline std::string replace_all(std::string str, const std::string& from, const std::string& to) {
     if (from.empty()) return str;

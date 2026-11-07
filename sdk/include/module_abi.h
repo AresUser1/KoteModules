@@ -510,6 +510,19 @@ typedef struct koto_module {
  * получает указатель на статический koto_module. */
 const koto_module* koto_module_register(void);
 
+/* ─── Хелперы локализации (RU / EN) ─── */
+#include <strings.h>
+
+static inline int koto_is_lang_en(koto_ctx* ctx, const koto_api* api) {
+    if (!api || !api->setting_get || !ctx) return 0;
+    char lang[16];
+    int len = api->setting_get(ctx, "app_language", lang, sizeof lang);
+    if (len <= 0) len = api->setting_get(ctx, "language", lang, sizeof lang);
+    return (len > 0 && (strcasecmp(lang, "en") == 0 || strcasecmp(lang, "english") == 0));
+}
+
+#define KOTO_TR(ctx, api, ru_str, en_str) (koto_is_lang_en(ctx, api) ? (en_str) : (ru_str))
+
 #ifdef __cplusplus
 }
 #endif

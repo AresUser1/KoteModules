@@ -1052,7 +1052,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.4.1",
+    "3.5.0",
     85,
     0,
     COMMANDS,
