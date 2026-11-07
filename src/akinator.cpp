@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.0.0";
+constexpr const char* VERSION = "1.0.1";
 
 // Helper URL encoding
 std::string url_encode(const std::string& value) {

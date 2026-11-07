@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.0.0";
+constexpr const char* VERSION = "1.0.1";
 
 // Simple portable MD5 implementation
 struct MD5Context {
