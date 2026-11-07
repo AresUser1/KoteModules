@@ -4,42 +4,6 @@
   "updated": "2026-10-26",
   "modules": [
     {
-      "id": "quotes",
-      "name": "Quotes",
-      "description": "[ru] Генерация красивых стикеров и PNG-картинок из цитат сообщений (C++ ABI 3). Поддержка .q, .fq (фейк-цитаты) и .qcfg. [en] Generate quote stickers with avatar and bubble from messages.",
-      "version": "1.1.0",
-      "type": "native",
-      "author": "Kote",
-      "commands": [
-        {
-          "name": "q",
-          "doc": "Generate quote sticker from replied message",
-          "usage": ""
-        },
-        {
-          "name": "fq",
-          "doc": "Generate fake quote (.fq @user text or reply)",
-          "usage": ""
-        },
-        {
-          "name": "qcfg",
-          "doc": "Configure quote generator (colors, size, emoji, endpoint)",
-          "usage": ""
-        }
-      ],
-      "platforms": [
-        "android-arm64-v8a",
-        "android-armeabi-v7a"
-      ],
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/quotes.so",
-      "size": 92208,
-      "sha256": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
-      "size_arm64": 92208,
-      "sha256_arm64": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
-      "size_arm32": 56308,
-      "sha256_arm32": "28f6658420bf37d7d3c538bee51103fd9981d303e5a918801569353fcd804480"
-    },
-    {
       "id": "administration",
       "name": "administration",
       "display_name": "Администрирование чатов",
@@ -752,6 +716,41 @@
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dep.so"
     },
     {
+      "id": "doom",
+      "name": "doom",
+      "display_name": "DOOM 3D",
+      "author": "Kote",
+      "description": "[ru] Интерактивная псевдо-3D игра DOOM в Telegram с инлайн-кнопками (by kote). [en] Interactive pseudo-3D DOOM game with inline buttons (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "doom",
+          "doc": "[ru] Запустить интерактивную игру DOOM 3D [en] Start interactive DOOM 3D game",
+          "usage": ""
+        },
+        {
+          "name": "doomstop",
+          "doc": "[ru] Остановить текущую сессию DOOM [en] Stop current DOOM session",
+          "usage": ""
+        }
+      ],
+      "size": 315632,
+      "sha256": "200914092a0b6b30621cc01a77af1eb6f109498b317e070a38acd490997b670a",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/doom.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/doom.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 315632,
+      "sha256_arm64": "200914092a0b6b30621cc01a77af1eb6f109498b317e070a38acd490997b670a",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/doom.so",
+      "size_arm32": 250172,
+      "sha256_arm32": "a59f913f3e1482308a2f3b8c7d1bd65a018e1999a8167dd26aab4a32580c721b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/doom.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/doom.cpp"
+    },
+    {
       "id": "dox",
       "name": "dox",
       "display_name": "Поиск данных (Dox)",
@@ -985,6 +984,56 @@
       "size_arm32": 194520,
       "sha256_arm32": "8b0b1c0b46306e424820b94faad70ef79277e8736b92509ee74f136e1ad2ead1",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/inviter.so"
+    },
+    {
+      "id": "iris",
+      "name": "iris",
+      "display_name": "Iris Helper",
+      "author": "Kote",
+      "description": "[ru] Помощник для бота Iris с авто-сбором фермы и логами (by kote). [en] Iris bot farm assistant with auto tracker (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "iris",
+          "doc": "[ru] Показать статус и справку помощника Iris [en] Show Iris helper status",
+          "usage": ""
+        },
+        {
+          "name": "irf",
+          "doc": "[ru] Ручной сбор фермы в чате [en] Manual farm harvest",
+          "usage": ""
+        },
+        {
+          "name": "irbag",
+          "doc": "[ru] Просмотр мешка Iris [en] Check Iris bag",
+          "usage": ""
+        },
+        {
+          "name": "irlogs",
+          "doc": "[ru] Просмотр последних логов сбора [en] View harvest logs",
+          "usage": ""
+        },
+        {
+          "name": "irreset",
+          "doc": "[ru] Сбросить статистику помощника [en] Reset assistant statistics",
+          "usage": ""
+        }
+      ],
+      "size": 288096,
+      "sha256": "4eeea333624501cf4f28f7b0632a186c5abe66269095b8cbb8962995d2423d87",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/iris.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/iris.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 288096,
+      "sha256_arm64": "4eeea333624501cf4f28f7b0632a186c5abe66269095b8cbb8962995d2423d87",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/iris.so",
+      "size_arm32": 226008,
+      "sha256_arm32": "18dc2be9c5d021551d10045efd6996fca691723661a4e5b870346a18a40e72da",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/iris.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/iris.cpp"
     },
     {
       "id": "kotserv",
@@ -1534,6 +1583,41 @@
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/music.so"
     },
     {
+      "id": "omni",
+      "name": "omni",
+      "display_name": "OmniLoad",
+      "author": "Kote",
+      "description": "[ru] Универсальный загрузчик медиа OmniLoad с YouTube, TikTok, Instagram, Twitter/X, Reddit (by kote). [en] Universal OmniLoad media downloader (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "omni",
+          "doc": "[ru] Скачать видео/аудио по ссылке или в ответ [en] Download media by link or reply",
+          "usage": "<ссылка>"
+        },
+        {
+          "name": "dl",
+          "doc": "[ru] Быстрый алиас OmniLoad [en] Fast download alias",
+          "usage": "<ссылка>"
+        }
+      ],
+      "size": 300592,
+      "sha256": "f587da2f0293a496a22cec660ef28cf4645e1fe9eb214d30f1eea904c57631bf",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/omni.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/omni.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 300592,
+      "sha256_arm64": "f587da2f0293a496a22cec660ef28cf4645e1fe9eb214d30f1eea904c57631bf",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/omni.so",
+      "size_arm32": 241868,
+      "sha256_arm32": "29fc9dcee34996f93b1d5fc97a64c5b4d255d4a702ce629d5f7815fb407c2b50",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/omni.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/omni.cpp"
+    },
+    {
       "id": "pmbl",
       "name": "pmbl",
       "display_name": "PMBL — Защита ЛС",
@@ -1701,6 +1785,42 @@
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/profile_manager.so"
     },
     {
+      "id": "quotes",
+      "name": "Quotes",
+      "description": "[ru] Генерация красивых стикеров и PNG-картинок из цитат сообщений (C++ ABI 3). Поддержка .q, .fq (фейк-цитаты) и .qcfg. [en] Generate quote stickers with avatar and bubble from messages.",
+      "version": "1.1.0",
+      "type": "native",
+      "author": "Kote",
+      "commands": [
+        {
+          "name": "q",
+          "doc": "Generate quote sticker from replied message",
+          "usage": ""
+        },
+        {
+          "name": "fq",
+          "doc": "Generate fake quote (.fq @user text or reply)",
+          "usage": ""
+        },
+        {
+          "name": "qcfg",
+          "doc": "Configure quote generator (colors, size, emoji, endpoint)",
+          "usage": ""
+        }
+      ],
+      "platforms": [
+        "android-arm64-v8a",
+        "android-armeabi-v7a"
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/quotes.so",
+      "size": 92208,
+      "sha256": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
+      "size_arm64": 92208,
+      "sha256_arm64": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
+      "size_arm32": 56308,
+      "sha256_arm32": "28f6658420bf37d7d3c538bee51103fd9981d303e5a918801569353fcd804480"
+    },
+    {
       "id": "rp",
       "name": "rp",
       "display_name": "Role-Play (РП команды)",
@@ -1788,6 +1908,41 @@
       "size_arm32": 101292,
       "sha256_arm32": "5d6672d50e2319aef62f22144db1502ee51020e070735e2cdacd729e8676be0e",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/rp.so"
+    },
+    {
+      "id": "rule34_searcher",
+      "name": "rule34_searcher",
+      "display_name": "Rule34 Searcher",
+      "author": "Kote",
+      "description": "[ru] Поиск артов на Rule34 и Danbooru с отправкой медиа (by kote). [en] Rule34 and Danbooru anime art searcher (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "r34",
+          "doc": "[ru] Поиск на Rule34 [en] Search on Rule34",
+          "usage": "<теги>"
+        },
+        {
+          "name": "danbooru",
+          "doc": "[ru] Поиск на Danbooru [en] Search on Danbooru",
+          "usage": "<теги>"
+        }
+      ],
+      "size": 258200,
+      "sha256": "88a4449b7aa7db71971e79b1ab62e3e091e79c2d69173d51c1002216152b151e",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rule34_searcher.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34_searcher.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 258200,
+      "sha256_arm64": "88a4449b7aa7db71971e79b1ab62e3e091e79c2d69173d51c1002216152b151e",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/rule34_searcher.so",
+      "size_arm32": 196764,
+      "sha256_arm32": "51b630818b52843fa09a6ec4a10d25d79c2b8f6e06de04769969dc393d3f6016",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/rule34_searcher.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34_searcher.cpp"
     },
     {
       "id": "scrapper",
@@ -2221,6 +2376,41 @@
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/virustotalchecker.cpp"
     },
     {
+      "id": "VoiceToText",
+      "name": "VoiceToText",
+      "display_name": "Voice to Text",
+      "author": "Kote",
+      "description": "[ru] Распознавание голосовых и видеосообщений в текст через Google STT (by kote). [en] Voice and video note speech-to-text transcriber (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "v2t",
+          "doc": "[ru] Расшифровать голосовое/видеосообщение в ответ [en] Transcribe voice/video note in reply",
+          "usage": ""
+        },
+        {
+          "name": "v2tauto",
+          "doc": "[ru] Переключить авто-расшифровку входящих [en] Toggle auto-transcribe",
+          "usage": ""
+        }
+      ],
+      "size": 264368,
+      "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/voicetotext.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 264368,
+      "sha256_arm64": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/voicetotext.so",
+      "size_arm32": 201792,
+      "sha256_arm32": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/voicetotext.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp"
+    },
+    {
       "id": "weather",
       "name": "weather",
       "display_name": "Погода (Weather)",
@@ -2302,65 +2492,6 @@
       "size_arm32": 156912,
       "sha256_arm32": "8c3e88e60eabb446264146f969ca1769cd5b785fb2537d1e66ef10fef6e3c986",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/whois.so"
-    },
-    {
-      "name": "VoiceToText",
-      "version": "1.0.0",
-      "description": "Преобразование голосовых сообщений и кружков в текст через Google STT (by kote).",
-      "author": "Kote",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
-      "commands": [
-        ".v2t",
-        ".v2tauto"
-      ]
-    },
-    {
-      "name": "rule34_searcher",
-      "version": "1.0.0",
-      "description": "Поиск артов и картинок на Rule34 и Danbooru (by kote).",
-      "author": "Kote",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34_searcher.cpp",
-      "commands": [
-        ".r34",
-        ".danbooru"
-      ]
-    },
-    {
-      "name": "doom",
-      "version": "1.0.0",
-      "description": "Интерактивная псевдо-3D игра DOOM в Telegram с инлайн-кнопками (by kote).",
-      "author": "Kote",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/doom.cpp",
-      "commands": [
-        ".doom",
-        ".hdoom"
-      ]
-    },
-    {
-      "name": "omni",
-      "version": "1.0.0",
-      "description": "Универсальный загрузчик видео и аудио OmniLoad (by kote).",
-      "author": "Kote",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/omni.cpp",
-      "commands": [
-        ".omni",
-        ".dl"
-      ]
-    },
-    {
-      "name": "iris",
-      "version": "1.0.0",
-      "description": "Помощник и авто-ферма для бота Iris (by kote).",
-      "author": "Kote",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/iris.cpp",
-      "commands": [
-        ".iris",
-        ".irf",
-        ".irfarm",
-        ".irbag",
-        ".irlogs",
-        ".irreset"
-      ]
     }
   ]
 }
