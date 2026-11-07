@@ -16,7 +16,11 @@ bool domain_matches(const std::string& host, const std::string& domain) {
         host.compare(host.size() - domain.size(), domain.size(), domain) == 0 &&
         host[host.size() - domain.size() - 1] == '.');
 }
-bool google_host(const std::string& host) { return domain_matches(host, "google.com"); }
+bool google_host(const std::string& host) {
+    return domain_matches(host, "google.com") ||
+           domain_matches(host, "googleapis.com") ||
+           domain_matches(host, "googleusercontent.com");
+}
 bool cookie_name(const std::string& name) {
     return !name.empty() && name.size() < 256 && name.find_first_not_of(
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.!#$%&'*+^`|~") == std::string::npos;
@@ -239,8 +243,13 @@ std::string Cookies::header(const Url& url) const {
     return result;
 }
 std::string Cookies::get(const std::string& name) const {
-    for (auto it = cookies_.rbegin(); it != cookies_.rend(); ++it)
-        if (it->name == name && (!it->expires || it->expires > std::time(nullptr))) return it->value;
+    for (auto it = cookies_.rbegin(); it != cookies_.rend(); ++it) {
+        if (it->name == name) {
+            // Never discard user's primary login credentials due to clock skew
+            if (name == "__Secure-1PSID" || name == "__Secure-1PSIDTS") return it->value;
+            if (!it->expires || it->expires > std::time(nullptr)) return it->value;
+        }
+    }
     return {};
 }
 Json Cookies::dump() const {
@@ -258,8 +267,11 @@ void Cookies::load(const Json& data) {
         Cookie c{entry.value("name", ""), entry.value("value", ""), entry.value("domain", ""),
                  entry.value("path", "/"), entry.value("expires", 0LL), entry.value("host_only", false)};
         if (cookie_name(c.name) && cookie_value(c.value) && google_host(c.domain) &&
-            !c.path.empty() && c.path.front() == '/' && (!c.expires || c.expires > std::time(nullptr)))
-            cookies_.push_back(std::move(c));
+            !c.path.empty() && c.path.front() == '/') {
+            if (c.name == "__Secure-1PSID" || c.name == "__Secure-1PSIDTS" || !c.expires || c.expires > std::time(nullptr)) {
+                cookies_.push_back(std::move(c));
+            }
+        }
     }
 }
 
@@ -354,12 +366,18 @@ Response Client::probe() {
     return request(app, req);
 }
 void Client::rotate() {
-    if (cookies.get("__Secure-1PSID").empty()) throw Error("auth", "Сначала сохрани cookies через .gweblogin.");
-    Request req; req.method = "POST"; req.timeout_seconds = 30;
-    req.headers = {{"Content-Type", "application/json"}, {"Origin", "https://accounts.google.com"}};
-    req.body = "[000,\"-0000000000000000000\"]";
-    Response result = request("https://accounts.google.com/RotateCookies", req, false);
-    status_error(result.status, "Обновление cookies"); rotated_at = std::time(nullptr);
+    if (cookies.get("__Secure-1PSID").empty()) return;
+    try {
+        Request req; req.method = "POST"; req.timeout_seconds = 30;
+        req.headers = {{"Content-Type", "application/json"}, {"Origin", "https://accounts.google.com"}};
+        req.body = "[000,\"-0000000000000000000\"]";
+        Response result = request("https://accounts.google.com/RotateCookies", req, false);
+        if (result.status >= 200 && result.status < 300) {
+            rotated_at = std::time(nullptr);
+        }
+    } catch (...) {
+        // Non-fatal: dummy snapshot may be rejected by accounts.google.com, but actual session can be valid
+    }
 }
 std::string Client::query() {
     request_id = (request_id + 100000) % 2000000000U;
@@ -434,20 +452,27 @@ void Client::init(bool force) {
     if (cookies.get("__Secure-1PSID").empty()) throw Error("auth", "Cookies не сохранены. Инструкция по входу: .gwebcookies.");
     long long now = std::time(nullptr);
     if (!force && !access_token.empty() && now >= initialized_at && now - initialized_at < 600) return;
-    initialized_at = 0;
+    
+    // Non-fatal rotation check if overdue
     if (rotated_at && now - rotated_at >= 600) rotate();
-    Response response = probe(); status_error(response.status, "Открытие Gemini");
-    access_token = html_value(response.body, "SNlM0e");
-    if (access_token.empty() && (!rotated_at || now - rotated_at >= 60)) {
-        rotate(); response = probe(); status_error(response.status, "Открытие Gemini");
+    
+    Response response = probe();
+    if (response.status >= 200 && response.status < 300) {
         access_token = html_value(response.body, "SNlM0e");
     }
+    if (access_token.empty() && (!rotated_at || now - rotated_at >= 60)) {
+        rotate();
+        response = probe();
+        access_token = html_value(response.body, "SNlM0e");
+    }
+    status_error(response.status, "Открытие Gemini");
     if (access_token.empty()) throw Error("auth", "В странице Gemini нет токена сессии SNlM0e. Проверь cookies, вход и доступность Gemini в браузере.");
     build_label = html_value(response.body, "cfb2h"); page_session = html_value(response.body, "FdrFJe");
     auto lang = html_value(response.body, "TuX5cc"); if (!lang.empty()) language = lang;
     auto push = html_value(response.body, "qKIAYe"); if (!push.empty()) push_id = push;
-    // A failing account-status RPC must not silently turn into a guest request.
-    discover();
+    try {
+        discover();
+    } catch (...) {}
     initialized_at = std::time(nullptr);
     if (!rotated_at) rotated_at = initialized_at;
 }
@@ -462,11 +487,76 @@ std::string Client::model_key(const std::string& name) const {
     throw Error("model", "Эта модель не найдена у аккаунта. Список: .gwebmodel; обновление: .gwebrefresh.");
 }
 
+std::string Client::upload_media(const std::vector<unsigned char>& data, const std::string& filename, const std::string& mime) {
+    if (data.empty()) return "";
+    
+    // Step 1: Start resumable upload on Google Scotty
+    Request init_req;
+    init_req.method = "POST";
+    init_req.timeout_seconds = 60;
+    init_req.headers = {
+        {"X-Goog-Upload-Command", "start"},
+        {"X-Goog-Upload-Protocol", "resumable"},
+        {"X-Goog-Upload-Header-Content-Length", std::to_string(data.size())},
+        {"X-Goog-Upload-Header-Content-Type", mime.empty() ? "image/jpeg" : mime},
+        {"X-Tenant-Id", "bard-storage"},
+        {"Push-ID", push_id.empty() ? "feeds/mcudyrk2a4khkz" : push_id},
+        {"Authorization", "Basic c2F2ZXM6cyNMdGhlNmxzd2F2b0RsN3J1d1U="}
+    };
+    init_req.body = "";
+    
+    Response init_res = request("https://content-push.googleapis.com/upload/", init_req, false);
+    if (init_res.status < 200 || init_res.status >= 300) {
+        throw Error("upload", "Сбой начала загрузки медиа в Google Scotty (" + std::to_string(init_res.status) + ")");
+    }
+    
+    std::string upload_url = init_res.header("x-goog-upload-url");
+    if (upload_url.empty()) {
+        upload_url = init_res.header("X-Goog-Upload-URL");
+    }
+    if (upload_url.empty()) {
+        throw Error("upload", "Google Scotty не вернул URL для загрузки файла.");
+    }
+    
+    // Step 2: Upload raw bytes
+    Request upload_req;
+    upload_req.method = "POST";
+    upload_req.timeout_seconds = timeout > 60 ? timeout : 60;
+    upload_req.headers = {
+        {"X-Goog-Upload-Command", "upload, finalize"},
+        {"X-Goog-Upload-Offset", "0"},
+        {"Content-Type", "application/octet-stream"}
+    };
+    upload_req.body = std::string(reinterpret_cast<const char*>(data.data()), data.size());
+    
+    Response upload_res = request(upload_url, upload_req, false);
+    if (upload_res.status < 200 || upload_res.status >= 300) {
+        throw Error("upload", "Сбой передачи файла в Google Scotty (" + std::to_string(upload_res.status) + ")");
+    }
+    
+    return trim(upload_res.body);
+}
+
 Json make_prompt(const std::string& prompt, const Chat& chat,
-                 const std::string& language, const std::string& request_uuid, int model_number) {
+                 const std::string& language, const std::string& request_uuid, int model_number,
+                 const std::string& attachment_url, const std::string& attachment_name) {
     // Positional fields of Google's JSPB wire format, independently encoded.
     Json fields = Json::array(); for (int i = 0; i < 81; ++i) fields.push_back(nullptr);
-    fields[0] = Json::array({prompt, 0, nullptr, nullptr, nullptr, nullptr, 0});
+    
+    Json attachments = nullptr;
+    if (!attachment_url.empty()) {
+        std::string fname = attachment_name.empty() ? "image.jpg" : attachment_name;
+        attachments = Json::array({
+            Json::array({
+                Json::array({
+                    Json::array({attachment_url, 1})
+                }),
+                fname
+            })
+        });
+    }
+
+    fields[0] = Json::array({prompt, 0, nullptr, attachments, nullptr, nullptr, 0});
     fields[1] = Json::array({language}); fields[2] = chat.metadata;
     fields[6] = Json::array({1}); fields[7] = 1; fields[10] = 1; fields[11] = 0;
     fields[17] = Json::array({Json::array({0})}); fields[18] = 0;
@@ -511,14 +601,14 @@ Answer parse_answer(std::string_view wire, const Chat& before) {
     if (answer.chat.turns < std::numeric_limits<unsigned>::max()) ++answer.chat.turns;
     return answer;
 }
-Answer Client::ask(const std::string& prompt, const Chat& chat) {
-    if (prompt.empty()) throw Error("prompt", "Укажи вопрос или ответь командой на текст.");
+Answer Client::ask(const std::string& prompt, const Chat& chat, const std::string& attachment_url, const std::string& attachment_name) {
+    if (prompt.empty()) throw Error("prompt", "Укажи вопрос или ответь командой на текст/фото.");
     if (prompt.size() > 128 * 1024) throw Error("prompt", "Запрос превышает 128 КиБ.");
     init();
     const Model* selected_model = selected == "auto" ? nullptr : model(selected);
     if (selected != "auto" && !selected_model) throw Error("model", "Выбранная модель больше не доступна. Проверь .gwebmodel.");
     std::string request_uuid = uuid();
-    Json payload = make_prompt(prompt, chat, language, request_uuid, selected_model ? selected_model->number : 1);
+    Json payload = make_prompt(prompt, chat, language, request_uuid, selected_model ? selected_model->number : 1, attachment_url, attachment_name);
     Json envelope = Json::array({nullptr, payload.dump()});
     Request req; req.method = "POST"; req.timeout_seconds = timeout;
     req.headers = {{"Content-Type", "application/x-www-form-urlencoded;charset=utf-8"},

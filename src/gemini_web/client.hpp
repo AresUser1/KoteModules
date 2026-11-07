@@ -61,7 +61,8 @@ public:
     void init(bool force = false);
     void rotate();
     void discover();
-    Answer ask(const std::string& prompt, const Chat& chat);
+    std::string upload_media(const std::vector<unsigned char>& data, const std::string& filename, const std::string& mime);
+    Answer ask(const std::string& prompt, const Chat& chat, const std::string& attachment_url = "", const std::string& attachment_name = "");
     Response probe();
     const Model* model(const std::string& name) const;
     std::string model_key(const std::string& name) const;
@@ -74,7 +75,8 @@ private:
 
 Answer parse_answer(std::string_view wire, const Chat& before);
 Json make_prompt(const std::string& prompt, const Chat& chat,
-                 const std::string& language, const std::string& request_uuid, int model_number);
+                 const std::string& language, const std::string& request_uuid, int model_number,
+                 const std::string& attachment_url = "", const std::string& attachment_name = "");
 #ifdef GWEB_TESTING
 void module_test_transport(Transport transport);
 #endif

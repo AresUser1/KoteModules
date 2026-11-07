@@ -4,6 +4,42 @@
   "updated": "2026-10-26",
   "modules": [
     {
+      "id": "quotes",
+      "name": "Quotes",
+      "description": "[ru] Генерация красивых стикеров и PNG-картинок из цитат сообщений (C++ ABI 3). Поддержка .q, .fq (фейк-цитаты) и .qcfg. [en] Generate quote stickers with avatar and bubble from messages.",
+      "version": "1.1.0",
+      "type": "native",
+      "author": "Kote",
+      "commands": [
+        {
+          "name": "q",
+          "doc": "Generate quote sticker from replied message",
+          "usage": ""
+        },
+        {
+          "name": "fq",
+          "doc": "Generate fake quote (.fq @user text or reply)",
+          "usage": ""
+        },
+        {
+          "name": "qcfg",
+          "doc": "Configure quote generator (colors, size, emoji, endpoint)",
+          "usage": ""
+        }
+      ],
+      "platforms": [
+        "android-arm64-v8a",
+        "android-armeabi-v7a"
+      ],
+      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/quotes.so",
+      "size": 92208,
+      "sha256": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
+      "size_arm64": 92208,
+      "sha256_arm64": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
+      "size_arm32": 56308,
+      "sha256_arm32": "28f6658420bf37d7d3c538bee51103fd9981d303e5a918801569353fcd804480"
+    },
+    {
       "id": "administration",
       "name": "administration",
       "display_name": "Администрирование чатов",
@@ -115,6 +151,45 @@
       "size_arm32": 36532,
       "sha256_arm32": "a7d3f38f612c279fe5d1b78a28ec4616b5af3b336526b6deadf7d5a7e0d35904",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/afk.so"
+    },
+    {
+      "id": "akinator",
+      "name": "akinator",
+      "display_name": "Akinator",
+      "author": "Kote",
+      "description": "[ru] Акинатор угадает любого задуманного персонажа по наводящим вопросам (by kote). [en] Akinator guesses any character you have in mind through interactive questions (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "aki",
+          "doc": "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.",
+          "usage": "[ru|en|--child]"
+        },
+        {
+          "name": "akinator",
+          "doc": "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.",
+          "usage": "[ru|en|--child]"
+        },
+        {
+          "name": "akistop",
+          "doc": "[ru] Остановить текущую игру Акинатор [en] Stop current Akinator game.",
+          "usage": ""
+        }
+      ],
+      "size": 349896,
+      "sha256": "dc0e3de3f21efef3baea83ae5ad5643f4fedad42a2a325b8aa805a48ec40acee",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/akinator.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 349896,
+      "sha256_arm64": "dc0e3de3f21efef3baea83ae5ad5643f4fedad42a2a325b8aa805a48ec40acee",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/akinator.so",
+      "size_arm32": 279884,
+      "sha256_arm32": "81238b5ac2901f0101ae2295c982b604b083061ba092bf011474d534d090cd90",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/akinator.so"
     },
     {
       "id": "aniliberty",
@@ -364,6 +439,60 @@
       "size_arm32": 140464,
       "sha256_arm32": "cbee98c34b112e691bdc80c499c06d5e894706a30586c1a9dc48d8391aac84ec",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banall.so"
+    },
+    {
+      "id": "banword",
+      "name": "banword",
+      "display_name": "BanWord",
+      "author": "dend1yya (@AuroraModules) / Ported to C++ ABI 3 by Kote",
+      "description": "[ru] Модуль для управления запрещёнными словами в чате (kick, mute, delete, авто-фильтрация). [en] Filter and moderate chat messages with forbidden words.",
+      "version": "1.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "bwadd",
+          "doc": "[ru] Добавляет запрещённое слово [en] Add forbidden word to blacklist",
+          "usage": "<слово>"
+        },
+        {
+          "name": "bwdel",
+          "doc": "[ru] Удаляет запрещённое слово [en] Remove word from blacklist",
+          "usage": "<слово>"
+        },
+        {
+          "name": "bwon",
+          "doc": "[ru] Включает банворды в чате [en] Enable banword protection in current chat",
+          "usage": ""
+        },
+        {
+          "name": "bwoff",
+          "doc": "[ru] Отключает банворды в чате [en] Disable banword protection in current chat",
+          "usage": ""
+        },
+        {
+          "name": "bword",
+          "doc": "[ru] Устанавливает действие при нахождении запрещённого слова (kick, mute, delete) [en] Set action on trigger (kick, mute, delete)",
+          "usage": "<kick|mute|delete>"
+        },
+        {
+          "name": "bwlist",
+          "doc": "[ru] Выводит список запрещённых слов [en] Display all blacklisted words for this chat",
+          "usage": ""
+        }
+      ],
+      "size": 66096,
+      "sha256": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banword.cpp",
+      "license": "GNU AGPLv3",
+      "min_host_version": 60,
+      "size_arm64": 66096,
+      "sha256_arm64": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
+      "size_arm32": 32412,
+      "sha256_arm32": "9c4f8b21ca6c2eddc9163b9998ace9193d583e15a86073351b0c08b982563075",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banword.so"
     },
     {
       "id": "calculator",
@@ -672,8 +801,8 @@
       "name": "gemini_web",
       "display_name": "Gemini Web AI",
       "author": "Kote",
-      "description": "[ru] Клиент Gemini Web для Android с прямым защищённым HTTPS-транспортом, поддержкой cookies, выбором моделей и надёжной персистентной памятью диалогов. [en] Gemini Web client for Android with direct HTTPS transport, cookie auth, model selection and conversation memory.",
-      "version": "0.2.0",
+      "description": "[ru] Gemini Web напрямую с Android: свой HTTPS, cookies, фото/файлы и память диалогов. [en] Gemini Web client for Android with direct HTTPS transport, cookie auth, photo/file vision and conversation memory.",
+      "version": "0.2.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -694,7 +823,12 @@
         },
         {
           "name": "gweb",
-          "doc": "[ru] Спросить Gemini Web; текст и reply на текст, память диалога [en] Ask Gemini Web; text and reply support with conversation memory.",
+          "doc": "[ru] Спросить Gemini Web (текст, reply на фото/файл, память) [en] Ask Gemini Web (text, reply to photo/file, conversation memory).",
+          "usage": "[вопрос]"
+        },
+        {
+          "name": "gw",
+          "doc": "[ru] Быстрый вызов Gemini Web (алиас к .gweb) [en] Short alias for .gweb.",
           "usage": "[вопрос]"
         },
         {
@@ -728,17 +862,17 @@
           "usage": "[секунды]"
         }
       ],
-      "size": 5878752,
-      "sha256": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
+      "size": 6310864,
+      "sha256": "a1d408cf9d273a343c3611158e5aa2a07f204f8a09f09af14a33367dd084437b",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
       "git_url": "https://github.com/AresUser1/KoteModules/tree/main/src/gemini_web",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 5878752,
-      "sha256_arm64": "ec7e8ec1ca0f2c595afcc3556c5bf62e74c13532ed913098c5031bcb4ca040e6",
+      "size_arm64": 6310864,
+      "sha256_arm64": "a1d408cf9d273a343c3611158e5aa2a07f204f8a09f09af14a33367dd084437b",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/gemini_web.so",
-      "size_arm32": 4280992,
-      "sha256_arm32": "30a3bc09411778573abeddf785174c64927bc66ef87e2214e6f96ee70d326978",
+      "size_arm32": 4297220,
+      "sha256_arm32": "77a80dbc61d6f718e2a12ef2fd3289423360d877bf482d27acf9e8197bef7ee0",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/gemini_web.so"
     },
     {
@@ -1956,6 +2090,35 @@
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/tagger.so"
     },
     {
+      "id": "top",
+      "name": "top",
+      "display_name": "Top",
+      "author": "Kote",
+      "description": "[ru] Модуль для просмотра топа активности пользователей по количеству сообщений в чате (график + статистика). [en] Chat leaderboard by message count with graphical chart.",
+      "version": "1.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "top",
+          "doc": "[ru] Посмотреть топ пользователей по количеству сообщений в чате (график + статистика) [en] View top chat members by message count with graphical chart",
+          "usage": "[число]"
+        }
+      ],
+      "size": 203232,
+      "sha256": "7e4a28dd5664d347af18b80ceeea83a82711733cedb4a800115e291913bcceb6",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/top.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/top.cpp",
+      "license": "MIT",
+      "min_host_version": 60,
+      "size_arm64": 203232,
+      "sha256_arm64": "7e4a28dd5664d347af18b80ceeea83a82711733cedb4a800115e291913bcceb6",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/top.so",
+      "size_arm32": 156696,
+      "sha256_arm32": "3895fba543df19bb2f485eb55691fe588346f9662865d9aaed41978df11d402b",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/top.so"
+    },
+    {
       "id": "tt_dl",
       "name": "tt_dl",
       "display_name": "TikTok Downloader",
@@ -2039,6 +2202,50 @@
       "abi": "arm64-v8a, armeabi-v7a"
     },
     {
+      "id": "virustotalchecker",
+      "name": "virustotalchecker",
+      "display_name": "VirusTotal Checker",
+      "author": "Kote",
+      "description": "[ru] Проверка файлов, хэшей и ссылок через VirusTotal (by kote). [en] VirusTotal file, hash and URL scanner (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "vtcheck",
+          "doc": "[ru] Проверить файл, хэш или URL через VirusTotal [en] Check file, hash or URL via VirusTotal.",
+          "usage": "[хэш|url] или reply на файл"
+        },
+        {
+          "name": "chash",
+          "doc": "[ru] Вычислить SHA-256 и MD5 хэш файла или строки [en] Compute SHA-256 and MD5 hash of file or string.",
+          "usage": "[строка] или reply на файл"
+        },
+        {
+          "name": "vtstatus",
+          "doc": "[ru] Статус модуля VirusTotal Checker и проверка ключа [en] VirusTotal module status and API key check.",
+          "usage": ""
+        },
+        {
+          "name": "vthelp",
+          "doc": "[ru] Справка по модулю VirusTotal Checker [en] VirusTotal Checker module help.",
+          "usage": ""
+        }
+      ],
+      "size": 206576,
+      "sha256": "0f48b8f9cb013503f7758428205d762974cfe82a6e9069244a18fbc27b314891",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/virustotalchecker.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/virustotalchecker.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 206576,
+      "sha256_arm64": "0f48b8f9cb013503f7758428205d762974cfe82a6e9069244a18fbc27b314891",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/virustotalchecker.so",
+      "size_arm32": 153964,
+      "sha256_arm32": "9ed0d1ef0b9bfb05222e6e7c6307de3cdc0788cc980b942a00958c35c63509f9",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/virustotalchecker.so"
+    },
+    {
       "id": "weather",
       "name": "weather",
       "display_name": "Погода (Weather)",
@@ -2120,125 +2327,6 @@
       "size_arm32": 156912,
       "sha256_arm32": "8c3e88e60eabb446264146f969ca1769cd5b785fb2537d1e66ef10fef6e3c986",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/whois.so"
-    },
-    {
-      "id": "quotes",
-      "name": "Quotes",
-      "description": "[ru] Генерация красивых стикеров и PNG-картинок из цитат сообщений (C++ ABI 3). Поддержка .q, .fq (фейк-цитаты) и .qcfg. [en] Generate quote stickers with avatar and bubble from messages.",
-      "version": "1.1.0",
-      "type": "native",
-      "author": "Kote",
-      "commands": [
-        {
-          "name": "q",
-          "doc": "Generate quote sticker from replied message",
-          "usage": ""
-        },
-        {
-          "name": "fq",
-          "doc": "Generate fake quote (.fq @user text or reply)",
-          "usage": ""
-        },
-        {
-          "name": "qcfg",
-          "doc": "Configure quote generator (colors, size, emoji, endpoint)",
-          "usage": ""
-        }
-      ],
-      "platforms": [
-        "android-arm64-v8a",
-        "android-armeabi-v7a"
-      ],
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/quotes.so",
-      "size": 92208,
-      "sha256": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
-      "size_arm64": 92208,
-      "sha256_arm64": "942de60cc861cb99b988c630386801fda284a4f95bfc376eaef54cfd13c92250",
-      "size_arm32": 56308,
-      "sha256_arm32": "28f6658420bf37d7d3c538bee51103fd9981d303e5a918801569353fcd804480"
-    },
-    {
-      "id": "banword",
-      "name": "banword",
-      "display_name": "BanWord",
-      "author": "dend1yya (@AuroraModules) / Ported to C++ ABI 3 by Kote",
-      "description": "[ru] Модуль для управления запрещёнными словами в чате (kick, mute, delete, авто-фильтрация). [en] Filter and moderate chat messages with forbidden words.",
-      "version": "1.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "bwadd",
-          "doc": "[ru] Добавляет запрещённое слово [en] Add forbidden word to blacklist",
-          "usage": "<слово>"
-        },
-        {
-          "name": "bwdel",
-          "doc": "[ru] Удаляет запрещённое слово [en] Remove word from blacklist",
-          "usage": "<слово>"
-        },
-        {
-          "name": "bwon",
-          "doc": "[ru] Включает банворды в чате [en] Enable banword protection in current chat",
-          "usage": ""
-        },
-        {
-          "name": "bwoff",
-          "doc": "[ru] Отключает банворды в чате [en] Disable banword protection in current chat",
-          "usage": ""
-        },
-        {
-          "name": "bword",
-          "doc": "[ru] Устанавливает действие при нахождении запрещённого слова (kick, mute, delete) [en] Set action on trigger (kick, mute, delete)",
-          "usage": "<kick|mute|delete>"
-        },
-        {
-          "name": "bwlist",
-          "doc": "[ru] Выводит список запрещённых слов [en] Display all blacklisted words for this chat",
-          "usage": ""
-        }
-      ],
-      "size": 66096,
-      "sha256": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
-      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banword.cpp",
-      "license": "GNU AGPLv3",
-      "min_host_version": 60,
-      "size_arm64": 66096,
-      "sha256_arm64": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
-      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/banword.so",
-      "size_arm32": 32412,
-      "sha256_arm32": "9c4f8b21ca6c2eddc9163b9998ace9193d583e15a86073351b0c08b982563075",
-      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/banword.so"
-    },
-    {
-      "id": "top",
-      "name": "top",
-      "display_name": "Top",
-      "author": "Kote",
-      "description": "[ru] Модуль для просмотра топа активности пользователей по количеству сообщений в чате (график + статистика). [en] Chat leaderboard by message count with graphical chart.",
-      "version": "1.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "top",
-          "doc": "[ru] Посмотреть топ пользователей по количеству сообщений в чате (график + статистика) [en] View top chat members by message count with graphical chart",
-          "usage": "[число]"
-        }
-      ],
-      "size": 203232,
-      "sha256": "7e4a28dd5664d347af18b80ceeea83a82711733cedb4a800115e291913bcceb6",
-      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/top.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/top.cpp",
-      "license": "MIT",
-      "min_host_version": 60,
-      "size_arm64": 203232,
-      "sha256_arm64": "7e4a28dd5664d347af18b80ceeea83a82711733cedb4a800115e291913bcceb6",
-      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/top.so",
-      "size_arm32": 156696,
-      "sha256_arm32": "3895fba543df19bb2f485eb55691fe588346f9662865d9aaed41978df11d402b",
-      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/top.so"
     }
   ]
 }

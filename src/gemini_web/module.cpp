@@ -9,7 +9,7 @@
 
 namespace {
 using namespace gweb;
-constexpr const char* version = "0.1.2";
+constexpr const char* version = "0.2.1";
 std::mutex command_mutex;
 #ifdef GWEB_TESTING
 Transport test_transport;
@@ -71,6 +71,7 @@ Json read_json(koto_ctx* ctx, const koto_api* api, const std::string& key) {
 void save(koto_ctx* ctx, const koto_api* api, const Client& client, bool is_logout = false) {
     auto path = session_file_path(ctx, api);
     if (is_logout) {
+        api->db_del(ctx, "session_state");
         api->db_del(ctx, "state");
         if (!path.empty()) std::remove(path.c_str());
         return;
@@ -80,14 +81,20 @@ void save(koto_ctx* ctx, const koto_api* api, const Client& client, bool is_logo
         return;
     }
     auto text = client.dump().dump();
+    api->db_set(ctx, "session_state", text.c_str());
     api->db_set(ctx, "state", text.c_str());
     write_file_safe(path, text);
 }
 Json load_state_json(koto_ctx* ctx, const koto_api* api) {
     Json db_val = nullptr;
     try {
-        db_val = read_json(ctx, api, "state");
+        db_val = read_json(ctx, api, "session_state");
     } catch (...) {}
+    if (!db_val.is_object() || !db_val.contains("cookies")) {
+        try {
+            db_val = read_json(ctx, api, "state");
+        } catch (...) {}
+    }
 
     bool db_has_cookies = false;
     if (db_val.is_object() && db_val.contains("cookies") && db_val["cookies"].is_array() && !db_val["cookies"].empty()) {
@@ -113,6 +120,7 @@ Json load_state_json(koto_ctx* ctx, const koto_api* api) {
     }
 
     if (file_has_cookies) {
+        api->db_set(ctx, "session_state", file_val.dump().c_str());
         api->db_set(ctx, "state", file_val.dump().c_str());
         return file_val;
     }
@@ -287,14 +295,80 @@ void ask(koto_ctx* ctx, const koto_api* api) {
         std::string prompt = args(ctx, api);
         const char* reply_raw = api->reply_text ? api->reply_text(ctx) : nullptr;
         std::string reply = reply_raw ? reply_raw : "";
+
+        // Check for attached / replied file or image
+        std::vector<unsigned char> file_data;
+        std::string file_name;
+        char name_buf[512] = {0};
+        if (api->reply_file_name && api->reply_file_name(ctx, name_buf, sizeof(name_buf)) > 0) {
+            file_name = name_buf;
+        }
+
+        long long file_size = api->reply_file ? api->reply_file(ctx, nullptr, 0) : -1;
+        if (file_size > 0 && file_size <= 25 * 1024 * 1024) {
+            file_data.resize(static_cast<size_t>(file_size));
+            long long got = api->reply_file(ctx, file_data.data(), static_cast<int>(file_data.size()));
+            if (got != file_size) {
+                file_data.clear();
+            }
+        }
+
+        std::string attachment_url;
+        bool is_image = false;
+        if (!file_data.empty()) {
+            std::string ext;
+            size_t dot = file_name.rfind('.');
+            if (dot != std::string::npos) ext = lower(file_name.substr(dot));
+
+            if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".webp" || ext == ".gif" ||
+                (file_data.size() >= 3 && file_data[0] == 0xFF && file_data[1] == 0xD8 && file_data[2] == 0xFF) ||
+                (file_data.size() >= 8 && file_data[0] == 0x89 && file_data[1] == 'P' && file_data[2] == 'N' && file_data[3] == 'G')) {
+                is_image = true;
+                std::string mime = "image/jpeg";
+                if (ext == ".png" || (file_data.size() >= 4 && file_data[1] == 'P')) mime = "image/png";
+                else if (ext == ".webp") mime = "image/webp";
+                else if (ext == ".gif") mime = "image/gif";
+
+                progress(ctx, api, "✦ Gemini · Загружаю изображение…");
+                try {
+                    attachment_url = client.upload_media(file_data, file_name.empty() ? "image.jpg" : file_name, mime);
+                } catch (const std::exception& e) {
+                    throw Error("upload", std::string("Не удалось загрузить изображение: ") + e.what());
+                }
+            } else {
+                bool is_text = true;
+                for (size_t i = 0; i < std::min<size_t>(file_data.size(), 4096); ++i) {
+                    if (file_data[i] == 0) { is_text = false; break; }
+                }
+                if (is_text && file_data.size() <= 256 * 1024) {
+                    std::string doc_content(reinterpret_cast<const char*>(file_data.data()), file_data.size());
+                    std::string doc_heading = "Содержимое файла " + (file_name.empty() ? "attachment.txt" : file_name) + ":\n```\n" + doc_content + "\n```\n\n";
+                    prompt = doc_heading + (prompt.empty() ? "Проанализируй этот файл подробно." : prompt);
+                } else {
+                    progress(ctx, api, "✦ Gemini · Загружаю файл…");
+                    try {
+                        attachment_url = client.upload_media(file_data, file_name.empty() ? "file.bin" : file_name, "application/octet-stream");
+                    } catch (...) {}
+                }
+            }
+        }
+
         if (!reply.empty()) {
             if (prompt.empty()) prompt = reply;
             else prompt = "Сообщение, на которое я отвечаю:\n" + reply + "\n\nМой запрос:\n" + prompt;
         }
-        if (prompt.empty()) throw Error("prompt", "Используй " + prefix(ctx, api) + "gweb <вопрос> или ответь командой на текст. Эта первая сборка поддерживает текст; вложения пока не отправляются.");
-        progress(ctx,api,"✦ Gemini · Думаю…");
+
+        if (prompt.empty()) {
+            if (!attachment_url.empty() || is_image) {
+                prompt = "Опиши подробно, что изображено на этом фото/файле, или переведи весь текст, если он там есть.";
+            } else {
+                throw Error("prompt", "Используй " + prefix(ctx, api) + "gweb <вопрос> или ответь командой на фото/текст/файл.");
+            }
+        }
+
+        progress(ctx, api, "✦ Gemini · Думаю…");
         Chat before = Chat::load(read_json(ctx, api, chat_key(ctx, api, client)));
-        Answer answer = client.ask(prompt, before);
+        Answer answer = client.ask(prompt, before, attachment_url, file_name);
         std::string state = answer.chat.dump().dump();
         api->db_set(ctx, chat_key(ctx, api, client).c_str(), state.c_str());
         // A very long reply is delivered intact as a text attachment instead of
@@ -333,19 +407,20 @@ void ask(koto_ctx* ctx, const koto_api* api) {
 }
 
 const koto_command commands[] = {
-    {"gweblogin", login, KOTO_LEVEL_OWNER, "Сохранить cookies из reply на сообщение с PSID [PSIDTS] в Избранном.", "reply на cookies; без аргументов"},
-    {"gweblogout", logout, KOTO_LEVEL_OWNER, "Удалить cookies и локальную память Gemini Web.", nullptr},
-    {"gwebcookies", cookies_help, KOTO_LEVEL_OWNER, "Инструкция по получению cookies Google.", nullptr},
-    {"gweb", ask, KOTO_LEVEL_TRUSTED, "Спросить Gemini Web; текст и reply на текст, память диалога.", "[вопрос]"},
-    {"gwebclear", clear, KOTO_LEVEL_TRUSTED, "Сбросить локальную память всех моделей в этом чате.", nullptr},
-    {"gwebmodel", model, KOTO_LEVEL_OWNER, "Список моделей аккаунта или выбор модели; auto — выбор Google.", "[auto|ключ|id]"},
-    {"gwebstatus", status, KOTO_LEVEL_TRUSTED, "Локальный статус Gemini Web без показа секретов.", nullptr},
-    {"gwebtest", test, KOTO_LEVEL_OWNER, "Проверить прямой HTTPS, затем вход и модели (без генерации).", nullptr},
-    {"gwebrefresh", refresh, KOTO_LEVEL_OWNER, "Обновить cookies, токен и модели без сброса диалогов.", nullptr},
-    {"gwebtimeout", timeout, KOTO_LEVEL_OWNER, "Таймаут генерации в секундах (30–300).", "[секунды]"},
+    {"gweblogin", login, KOTO_LEVEL_OWNER, "[ru] Сохранить cookies из reply на сообщение с PSID [PSIDTS] в Избранном [en] Save cookies from reply to message with PSID [PSIDTS] in Saved Messages.", "reply на cookies; без аргументов"},
+    {"gweblogout", logout, KOTO_LEVEL_OWNER, "[ru] Удалить cookies и локальную память Gemini Web [en] Clear cookies and local Gemini Web session memory.", nullptr},
+    {"gwebcookies", cookies_help, KOTO_LEVEL_OWNER, "[ru] Инструкция по получению cookies Google [en] Instructions for obtaining Google cookies.", nullptr},
+    {"gweb", ask, KOTO_LEVEL_TRUSTED, "[ru] Спросить Gemini Web (текст, reply на фото/файл, память) [en] Ask Gemini Web (text, reply to photo/file, conversation memory).", "[вопрос]"},
+    {"gw", ask, KOTO_LEVEL_TRUSTED, "[ru] Быстрый вызов Gemini Web (алиас к .gweb) [en] Short alias for .gweb.", "[вопрос]"},
+    {"gwebclear", clear, KOTO_LEVEL_TRUSTED, "[ru] Сбросить локальную память всех моделей в этом чате [en] Clear local memory for all models in this chat.", nullptr},
+    {"gwebmodel", model, KOTO_LEVEL_OWNER, "[ru] Список моделей аккаунта или выбор модели; auto — выбор Google [en] Account model list or select model; auto - Google default.", "[auto|ключ|id]"},
+    {"gwebstatus", status, KOTO_LEVEL_TRUSTED, "[ru] Локальный статус Gemini Web без показа секретов [en] Gemini Web local status without exposing credentials.", nullptr},
+    {"gwebtest", test, KOTO_LEVEL_OWNER, "[ru] Проверить прямой HTTPS, затем вход и модели (без генерации) [en] Test direct HTTPS connection, auth and models without generation.", nullptr},
+    {"gwebrefresh", refresh, KOTO_LEVEL_OWNER, "[ru] Обновить cookies, токен и модели без сброса диалогов [en] Refresh cookies, token and models without resetting dialogs.", nullptr},
+    {"gwebtimeout", timeout, KOTO_LEVEL_OWNER, "[ru] Таймаут генерации в секундах (30–300) [en] Generation timeout in seconds (30-300).", "[секунды]"},
 };
 const koto_module module = {
-    KOTO_MODULE_ABI, "gemini_web", "Gemini Web напрямую с Android: свой HTTPS, cookies и память диалогов.",
+    KOTO_MODULE_ABI, "gemini_web", "[ru] Gemini Web напрямую с Android: свой HTTPS, cookies, фото/файлы и память диалогов. [en] Gemini Web directly from Android with HTTPS, cookies, photo/file vision and chat memory.",
     version, 26, KOTO_MOD_NO_TWIN, commands, static_cast<int>(sizeof(commands) / sizeof(commands[0])),
     nullptr, 0, nullptr, nullptr, 0, nullptr
 };
