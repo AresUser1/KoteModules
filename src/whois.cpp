@@ -237,7 +237,12 @@ static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
     }
 
     api->c_text(ctx, "\n🔗 ");
-    std::string profile_link = "tg://user?id=" + std::to_string(target_uid);
+    std::string profile_link;
+    if (!username.empty()) {
+        profile_link = "https://t.me/" + username;
+    } else {
+        profile_link = "tg://user?id=" + std::to_string(target_uid);
+    }
     api->c_url(ctx, "Открыть профиль", profile_link.c_str());
 
     send_result(ctx, api);

@@ -52,6 +52,16 @@ std::string html_unescape(const std::string& str) {
     return res;
 }
 
+std::string aki_headers(const std::string& lang) {
+    return "Content-Type: application/x-www-form-urlencoded\r\n"
+           "x-requested-with: XMLHttpRequest\r\n"
+           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n"
+           "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
+           "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
+           "Origin: https://" + lang + ".akinator.com\r\n"
+           "Referer: https://" + lang + ".akinator.com/game";
+}
+
 std::string http_post_req(koto_ctx* ctx, const koto_api* api, const std::string& url, const std::string& body, const std::string& headers) {
     if (!api->http_post) return "";
     std::vector<unsigned char> buf(256 * 1024, 0);
@@ -179,7 +189,7 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     // Call Akinator start game
     std::string url = "https://" + lang + ".akinator.com/game";
     std::string body = "sid=1&cm=" + std::string(child ? "true" : "false");
-    std::string headers = "Content-Type: application/x-www-form-urlencoded\r\nx-requested-with: XMLHttpRequest";
+    std::string headers = aki_headers(lang);
 
     std::string resp = http_post_req(ctx, api, url, body, headers);
     if (resp.empty()) {
@@ -189,21 +199,24 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    // Extract session and question
+    // Extract session and question safely without throwing regex exceptions
     std::string session, step = "1", question;
-    std::regex ses_re(R"(localStorage\.setItem\(['"]session['"],\s*['"](.+?)['"]|session['"]\)\.val\(['"](.+?)['"]))");
-    std::smatch m;
-    if (std::regex_search(resp, m, ses_re)) {
-        session = m[1].matched ? m[1].str() : m[2].str();
-    }
-    std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"]))");
-    if (std::regex_search(resp, m, step_re)) {
-        step = m[1].str();
-    }
-    std::regex q_re(R"(class="question-text".*?>(.+?)</p>)");
-    if (std::regex_search(resp, m, q_re)) {
-        question = html_unescape(trim(m[1].str()));
-    }
+    try {
+        std::smatch m;
+        std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"])");
+        std::regex ses_re2(R"(session['"]\)\.val\(['"]([^'"]+)['"])");
+        if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2)) {
+            session = m[1].str();
+        }
+        std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"])");
+        if (std::regex_search(resp, m, step_re)) {
+            step = m[1].str();
+        }
+        std::regex q_re(R"(class="question-text"[^>]*>([^<]+)</p>)");
+        if (std::regex_search(resp, m, q_re)) {
+            question = html_unescape(trim(m[1].str()));
+        }
+    } catch (...) {}
 
     if (session.empty() || question.empty()) {
         api->c_reset(ctx);
@@ -290,7 +303,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
                            "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
                            "&session=" + url_encode(st.session) +
                            "&forward_answer=1";
-        std::string headers = "Content-Type: application/x-www-form-urlencoded\r\nx-requested-with: XMLHttpRequest";
+        std::string headers = aki_headers(st.lang);
         std::string resp = http_post_req(ctx, api, url, body, headers);
 
         try {
@@ -358,7 +371,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
                            "&step_last_proposition=" + url_encode(st.slp) +
                            "&num_question=" + std::to_string(st.num) +
                            "&session=" + url_encode(st.session);
-        std::string headers = "Content-Type: application/x-www-form-urlencoded\r\nx-requested-with: XMLHttpRequest";
+        std::string headers = aki_headers(st.lang);
         std::string resp = http_post_req(ctx, api, url, body, headers);
 
         try {

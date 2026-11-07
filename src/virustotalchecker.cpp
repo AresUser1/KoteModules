@@ -217,6 +217,12 @@ void cmd_vthelp(koto_ctx* ctx, const koto_api* api) {
 void cmd_chash(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
+    if (api->is_outgoing(ctx)) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "🔑 Вычисляю хэши…", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+    }
+
     std::vector<unsigned char> data;
     std::string file_name;
     char name_buf[512] = {0};
@@ -276,6 +282,12 @@ void cmd_chash(koto_ctx* ctx, const koto_api* api) {
 // ── Command: .vtcheck ────────────────────────────────────────────────────────
 void cmd_vtcheck(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    if (api->is_outgoing(ctx)) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "🛡️ Проверяю в VirusTotal…", KOTO_ENT_BOLD);
+        api->c_edit(ctx, 0);
+    }
 
     std::vector<unsigned char> data;
     std::string file_name;
@@ -417,7 +429,8 @@ const koto_setting_field SETTINGS[] = {
 };
 
 const koto_command COMMANDS[] = {
-    {"vtcheck", cmd_vtcheck, KOTO_LEVEL_TRUSTED, "[ru] Проверить файл, хэш или URL через VirusTotal [en] Check file, hash or URL via VirusTotal.", "[хэш|url] или reply на файл"},
+    {"vtcheck", cmd_vtcheck, KOTO_LEVEL_TRUSTED, "[ru] Проверить файл, хэш или URL через VirusTotal (by kote) [en] Check file, hash or URL via VirusTotal (by kote).", "[хэш|url] или reply на файл"},
+    {"vt", cmd_vtcheck, KOTO_LEVEL_TRUSTED, "[ru] Проверить файл, хэш или URL через VirusTotal (by kote) [en] Check file, hash or URL via VirusTotal (by kote).", "[хэш|url] или reply на файл"},
     {"chash", cmd_chash, KOTO_LEVEL_TRUSTED, "[ru] Вычислить SHA-256 и MD5 хэш файла или строки [en] Compute SHA-256 and MD5 hash of file or string.", "[строка] или reply на файл"},
     {"vtstatus", cmd_vtstatus, KOTO_LEVEL_TRUSTED, "[ru] Статус модуля VirusTotal Checker и проверка ключа [en] VirusTotal module status and API key check.", nullptr},
     {"vthelp", cmd_vthelp, KOTO_LEVEL_TRUSTED, "[ru] Справка по модулю VirusTotal Checker [en] VirusTotal Checker module help.", nullptr}
