@@ -145,6 +145,41 @@
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp"
     },
     {
+      "id": "amnesty",
+      "name": "amnesty",
+      "display_name": "Amnesty",
+      "author": "Kote",
+      "description": "[ru] Модуль для массового разбана пользователей в чате или в ЛС (амнистия) (by kote). [en] Mass unban users in chat or PM (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "amnesty",
+          "doc": "[ru] Разблокировать всех участников в чате [en] Unban members in chat",
+          "usage": "[id1 id2...]"
+        },
+        {
+          "name": "amnistia",
+          "doc": "[ru] Разблокировать пользователей в ЛС [en] Unblock users in PM",
+          "usage": "[id1 id2...]"
+        }
+      ],
+      "size": 172912,
+      "sha256": "3149be3bf2fe74fca5d107bc3c2aa4e6cc488626e9af28f15d83ce3d09e68606",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/amnesty.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/amnesty.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 172912,
+      "sha256_arm64": "3149be3bf2fe74fca5d107bc3c2aa4e6cc488626e9af28f15d83ce3d09e68606",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/amnesty.so",
+      "size_arm32": 123596,
+      "sha256_arm32": "392dfdca3c54915caa424747219b54fc17c84d09453f4c11951bdf13c7513686",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/amnesty.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/amnesty.cpp"
+    },
+    {
       "id": "aniliberty",
       "name": "aniliberty",
       "display_name": "AniLiberty (Аниме)",
@@ -783,6 +818,41 @@
       "size_arm32": 285768,
       "sha256_arm32": "d62ff13dcd1631f21f99b62db2fd6dcc9d452ccf533faa22a682aef0ae87a245",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/dox.so"
+    },
+    {
+      "id": "freegpt",
+      "name": "freegpt",
+      "display_name": "FreeGPT",
+      "author": "Kote",
+      "description": "[ru] Бесплатный ChatGPT (gpt-4o) и генерация изображений (Flux AI) БЕЗ API и БЕЗ ботов (by kote). [en] Free ChatGPT & Flux AI image generation without API keys or bots (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "gf",
+          "doc": "[ru] Задать вопрос к ChatGPT [en] Ask ChatGPT",
+          "usage": "<вопрос>"
+        },
+        {
+          "name": "gfi",
+          "doc": "[ru] Сгенерировать картинку через Flux AI [en] Generate AI image",
+          "usage": "<промпт>"
+        }
+      ],
+      "size": 52856,
+      "sha256": "5b367e042bd043777b6e3f4b83c0a79bc97e099228d3308598e133c0766f5d6e",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/freegpt.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/freegpt.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 52856,
+      "sha256_arm64": "5b367e042bd043777b6e3f4b83c0a79bc97e099228d3308598e133c0766f5d6e",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/freegpt.so",
+      "size_arm32": 20960,
+      "sha256_arm32": "8ce93fe1e2cb12612235e3e215e7474c2df225db4c92ae741d00f7e0beaa7f83",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/freegpt.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/freegpt.cpp"
     },
     {
       "id": "gemini_web",
@@ -1623,6 +1693,61 @@
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/music.so"
     },
     {
+      "id": "nekospy",
+      "name": "nekospy",
+      "display_name": "NekoSpy",
+      "author": "Kote",
+      "description": "[ru] Модуль слежки за удалёнными и изменёнными сообщениями с отчётом в Избранное (by kote). [en] NekoSpy: tracks edited and deleted messages to Saved Messages (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "spymode",
+          "doc": "[ru] Включить/выключить режим слежки NekoSpy [en] Toggle NekoSpy mode",
+          "usage": "[on|off]"
+        },
+        {
+          "name": "spyinfo",
+          "doc": "[ru] Статус и статистика модуля NekoSpy [en] NekoSpy status and statistics",
+          "usage": ""
+        },
+        {
+          "name": "spybl",
+          "doc": "[ru] Добавить чат в черный список NekoSpy [en] Add chat to NekoSpy blacklist",
+          "usage": ""
+        },
+        {
+          "name": "spyblclear",
+          "doc": "[ru] Очистить черный список NekoSpy [en] Clear NekoSpy blacklist",
+          "usage": ""
+        },
+        {
+          "name": "spywl",
+          "doc": "[ru] Добавить чат в белый список NekoSpy [en] Add chat to NekoSpy whitelist",
+          "usage": ""
+        },
+        {
+          "name": "spywlclear",
+          "doc": "[ru] Очистить белый список NekoSpy [en] Clear NekoSpy whitelist",
+          "usage": ""
+        }
+      ],
+      "size": 57376,
+      "sha256": "05e1d4d4cd5f2e53d74721ef13e1dbb995747dbf8569c55fbbca42d020f4e8f8",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/nekospy.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/nekospy.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 57376,
+      "sha256_arm64": "05e1d4d4cd5f2e53d74721ef13e1dbb995747dbf8569c55fbbca42d020f4e8f8",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/nekospy.so",
+      "size_arm32": 25328,
+      "sha256_arm32": "8ef71d6bc70d036b6867efef3a6473aef2d39f073395196738a2568c95bc6146",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/nekospy.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/nekospy.cpp"
+    },
+    {
       "id": "omni",
       "name": "omni",
       "display_name": "OmniLoad",
@@ -1656,6 +1781,36 @@
       "sha256_arm32": "29fc9dcee34996f93b1d5fc97a64c5b4d255d4a702ce629d5f7815fb407c2b50",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/omni.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/omni.cpp"
+    },
+    {
+      "id": "picme",
+      "name": "picme",
+      "display_name": "PicMe",
+      "author": "Kote",
+      "description": "[ru] Кринж-модуль «Режим пикми»: добавляет милые эмодзи и восклицания к вашим сообщениям (by kote). [en] PicMe cringe mode: adds emojis and exclamation marks to outgoing messages (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "picme",
+          "doc": "[ru] Включить/выключить режим пикми [en] Toggle PicMe mode",
+          "usage": ""
+        }
+      ],
+      "size": 53024,
+      "sha256": "3dd2da32f23f3d3930c9939cfafae2e88de5dc245b11657c0d21994c4452028a",
+      "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/picme.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/picme.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 53024,
+      "sha256_arm64": "3dd2da32f23f3d3930c9939cfafae2e88de5dc245b11657c0d21994c4452028a",
+      "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/picme.so",
+      "size_arm32": 20752,
+      "sha256_arm32": "cddb3aa1c4897eaa48d0c7611f0735fbf390d397bb66ebe28a4ed6a85b8e944d",
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/picme.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/picme.cpp"
     },
     {
       "id": "pmbl",
