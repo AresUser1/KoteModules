@@ -122,7 +122,7 @@
       "display_name": "Akinator",
       "author": "Kote",
       "description": "Акинатор угадает любого задуманного персонажа по вопросам (by kote).",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -130,8 +130,8 @@
         ".akinator",
         ".akistop"
       ],
-      "size": 356408,
-      "sha256": "83b1141b93a97e9b1acbf61b64499ab04d4cd227a6269c7e8b2c05b43ac74074",
+      "size": 355872,
+      "sha256": "095e6f11cb714ffacb64716309deb6bdae2f0ff201e2642be4ebf60f515defa0",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/akinator.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "license": "MIT",
@@ -142,7 +142,19 @@
       "size_arm32": 286124,
       "sha256_arm32": "619e90f5e4090dae36391c2e8c51b081f67f181b54fae3d3e71146e7c0f9f067",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/akinator.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp"
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "095e6f11cb714ffacb64716309deb6bdae2f0ff201e2642be4ebf60f515defa0",
+          "size": 355872,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-arm64-v8a/akinator.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "dfc8978d90dbdc94b6533fa16bf3957371aff960c82edd42333f227986e344e3",
+          "size": 285592,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-armeabi-v7a/akinator.so"
+        }
+      }
     },
     {
       "id": "amnesty",
@@ -1145,7 +1157,7 @@
       "display_name": "Линк Манагер",
       "author": "Kote",
       "description": "[ru] Модуль для выдачи ссылок на чаты. Управление категориями, шаблонами сообщений, лимитами переходов и сроками ссылок. [en] Manage chat invite links and request approvals.",
-      "version": "2.6.0",
+      "version": "1.1.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -1175,8 +1187,8 @@
           "usage": ""
         }
       ],
-      "size": 372008,
-      "sha256": "2c87a23eb9702926fe020cb1da25c0c601e5be8952a9fd02eb8447f875d08f47",
+      "size": 375136,
+      "sha256": "aec5470096629b9301b084afc4ef3a1aa866b8e73408e3114cc2757e8bfd68ab",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/link_manager.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/link_manager.cpp",
       "license": "MIT",
@@ -1186,7 +1198,19 @@
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/link_manager.so",
       "size_arm32": 298048,
       "sha256_arm32": "ac58e967bb19c2110fde9a9c300983e15352bc7b4d5166aa58bf47c833cc33b6",
-      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/link_manager.so"
+      "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/link_manager.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "aec5470096629b9301b084afc4ef3a1aa866b8e73408e3114cc2757e8bfd68ab",
+          "size": 375136,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-arm64-v8a/link_manager.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "6edf7bead96e812d16c1b9ad98cff59e1f62a1f3c9426d01400bb11b5d61550f",
+          "size": 300236,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-armeabi-v7a/link_manager.so"
+        }
+      }
     },
     {
       "id": "mafia_multitool",
@@ -1441,7 +1465,7 @@
       "display_name": "Модерация (Moderation)",
       "author": "Kote",
       "description": "[ru] Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное. [en] Advanced group moderation (warn, mute, kick, ban).",
-      "version": "1.2.0",
+      "version": "1.1.8",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -1541,17 +1565,17 @@
           "usage": "<категория> [user/id] [причина]"
         }
       ],
-      "size": 289848,
-      "sha256": "ef70dce95ee9f35602700c0d2836b1fca661a2c9c4e41e155a7aa2ab6e6b746f",
+      "size": 289408,
+      "sha256": "183833267199b0a18e9bfe4896a8ca54101020a5d801367e51b110b3e754a5c4",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/moderation.cpp",
       "license": "MIT",
       "min_host_version": 60,
-      "size_arm64": 289848,
-      "sha256_arm64": "ef70dce95ee9f35602700c0d2836b1fca661a2c9c4e41e155a7aa2ab6e6b746f",
+      "size_arm64": 289408,
+      "sha256_arm64": "183833267199b0a18e9bfe4896a8ca54101020a5d801367e51b110b3e754a5c4",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/moderation.so",
-      "size_arm32": 228744,
-      "sha256_arm32": "bf152e2432159794f5625329ed93a3f723d92216f9e9a8ca9445ee715ca4c805",
+      "size_arm32": 228324,
+      "sha256_arm32": "aa29882e634e4014b3afd8dd033d76cea18fcba4b184c17cdc8be4ecd060f8c4",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/moderation.so"
     },
     {
@@ -1842,13 +1866,13 @@
       "display_name": "Конструктор опросов",
       "author": "Kote",
       "description": "[ru] Создание опросов по шаблонам, сканер результатов и теги участников. [en] Create interactive polls and quizzes with options.",
-      "version": "3.5.0",
+      "version": "3.4.1",
       "kind": "so",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/poll.so",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/poll.so",
-      "size": 332248,
-      "sha256": "fdba06a8320b677a519a70adcad56255095e208bf4aa37483adb3d511bd4ff12",
+      "size": 331808,
+      "sha256": "9f5b9fadeadd13642f5a21ac572ec49e2f9454be1868cf0e2d882d5117fee0da",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
       "license": "MIT",
       "min_host_version": 85,
@@ -1874,10 +1898,10 @@
           "usage": "<номер|novote> [текст]"
         }
       ],
-      "size_arm64": 332248,
-      "sha256_arm64": "fdba06a8320b677a519a70adcad56255095e208bf4aa37483adb3d511bd4ff12",
-      "size_arm32": 260700,
-      "sha256_arm32": "f8850b5af95bf8357ed4e91ffedfe4b8e92c9261d037b9ac66cc0a6d79cf1c00",
+      "size_arm64": 331808,
+      "sha256_arm64": "9f5b9fadeadd13642f5a21ac572ec49e2f9454be1868cf0e2d882d5117fee0da",
+      "size_arm32": 260264,
+      "sha256_arm32": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
       "abi": "arm64-v8a, armeabi-v7a"
     },
     {
@@ -2829,7 +2853,7 @@
       "display_name": "Wordle (Отгадай слово)",
       "author": "Kote",
       "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок, защитой от утечек .wset и мультиплеером без добавления в trust (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer without trust requirement (by kote).",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -2889,8 +2913,8 @@
           "usage": ""
         }
       ],
-      "size": 113592,
-      "sha256": "3be7a0f429f511d321c96ad79e09bb4efaef65629966727d5651e977fc427a2f",
+      "size": 348864,
+      "sha256": "b0395c9db805c5500b4e5021b20d2e1481cd57cc96575e30b906776f8b7652d7",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/wordle.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
       "license": "MIT",
@@ -2901,7 +2925,19 @@
       "size_arm32": 78636,
       "sha256_arm32": "9f399cd18b5e980cecd7014d5164a3ef1ea43c4d99da4c3a0b03c275d9a749d9",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/wordle.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp"
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "b0395c9db805c5500b4e5021b20d2e1481cd57cc96575e30b906776f8b7652d7",
+          "size": 348864,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-arm64-v8a/wordle.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "2d9579a910747d880fdce64dd10658ca46a94e604f9943495707b9321af69f57",
+          "size": 278112,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-armeabi-v7a/wordle.so"
+        }
+      }
     },
     {
       "id": "mazegame",
@@ -2909,7 +2945,7 @@
       "display_name": "Лабиринт (MazeGame)",
       "author": "Kote",
       "description": "[ru] Игра Лабиринт: процедурная генерация, туман войны, ловушки-огонь, одиночная игра и PvP на двоих через кнопки (by kote). [en] Maze game: procedural generation, fog of war, fire traps, solo and 2-player PvP with inline buttons (by kote).",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -2939,8 +2975,8 @@
           "usage": ""
         }
       ],
-      "size": 71728,
-      "sha256": "3235bbcaf36c2db9eba84e3a679ee3d01679b44898f9ba3e5bf5055e21a60958",
+      "size": 276048,
+      "sha256": "b79bc4063a651033f997dd5bffd51c6345a2a8d480d4439fe3c499bb27285fb4",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/mazegame.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
       "license": "MIT",
@@ -2951,7 +2987,19 @@
       "size_arm32": 43228,
       "sha256_arm32": "302811132985122d64d9ec0bd55c8e71940066481a645dae9ae7874e71305ec6",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/mazegame.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp"
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "b79bc4063a651033f997dd5bffd51c6345a2a8d480d4439fe3c499bb27285fb4",
+          "size": 276048,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-arm64-v8a/mazegame.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "da74377fef747fd4718b97de9ae91ea711f7686be7ea63538e5b485bb9c48b53",
+          "size": 218636,
+          "url": "https://raw.githubusercontent.com/kotogram/kotomules/main/dist/android-armeabi-v7a/mazegame.so"
+        }
+      }
     }
   ]
 }

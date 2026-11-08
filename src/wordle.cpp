@@ -14,10 +14,14 @@
 #include <cctype>
 #include <cstring>
 #include <algorithm>
+#include <sstream>
+#include "nlohmann/json.hpp"
+
+using json = nlohmann::json;
 
 namespace {
 
-constexpr const char* VERSION = "1.3.0";
+constexpr const char* VERSION = "1.3.1";
 
 // ── Встроенный словарь 5-буквенных существительных ─────────────────────────
 const char* const DICTIONARY[] = {
@@ -221,30 +225,146 @@ inline int64_t bare_cid(int64_t cid) {
     return normalize_cid(cid);
 }
 
-Game* find_wordle_game(const std::string& target_id, int64_t cid, int64_t sender) {
+
+void save_wordle_game_db(koto_ctx* ctx, const koto_api* api, const Game& g) {
+    if (!api->db_set) return;
+    try {
+        json j;
+        j["id"] = g.id;
+        j["chat_id"] = g.chat_id;
+        j["msg_id"] = g.msg_id;
+        j["creator_id"] = g.creator_id;
+        j["creator_name"] = g.creator_name;
+        j["target_opponent_id"] = g.target_opponent_id;
+        j["target_opponent_name"] = g.target_opponent_name;
+        j["target_word"] = g.target_word;
+        j["target_letters"] = g.target_letters;
+        j["target_len"] = g.target_len;
+        j["max_attempts"] = g.max_attempts;
+        j["hint"] = g.hint;
+        j["hint_revealed"] = g.hint_revealed;
+        j["is_custom"] = g.is_custom;
+        j["is_finished"] = g.is_finished;
+        j["is_won"] = g.is_won;
+        j["is_lobby"] = g.is_lobby;
+        j["winner_name"] = g.winner_name;
+        j["last_active"] = (long long)g.last_active;
+        json atts = json::array();
+        for (const auto& a : g.attempts) {
+            atts.push_back({
+                {"word_raw", a.word_raw},
+                {"letters", a.letters},
+                {"colors", a.colors},
+                {"player_name", a.player_name}
+            });
+        }
+        j["attempts"] = atts;
+        std::string s = j.dump();
+        std::string key = "wrd_g:" + g.id;
+        api->db_set(ctx, key.c_str(), s.c_str());
+        if (g.chat_id != 0) {
+            api->db_set(ctx, ("wrd_active:" + std::to_string(g.chat_id)).c_str(), g.id.c_str());
+        }
+    } catch (...) {}
+}
+
+bool load_wordle_game_db(koto_ctx* ctx, const koto_api* api, const std::string& gid, Game& out) {
+    if (!api->db_get || gid.empty()) return false;
+    try {
+        char buf[16384] = {0};
+        std::string key = "wrd_g:" + gid;
+        int n = api->db_get(ctx, key.c_str(), buf, sizeof(buf));
+        if (n <= 0) return false;
+        json j = json::parse(std::string(buf, n));
+        out.id = j.value("id", gid);
+        out.chat_id = j.value("chat_id", 0LL);
+        out.msg_id = j.value("msg_id", 0LL);
+        out.creator_id = j.value("creator_id", 0LL);
+        out.creator_name = j.value("creator_name", "");
+        out.target_opponent_id = j.value("target_opponent_id", 0LL);
+        out.target_opponent_name = j.value("target_opponent_name", "");
+        out.target_word = j.value("target_word", "");
+        out.target_letters = j.value("target_letters", std::vector<std::string>{});
+        out.target_len = j.value("target_len", 5);
+        out.max_attempts = j.value("max_attempts", 6);
+        out.hint = j.value("hint", "");
+        out.hint_revealed = j.value("hint_revealed", false);
+        out.is_custom = j.value("is_custom", false);
+        out.is_finished = j.value("is_finished", false);
+        out.is_won = j.value("is_won", false);
+        out.is_lobby = j.value("is_lobby", false);
+        out.winner_name = j.value("winner_name", "");
+        out.last_active = (time_t)j.value("last_active", 0LL);
+        out.attempts.clear();
+        if (j.contains("attempts")) {
+            for (const auto& aj : j["attempts"]) {
+                GuessRecord gr;
+                gr.word_raw = aj.value("word_raw", "");
+                gr.letters = aj.value("letters", std::vector<std::string>{});
+                gr.colors = aj.value("colors", std::vector<int>{});
+                gr.player_name = aj.value("player_name", "");
+                out.attempts.push_back(gr);
+            }
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+Game* find_wordle_game(const std::string& target_id, int64_t cid, int64_t sender, koto_ctx* ctx = nullptr, const koto_api* api = nullptr) {
     // 1. По точному ID игры (GID)
     if (!target_id.empty()) {
         auto it = g_games_by_id.find(target_id);
         if (it != g_games_by_id.end()) return &it->second;
+
+        // Числовой target_id (chat_id или user_id из inline кнопки)
+        try {
+            int64_t num_id = std::stoll(target_id);
+            if (num_id != 0) {
+                for (int64_t cand : {num_id, normalize_cid(num_id), bare_cid(num_id), -num_id}) {
+                    auto it_c = g_chat_to_game.find(cand);
+                    if (it_c != g_chat_to_game.end()) {
+                        auto git = g_games_by_id.find(it_c->second);
+                        if (git != g_games_by_id.end()) return &git->second;
+                    }
+                }
+                for (auto& p : g_games_by_id) {
+                    if (p.second.chat_id == num_id || p.second.creator_id == num_id || p.second.target_opponent_id == num_id) {
+                        return &p.second;
+                    }
+                }
+            }
+        } catch (...) {}
+
+        // Fallback: загрузка из DB
+        if (ctx && api) {
+            Game loaded;
+            if (load_wordle_game_db(ctx, api, target_id, loaded)) {
+                g_games_by_id[target_id] = loaded;
+                return &g_games_by_id[target_id];
+            }
+        }
     }
     // 2. По cid в карте
     if (cid != 0) {
-        auto it = g_chat_to_game.find(cid);
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        for (int64_t cand : {cid, normalize_cid(cid), bare_cid(cid)}) {
+            auto it = g_chat_to_game.find(cand);
+            if (it != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
         }
-        int64_t ncid = normalize_cid(cid);
-        auto it2 = g_chat_to_game.find(ncid);
-        if (it2 != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it2->second);
-            if (git != g_games_by_id.end()) return &git->second;
-        }
-        int64_t bcid = bare_cid(cid);
-        auto it3 = g_chat_to_game.find(bcid);
-        if (it3 != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it3->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        if (ctx && api && api->db_get) {
+            char abuf[64] = {0};
+            if (api->db_get(ctx, ("wrd_active:" + std::to_string(cid)).c_str(), abuf, sizeof(abuf)) > 0 && abuf[0]) {
+                Game loaded;
+                if (load_wordle_game_db(ctx, api, abuf, loaded)) {
+                    g_games_by_id[abuf] = loaded;
+                    g_chat_to_game[cid] = abuf;
+                    return &g_games_by_id[abuf];
+                }
+            }
         }
     }
     // 3. По sender
@@ -423,17 +543,36 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
 // ── Вспомогательный парсер попыток (-a <число>) ───────────────────────────
 int extract_attempts_arg(std::string& args) {
     int attempts = 6;
-    size_t pos = args.find("-a ");
-    if (pos == std::string::npos) pos = args.find("/a ");
-    if (pos != std::string::npos) {
-        int val = 0;
-        if (sscanf(args.c_str() + pos + 3, "%d", &val) == 1 && val >= 3 && val <= 10) {
-            attempts = val;
+    for (const char* flag : {"-a ", "/a ", "-p ", "/p "}) {
+        size_t pos = args.find(flag);
+        if (pos != std::string::npos) {
+            int val = 0;
+            if (sscanf(args.c_str() + pos + strlen(flag), "%d", &val) == 1 && val >= 3 && val <= 10) {
+                attempts = val;
+            }
+            size_t end_pos = args.find(' ', pos + strlen(flag));
+            if (end_pos != std::string::npos) args.erase(pos, end_pos - pos + 1);
+            else args.erase(pos);
+            break;
         }
-        size_t end_pos = args.find(' ', pos + 3);
-        if (end_pos != std::string::npos) args.erase(pos, end_pos - pos + 1);
-        else args.erase(pos);
     }
+    // Также проверяем отдельное число в аргументах (.w rnd 8 или .w 7)
+    std::istringstream iss(args);
+    std::string token, filtered;
+    while (iss >> token) {
+        bool is_num = true;
+        for (char c : token) if (!isdigit((unsigned char)c)) { is_num = false; break; }
+        if (is_num && token.size() <= 2) {
+            int val = std::stoi(token);
+            if (val >= 3 && val <= 10) {
+                attempts = val;
+                continue;
+            }
+        }
+        if (!filtered.empty()) filtered += " ";
+        filtered += token;
+    }
+    args = filtered;
     while (!args.empty() && (args.back() == ' ' || args.back() == '\t')) args.pop_back();
     return attempts;
 }
@@ -614,6 +753,7 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
     g.msg_id = (cmd_mid > 0) ? (cmd_mid + 1) : 0;
 
     std::lock_guard<std::mutex> lock(g_mutex);
+    save_wordle_game_db(ctx, api, g);
     g_games_by_id[g.id] = g;
     g_chat_to_game[cid] = g.id;
     g_chat_to_game[normalize_cid(cid)] = g.id;
@@ -641,11 +781,7 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
 
     // Защита оппонента: если игра привязана к конкретному игроку, посторонние не могут ходить
     if (g.target_opponent_id != 0 && sender != g.target_opponent_id) {
-        api->c_reset(ctx);
-        std::string warn = "⚠️ В этой игре сейчас отгадывает " + (g.target_opponent_name.empty() ? "другой игрок" : g.target_opponent_name) + "!\nЗапустите свою игру: .w rnd";
-        api->c_fmt(ctx, warn.c_str(), KOTO_ENT_ITALIC);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        // В группах просто игнорируем посторонних без спама в чат
         return true;
     }
 
@@ -725,6 +861,7 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
         api->delete_msg(ctx);
     }
 
+    save_wordle_game_db(ctx, api, g);
     render_game(ctx, api, g);
 
     int64_t target_chat = (cid != 0) ? cid : g.chat_id;
@@ -952,7 +1089,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     else if (data.rfind("wrd:c:", 0) == 0) target_id = data.substr(6);
 
     std::unique_lock<std::mutex> lock(g_mutex);
-    Game* gp = find_wordle_game(target_id, cid, sender);
+    Game* gp = find_wordle_game(target_id, cid, sender, ctx, api);
     if (!gp) {
         api->cb_answer(ctx, "❌ Игра не найдена или устарела!", 0);
         return;

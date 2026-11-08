@@ -3,6 +3,8 @@
 // Автор: by kote (портировано из MazeGame.py)
 
 #include "module_abi.h"
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #include <string>
 #include <vector>
@@ -17,7 +19,7 @@
 
 namespace {
 
-constexpr const char* VERSION = "1.0.1";
+constexpr const char* VERSION = "1.0.2";
 constexpr int DEFAULT_MAZE_SIZE = 15; // 15x15 лабиринт (всегда нечетный)
 constexpr int VIEWPORT_SIZE = 7;      // видимая область 7x7
 
@@ -82,39 +84,132 @@ inline long long bare_cid(long long cid) {
     return cid;
 }
 
-Game* find_maze_game(const std::string& target_id, long long cid, long long sender) {
+
+void save_maze_game_db(koto_ctx* ctx, const koto_api* api, const Game& g) {
+    if (!api->db_set) return;
+    try {
+        json j;
+        j["id"] = g.id;
+        j["chat_id"] = g.chat_id;
+        j["msg_id"] = g.msg_id;
+        j["p1_id"] = g.p1_id;
+        j["p1_name"] = g.p1_name;
+        j["p2_id"] = g.p2_id;
+        j["p2_name"] = g.p2_name;
+        j["is_multiplayer"] = g.is_multiplayer;
+        j["is_finished"] = g.is_finished;
+        j["turn"] = g.turn;
+        j["winner"] = g.winner;
+        j["end_reason"] = g.end_reason;
+        j["rows"] = g.rows;
+        j["cols"] = g.cols;
+        j["p1_steps"] = g.p1_steps;
+        j["p2_steps"] = g.p2_steps;
+        j["start_pos"] = {g.start_pos.r, g.start_pos.c};
+        j["finish_pos"] = {g.finish_pos.r, g.finish_pos.c};
+        j["p1_pos"] = {g.p1_pos.r, g.p1_pos.c};
+        j["p2_pos"] = {g.p2_pos.r, g.p2_pos.c};
+        j["grid"] = g.grid;
+        std::string s = j.dump();
+        api->db_set(ctx, ("mzg_g:" + g.id).c_str(), s.c_str());
+        if (g.chat_id != 0) {
+            api->db_set(ctx, ("mzg_act:" + std::to_string(g.chat_id)).c_str(), g.id.c_str());
+        }
+    } catch (...) {}
+}
+
+bool load_maze_game_db(koto_ctx* ctx, const koto_api* api, const std::string& gid, Game& out) {
+    if (!api->db_get || gid.empty()) return false;
+    try {
+        char buf[65536] = {0};
+        int n = api->db_get(ctx, ("mzg_g:" + gid).c_str(), buf, sizeof(buf));
+        if (n <= 0) return false;
+        json j = json::parse(std::string(buf, n));
+        out.id = j.value("id", gid);
+        out.chat_id = j.value("chat_id", 0LL);
+        out.msg_id = j.value("msg_id", 0LL);
+        out.p1_id = j.value("p1_id", 0LL);
+        out.p1_name = j.value("p1_name", "");
+        out.p2_id = j.value("p2_id", 0LL);
+        out.p2_name = j.value("p2_name", "");
+        out.is_multiplayer = j.value("is_multiplayer", false);
+        out.is_finished = j.value("is_finished", false);
+        out.turn = j.value("turn", 1);
+        out.winner = j.value("winner", 0);
+        out.end_reason = j.value("end_reason", "");
+        out.rows = j.value("rows", DEFAULT_MAZE_SIZE);
+        out.cols = j.value("cols", DEFAULT_MAZE_SIZE);
+        out.p1_steps = j.value("p1_steps", 0);
+        out.p2_steps = j.value("p2_steps", 0);
+        if (j.contains("start_pos") && j["start_pos"].is_array() && j["start_pos"].size() >= 2) {
+            out.start_pos = {j["start_pos"][0], j["start_pos"][1]};
+        }
+        if (j.contains("finish_pos") && j["finish_pos"].is_array() && j["finish_pos"].size() >= 2) {
+            out.finish_pos = {j["finish_pos"][0], j["finish_pos"][1]};
+        }
+        if (j.contains("p1_pos") && j["p1_pos"].is_array() && j["p1_pos"].size() >= 2) {
+            out.p1_pos = {j["p1_pos"][0], j["p1_pos"][1]};
+        }
+        if (j.contains("p2_pos") && j["p2_pos"].is_array() && j["p2_pos"].size() >= 2) {
+            out.p2_pos = {j["p2_pos"][0], j["p2_pos"][1]};
+        }
+        if (j.contains("grid")) {
+            out.grid = j["grid"].get<std::vector<std::vector<int>>>();
+        }
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+Game* find_maze_game(const std::string& target_id, long long cid, long long sender, koto_ctx* ctx = nullptr, const koto_api* api = nullptr) {
     if (!target_id.empty()) {
         auto it = g_games_by_id.find(target_id);
         if (it != g_games_by_id.end()) return &it->second;
         try {
             long long tid = std::stoll(target_id);
-            auto it2 = g_chat_to_game.find(tid);
-            if (it2 != g_chat_to_game.end()) {
-                auto git = g_games_by_id.find(it2->second);
-                if (git != g_games_by_id.end()) return &git->second;
-            }
-            it2 = g_chat_to_game.find(normalize_cid(tid));
-            if (it2 != g_chat_to_game.end()) {
-                auto git = g_games_by_id.find(it2->second);
-                if (git != g_games_by_id.end()) return &git->second;
+            if (tid != 0) {
+                for (long long cand : {tid, normalize_cid(tid), bare_cid(tid), -tid}) {
+                    auto it2 = g_chat_to_game.find(cand);
+                    if (it2 != g_chat_to_game.end()) {
+                        auto git = g_games_by_id.find(it2->second);
+                        if (git != g_games_by_id.end()) return &git->second;
+                    }
+                }
+                for (auto& p : g_games_by_id) {
+                    if (p.second.chat_id == tid || p.second.p1_id == tid || p.second.p2_id == tid) {
+                        return &p.second;
+                    }
+                }
             }
         } catch (...) {}
+
+        if (ctx && api) {
+            Game loaded;
+            if (load_maze_game_db(ctx, api, target_id, loaded)) {
+                g_games_by_id[target_id] = loaded;
+                return &g_games_by_id[target_id];
+            }
+        }
     }
     if (cid != 0) {
-        auto it = g_chat_to_game.find(cid);
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        for (long long cand : {cid, normalize_cid(cid), bare_cid(cid)}) {
+            auto it = g_chat_to_game.find(cand);
+            if (it != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
         }
-        it = g_chat_to_game.find(normalize_cid(cid));
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
-        }
-        it = g_chat_to_game.find(bare_cid(cid));
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        if (ctx && api && api->db_get) {
+            char buf[64] = {0};
+            if (api->db_get(ctx, ("mzg_act:" + std::to_string(cid)).c_str(), buf, sizeof(buf)) > 0 && buf[0]) {
+                Game loaded;
+                if (load_maze_game_db(ctx, api, buf, loaded)) {
+                    g_games_by_id[buf] = loaded;
+                    g_chat_to_game[cid] = buf;
+                    return &g_games_by_id[buf];
+                }
+            }
         }
     }
     if (sender != 0) {
@@ -340,7 +435,8 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
             g.end_reason = "🔥 Вы угодили в огненную ловушку и сгорели!";
             api->cb_answer(ctx, "🔥 Вы сгорели в ловушке! Игра окончена.", 1);
         }
-        render_game_message(ctx, api, g);
+        save_maze_game_db(ctx, api, g);
+    render_game_message(ctx, api, g);
         api->c_edit_message(ctx, 0, mid, 0);
         return;
     }
@@ -365,6 +461,7 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
         api->cb_answer(ctx, "👣 Шаг сделан", 0);
     }
 
+    save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
     api->c_edit_message(ctx, 0, mid, 0);
 }
@@ -397,6 +494,7 @@ void cmd_maze(koto_ctx* ctx, const koto_api* api) {
 
     Game g = generate_new_maze(cid, sender, p1_buf, p2_id, p2_buf);
 
+    save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
 
     if (api->is_outgoing(ctx)) {
@@ -409,6 +507,7 @@ void cmd_maze(koto_ctx* ctx, const koto_api* api) {
     g.msg_id = (cmd_mid > 0) ? (cmd_mid + 1) : 0;
 
     std::lock_guard<std::mutex> lock(g_mutex);
+    save_maze_game_db(ctx, api, g);
     g_games_by_id[g.id] = g;
     g_chat_to_game[cid] = g.id;
     g_chat_to_game[normalize_cid(cid)] = g.id;
@@ -435,6 +534,7 @@ void cmd_mazestop(koto_ctx* ctx, const koto_api* api) {
     g.is_finished = true;
     g.end_reason = "🏳️ Игра была остановлена.";
 
+    save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
 
     if (g.msg_id != 0) {
@@ -478,7 +578,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     }
 
     std::unique_lock<std::mutex> lock(g_mutex);
-    Game* gp = find_maze_game(target_id, cid, sender);
+    Game* gp = find_maze_game(target_id, cid, sender, ctx, api);
     if (!gp) {
         api->cb_answer(ctx, "Игра не найдена", 0);
         return;
@@ -518,7 +618,8 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         }
 
         api->cb_answer(ctx, "🏳️ Сдались!", 0);
-        render_game_message(ctx, api, g);
+        save_maze_game_db(ctx, api, g);
+    render_game_message(ctx, api, g);
         api->c_edit_message(ctx, 0, mid, 0);
         return;
     }
@@ -536,7 +637,8 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         if (g.p1_id != 0) g_chat_to_game[g.p1_id] = g.id;
 
         api->cb_answer(ctx, "🔄 Лабиринт перестроен!", 0);
-        render_game_message(ctx, api, g);
+        save_maze_game_db(ctx, api, g);
+    render_game_message(ctx, api, g);
         api->c_edit_message(ctx, 0, mid, 0);
         return;
     }

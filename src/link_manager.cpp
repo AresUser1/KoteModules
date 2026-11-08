@@ -11,6 +11,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
+#include <thread>
+#include <chrono>
 
 using json = nlohmann::json;
 
@@ -925,6 +927,25 @@ static void cmd_link(koto_ctx* ctx, const koto_api* api) {
                         });
                     } else if (res_j.contains("error")) {
                         err_desc = res_j["error"].get<std::string>();
+                        if ((err_desc.find("CHANNEL_INVALID") != std::string::npos || err_desc.find("PEER_ID_INVALID") != std::string::npos) && cid != 0) {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                            std::vector<char> retry_buf(4096, 0);
+                            int n2 = api->host_call_json(ctx, "chat.export_invite", exp_req.dump().c_str(), retry_buf.data(), (int)retry_buf.size());
+                            if (n2 > 0) {
+                                try {
+                                    auto r2 = json::parse(std::string(retry_buf.data(), n2));
+                                    if (r2.value("ok", false) && r2.contains("link")) {
+                                        link = r2["link"].get<std::string>();
+                                        err_desc.clear();
+                                        active_links[category_name].push_back({
+                                            {"chat_id", cid},
+                                            {"link", link},
+                                            {"tag", custom_text_val}
+                                        });
+                                    }
+                                } catch (...) {}
+                            }
+                        }
                     }
                 } catch (...) {}
             }

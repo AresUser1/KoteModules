@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.1.0";
+constexpr const char* VERSION = "1.1.1";
 
 // Helper URL encoding
 std::string url_encode(const std::string& value) {
@@ -54,18 +54,12 @@ std::string html_unescape(const std::string& str) {
 
 std::string aki_headers(const std::string& lang) {
     return "Content-Type: application/x-www-form-urlencoded\r\n"
-           "x-requested-with: XMLHttpRequest\r\n"
-           "User-Agent: Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36\r\n"
-           "sec-ch-ua: \"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"\r\n"
-           "sec-ch-ua-mobile: ?1\r"
-           "sec-ch-ua-platform: \"Android\"\r\n"
-           "sec-fetch-dest: empty\r\n"
-           "sec-fetch-mode: cors\r\n"
-           "sec-fetch-site: same-origin\r\n"
-           "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
+           "X-Requested-With: XMLHttpRequest\r\n"
+           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\r\n"
+           "Accept: application/json, text/javascript, */*; q=0.01\r\n"
            "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
            "Origin: https://" + lang + ".akinator.com\r\n"
-           "Referer: https://" + lang + ".akinator.com/";
+           "Referer: https://" + lang + ".akinator.com/game\r\n";
 }
 
 std::string get_proxy(koto_ctx* ctx, const koto_api* api) {
@@ -234,8 +228,14 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
     else api->c_reply(ctx, 0);
 
-    // Call Akinator start game
+    // Call Akinator start game: 1. GET to init session and cookies
     std::string url = build_aki_url(ctx, api, lang, "game");
+    if (api->http_get) {
+        std::vector<unsigned char> init_buf(4096, 0);
+        api->http_get(ctx, url.c_str(), init_buf.data(), (int)init_buf.size());
+    }
+
+    // 2. POST with established session
     std::string body = "sid=1&cm=" + std::string(child ? "true" : "false");
     std::string headers = aki_headers(lang);
 
