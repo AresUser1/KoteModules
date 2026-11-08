@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr const char* VERSION = "1.0.0";
+constexpr const char* VERSION = "1.1.0";
 
 // ── Встроенный словарь 5-буквенных существительных ─────────────────────────
 const char* const DICTIONARY[] = {
@@ -220,50 +220,66 @@ struct Game {
 std::unordered_map<int64_t, Game> g_games;
 std::mutex g_mutex;
 
-// ── Отрисовка сообщения и кнопок ───────────────────────────────────────────
+// ── Отрисовка сообщения и инлайн-кнопок ─────────────────────────────────────
 
 void add_game_buttons(koto_ctx* ctx, const koto_api* api, const Game& g) {
     std::string cid_str = std::to_string(g.chat_id);
 
-    // Если сделана хотя бы одна попытка и игра не закончена:
-    // показываем цветные кнопки букв последней попытки!
-    if (!g.attempts.empty() && !g.is_finished) {
-        const auto& last = g.attempts.back();
-        for (size_t i = 0; i < last.letters.size(); ++i) {
-            std::string u_let = utf8_to_upper_letter(last.letters[i]);
-            int color = last.colors[i];
-            int btn_color = KOTO_BTN_DEFAULT;
-            const char* cb_data = "wrd:l:0";
-            if (color == 2) {
-                btn_color = KOTO_BTN_SUCCESS; // Зелёный
-                cb_data = "wrd:l:2";
-            } else if (color == 1) {
-                btn_color = KOTO_BTN_PRIMARY; // Синий
-                cb_data = "wrd:l:1";
-            } else {
-                btn_color = KOTO_BTN_DANGER;  // Красный
-                cb_data = "wrd:l:0";
-            }
+    // Показываем ряды кнопок со словами попыток (как игровое поле Wordle!)
+    int rows_to_show = g.max_attempts;
+    if (g.is_finished) {
+        rows_to_show = (int)g.attempts.size();
+        if (rows_to_show == 0) rows_to_show = 1;
+    }
 
-            int new_row = (i == 0) ? 1 : 0;
-            if (api->c_button_ex) {
-                api->c_button_ex(ctx, u_let.c_str(), cb_data, new_row, btn_color, 0);
+    for (int r = 0; r < rows_to_show; ++r) {
+        bool has_attempt = (r < (int)g.attempts.size());
+
+        for (int c = 0; c < g.target_len; ++c) {
+            int new_row = (c == 0) ? 1 : 0;
+
+            if (has_attempt) {
+                const auto& att = g.attempts[r];
+                std::string u_let = (c < (int)att.letters.size()) ? utf8_to_upper_letter(att.letters[c]) : " ";
+                int col = (c < (int)att.colors.size()) ? att.colors[c] : 0;
+
+                int btn_color = KOTO_BTN_DEFAULT;
+                const char* cb = "wrd:i:0";
+                if (col == 2) {
+                    btn_color = KOTO_BTN_SUCCESS; // Зелёный
+                    cb = "wrd:i:2";
+                } else if (col == 1) {
+                    btn_color = KOTO_BTN_PRIMARY; // Синий
+                    cb = "wrd:i:1";
+                } else {
+                    btn_color = KOTO_BTN_DANGER;  // Красный
+                    cb = "wrd:i:0";
+                }
+
+                if (api->c_button_ex) {
+                    api->c_button_ex(ctx, u_let.c_str(), cb, new_row, btn_color, 0);
+                } else {
+                    std::string label = (col == 2 ? "🟩 " : (col == 1 ? "🟦 " : "🟥 ")) + u_let;
+                    api->c_button(ctx, label.c_str(), cb, new_row);
+                }
             } else {
-                std::string label = (color == 2 ? "🟩 " : (color == 1 ? "🟦 " : "🟥 ")) + u_let;
-                api->c_button(ctx, label.c_str(), cb_data, new_row);
+                // Пустые клетки игрового поля
+                if (api->c_button_ex) {
+                    api->c_button_ex(ctx, "·", "wrd:i:x", new_row, KOTO_BTN_DEFAULT, 0);
+                } else {
+                    api->c_button(ctx, "·", "wrd:i:x", new_row);
+                }
             }
         }
     }
 
-    // Ряд кнопок управления
+    // Ряд кнопок управления внизу
     if (!g.is_finished) {
         api->c_button(ctx, "💡 Подсказка", ("wrd:h:" + cid_str).c_str(), 1);
         if (api->c_button_ex) {
             api->c_button_ex(ctx, "🏳️ Сдаться", ("wrd:s:" + cid_str).c_str(), 0, KOTO_BTN_DANGER, 0);
-            api->c_button_ex(ctx, "🔄 Новая игра", ("wrd:n:" + cid_str).c_str(), 0, KOTO_BTN_SUCCESS, 0);
         } else {
             api->c_button(ctx, "🏳️ Сдаться", ("wrd:s:" + cid_str).c_str(), 0);
-            api->c_button(ctx, "🔄 Новая игра", ("wrd:n:" + cid_str).c_str(), 0);
         }
     } else {
         if (api->c_button_ex) {
@@ -279,44 +295,6 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
 
     api->c_fmt(ctx, "🎮 ОТГАДАЙ СЛОВО (Wordle)\n\n", KOTO_ENT_BOLD);
 
-    std::string info = "👤 Загадал(а): " + (g.creator_name.empty() ? "KoteLoader" : g.creator_name) + "\n";
-    info += "📏 Букв в слове: " + std::to_string(g.target_len) + "\n";
-    info += "🎯 Попытка: " + std::to_string(g.attempts.size()) + " / " + std::to_string(g.max_attempts) + "\n\n";
-    api->c_text(ctx, info.c_str());
-
-    for (int i = 0; i < g.max_attempts; ++i) {
-        std::string row_num = std::to_string(i + 1) + ". ";
-        api->c_text(ctx, row_num.c_str());
-
-        if (i < (int)g.attempts.size()) {
-            const auto& att = g.attempts[i];
-            std::string spaced = format_spaced_upper(att.letters);
-            api->c_fmt(ctx, spaced.c_str(), KOTO_ENT_CODE);
-            api->c_text(ctx, "\n   ");
-            std::string squares;
-            for (int col : att.colors) {
-                if (col == 2) squares += "🟩 ";
-                else if (col == 1) squares += "🟦 ";
-                else squares += "🟥 ";
-            }
-            if (!att.player_name.empty()) {
-                squares += " (" + att.player_name + ")";
-            }
-            api->c_text(ctx, squares.c_str());
-            api->c_text(ctx, "\n");
-        } else {
-            std::string empty_row;
-            for (int k = 0; k < g.target_len; ++k) {
-                if (k > 0) empty_row += " ";
-                empty_row += "·";
-            }
-            api->c_fmt(ctx, empty_row.c_str(), KOTO_ENT_CODE);
-            api->c_text(ctx, "\n");
-        }
-    }
-
-    api->c_text(ctx, "\n");
-
     if (g.is_finished) {
         if (g.is_won) {
             std::string win_str = "🎉 ПОБЕДА! Слово отгадано: " + format_spaced_upper(g.target_letters) + "\n";
@@ -327,6 +305,11 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
             api->c_fmt(ctx, lose_str.c_str(), KOTO_ENT_BOLD);
         }
     } else {
+        std::string info = "👤 Загадал(а): " + (g.creator_name.empty() ? "KoteLoader" : g.creator_name) + "\n";
+        info += "📏 Букв в слове: " + std::to_string(g.target_len) + "\n";
+        info += "🎯 Попытка: " + std::to_string(g.attempts.size()) + " / " + std::to_string(g.max_attempts) + "\n\n";
+        api->c_text(ctx, info.c_str());
+
         if (!g.hint.empty()) {
             if (g.attempts.size() >= 2 || g.hint_revealed) {
                 std::string h_str = "💡 Подсказка: " + g.hint + "\n\n";
@@ -334,7 +317,7 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
             } else {
                 api->c_fmt(ctx, "🔒 Подсказка откроется после 2-й попытки (или нажмите кнопку)\n\n", KOTO_ENT_ITALIC);
             }
-        } else {
+        } else if (!g.is_custom) {
             if (g.attempts.size() >= 4 && g.target_letters.size() > 1) {
                 std::string h_str = "💡 Подсказка: Последняя буква — «" + utf8_to_upper_letter(g.target_letters.back()) + "»\n\n";
                 api->c_fmt(ctx, h_str.c_str(), KOTO_ENT_ITALIC);
@@ -347,12 +330,12 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
         api->c_fmt(ctx, "Отправляйте догадки: .g <слово> (или ответом на это сообщение)\n", KOTO_ENT_CODE);
     }
 
-    api->c_fmt(ctx, "🟩 Верно | 🟦 Есть не там | 🟥 Нет\n<i>by kote</i>", KOTO_ENT_ITALIC);
+    api->c_fmt(ctx, "🟩 Верно | 🟦 Есть не там | 🟥 Нет\nby kote", KOTO_ENT_ITALIC);
 
     add_game_buttons(ctx, api, g);
 }
 
-// ── Обработчик запуска: .wordle ────────────────────────────────────────────
+// ── Обработчик запуска: .wordle / .w ───────────────────────────────────────
 
 void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
@@ -368,22 +351,38 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
 
     std::string args = raw_args ? raw_args : "";
 
+    // Если аргументов нет — выводим инструкцию, как загадать слово для игры
+    if (args.empty()) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "⚠️ Вы не указали слово для игры!\n\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "Использование:\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "• .w <слово> [подсказка] — загадать слово для чата\n", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "• .w rnd — случайное слово от бота (соло)\n\n", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "Пример:\n.w кошка Домашнее животное с усами\n\n", KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, "by kote", KOTO_ENT_ITALIC);
+        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+        else api->c_reply(ctx, 0);
+        return;
+    }
+
     Game g;
     g.chat_id = cid;
     g.creator_id = sender;
-    g.creator_name = name_buf;
     g.last_active = time(nullptr);
     g.max_attempts = 6;
 
-    if (args.empty()) {
-        // Соло-режим: случайное слово из словаря
+    if (args == "rnd" || args == "rand" || args == "random" || args == "рандом" || args == "ранд") {
+        // Случайное слово от бота
         g.is_custom = false;
+        g.creator_name = "Бот (случайное)";
         g.target_word = get_random_word();
         g.target_letters = utf8_split_letters(g.target_word);
         g.target_len = (int)g.target_letters.size();
     } else {
-        // Мультиплеер: пользователь задал своё слово и, возможно, подсказку
-        // Формат: .wordle <слово> [подсказка]
+        // Пользователь загадал слово
+        g.creator_name = name_buf;
+        g.is_custom = true;
+
         std::string word_part;
         std::string hint_part;
 
@@ -399,15 +398,14 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
         }
 
         auto letters = utf8_split_letters(word_part);
-        if (letters.size() < 3 || letters.size() > 10 || !is_all_alpha(letters)) {
+        if (letters.size() < 3 || letters.size() > 8 || !is_all_alpha(letters)) {
             api->c_reset(ctx);
-            api->c_fmt(ctx, "⚠️ Загадайте слово от 3 до 10 букв (только буквы без пробелов)!\nПример: <code>.wordle пират Морской разбойник</code>", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, "⚠️ Загадайте слово от 3 до 8 букв (только буквы без пробелов)!\n\nПример:\n.w пират Морской разбойник\n\nby kote", KOTO_ENT_BOLD);
             if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
             else api->c_reply(ctx, 0);
             return;
         }
 
-        g.is_custom = true;
         std::string lower_word;
         for (const auto& l : letters) lower_word += l;
         g.target_word = lower_word;
@@ -416,26 +414,12 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
         g.hint = hint_part;
     }
 
-    // Защита от спойлеров:
-    // Если загадали слово для чата, удаляем сообщение с секретным словом
-    // и шлём чистое игровое сообщение!
-    if (g.is_custom && api->is_outgoing(ctx)) {
-        if (api->delete_msg) {
-            api->delete_msg(ctx);
-        }
-    }
-
     render_game(ctx, api, g);
 
-    if (g.is_custom && api->is_outgoing(ctx) && api->delete_msg) {
-        // Отправляем новое чистое сообщение
-        api->c_send(ctx, cid, 0);
+    if (api->is_outgoing(ctx)) {
+        api->c_edit(ctx, 0);
     } else {
-        if (api->is_outgoing(ctx)) {
-            api->c_edit(ctx, 0);
-        } else {
-            api->c_reply(ctx, 0);
-        }
+        api->c_reply(ctx, 0);
     }
 
     // Запоминаем msg_id
@@ -525,7 +509,7 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
         g.is_won = false;
     }
 
-    // Удаляем сообщение команды .g <слово>, чтобы не спамить в чате
+    // Удаляем сообщение команды .g <слово>, чтобы не засорять чат
     if (api->is_outgoing(ctx) && api->delete_msg) {
         api->delete_msg(ctx);
     }
@@ -557,7 +541,7 @@ void cmd_guess(koto_ctx* ctx, const koto_api* api) {
 
     if (!raw_args || !*raw_args) {
         api->c_reset(ctx);
-        api->c_fmt(ctx, "Использование: <code>.g <слово></code>", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "Использование: .g <слово>", KOTO_ENT_CODE);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
         else api->c_reply(ctx, 0);
         return;
@@ -565,7 +549,7 @@ void cmd_guess(koto_ctx* ctx, const koto_api* api) {
 
     if (!process_guess(ctx, api, cid, sender, name_buf, raw_args)) {
         api->c_reset(ctx);
-        api->c_fmt(ctx, "⚠️ В этом чате нет активной игры в Wordle.\nЗапустите новую командой <code>.wordle</code>!", KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, "⚠️ В этом чате нет активной игры в Wordle.\nЗапустите новую командой: .w <слово>", KOTO_ENT_ITALIC);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
         else api->c_reply(ctx, 0);
     }
@@ -600,7 +584,7 @@ void cmd_hint(koto_ctx* ctx, const koto_api* api) {
         }
         g.hint_revealed = true;
         api->c_reset(ctx);
-        std::string out = "💡 <b>Подсказка:</b> " + h;
+        std::string out = "💡 Подсказка: " + h;
         api->c_fmt(ctx, out.c_str(), KOTO_ENT_BOLD);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
         else api->c_reply(ctx, 0);
@@ -681,15 +665,17 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     long long mid = api->cb_message_id(ctx);
 
-    // Цветные буквы последней попытки
-    if (data.rfind("wrd:l:", 0) == 0) {
+    // Буквы и клетки поля Wordle
+    if (data.rfind("wrd:i:", 0) == 0) {
         char col_code = data[6];
         if (col_code == '2') {
-            api->cb_answer(ctx, "🟩 Буква на своём месте! (ВЕРНО)", 0);
+            api->cb_answer(ctx, "🟩 Буква на своём месте! (Верно)", 0);
         } else if (col_code == '1') {
-            api->cb_answer(ctx, "🟦 Есть в слове, но на другой позиции!", 0);
-        } else {
+            api->cb_answer(ctx, "🟦 Буква есть в слове, но на другой позиции!", 0);
+        } else if (col_code == '0') {
             api->cb_answer(ctx, "🟥 Этой буквы нет в слове!", 0);
+        } else {
+            api->cb_answer(ctx, "Отправляйте догадки: .g <слово> или реплаем", 0);
         }
         return;
     }
@@ -742,10 +728,17 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 
     // Новая игра
     if (data.rfind("wrd:n:", 0) == 0) {
+        std::lock_guard<std::mutex> lock(g_mutex);
+        auto it = g_games.find(cid);
+        if (it != g_games.end() && it->second.is_custom) {
+            api->cb_answer(ctx, "Чтобы начать новую игру, напишите: .w <слово> [подсказка]", 1);
+            return;
+        }
+
         Game g;
         g.chat_id = cid;
         g.msg_id = mid;
-        g.creator_name = "KoteLoader";
+        g.creator_name = "Бот (случайное)";
         g.last_active = time(nullptr);
         g.max_attempts = 6;
         g.is_custom = false;
@@ -753,10 +746,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         g.target_letters = utf8_split_letters(g.target_word);
         g.target_len = (int)g.target_letters.size();
 
-        {
-            std::lock_guard<std::mutex> lock(g_mutex);
-            g_games[cid] = g;
-        }
+        g_games[cid] = g;
 
         api->cb_answer(ctx, "🔄 Новая игра начата!", 0);
         render_game(ctx, api, g);
@@ -768,7 +758,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 // ── Декларация команд и модуля ─────────────────────────────────────────────
 
 const koto_command COMMANDS[] = {
-    {"wordle", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Игра Отгадай слово (Wordle). Без аргументов - соло, или: .wordle <слово> [подсказка] [en] Wordle game. Solo or: .wordle <word> [hint]", "[word] [hint]"},
+    {"wordle", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Игра Отгадай слово: .w <слово> [подсказка] или .w rnd [en] Wordle game: .w <word> [hint] or .w rnd", "[word] [hint]"},
     {"w", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[word] [hint]"},
     {"word", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[word] [hint]"},
     {"g", cmd_guess, KOTO_LEVEL_ALL, "[ru] Предложить слово в игре Wordle [en] Submit a guess in Wordle", "<слово>"},
@@ -781,7 +771,7 @@ const koto_command COMMANDS[] = {
 const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "wordle",
-    "[ru] Отгадай слово (Wordle) с цветными подсказками, мультиплеером и инлайн-кнопками (by kote). [en] Wordle guessing game with colored hints, multiplayer and inline buttons (by kote).",
+    "[ru] Отгадай слово (Wordle) с цветным полем из инлайн-кнопок и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board and multiplayer (by kote).",
     VERSION,
     26,
     0,
