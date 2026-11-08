@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.0.1";
+constexpr const char* VERSION = "1.1.0";
 
 // Helper URL encoding
 std::string url_encode(const std::string& value) {
@@ -55,11 +55,43 @@ std::string html_unescape(const std::string& str) {
 std::string aki_headers(const std::string& lang) {
     return "Content-Type: application/x-www-form-urlencoded\r\n"
            "x-requested-with: XMLHttpRequest\r\n"
-           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n"
+           "User-Agent: Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36\r\n"
+           "sec-ch-ua: \"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"\r\n"
+           "sec-ch-ua-mobile: ?1\r"
+           "sec-ch-ua-platform: \"Android\"\r\n"
+           "sec-fetch-dest: empty\r\n"
+           "sec-fetch-mode: cors\r\n"
+           "sec-fetch-site: same-origin\r\n"
            "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8\r\n"
            "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
            "Origin: https://" + lang + ".akinator.com\r\n"
-           "Referer: https://" + lang + ".akinator.com/game";
+           "Referer: https://" + lang + ".akinator.com/";
+}
+
+std::string get_proxy(koto_ctx* ctx, const koto_api* api) {
+    char buf[512] = {0};
+    if (api->db_get && api->db_get(ctx, "aki_proxy", buf, sizeof(buf)) > 0 && buf[0]) {
+        return trim(buf);
+    }
+    if (api->setting_get && api->setting_get(ctx, "proxy", buf, sizeof(buf)) > 0 && buf[0]) {
+        return trim(buf);
+    }
+    return "";
+}
+
+std::string build_aki_url(koto_ctx* ctx, const koto_api* api, const std::string& lang, const std::string& endpoint) {
+    std::string proxy = get_proxy(ctx, api);
+    if (!proxy.empty()) {
+        while (!proxy.empty() && proxy.back() == '/') proxy.pop_back();
+        if (proxy.find("?url=") != std::string::npos) {
+            return proxy + url_encode("https://" + lang + ".akinator.com/" + endpoint);
+        }
+        if (proxy.find('?') != std::string::npos) {
+            return proxy + "&url=" + url_encode("https://" + lang + ".akinator.com/" + endpoint);
+        }
+        return proxy + "/" + endpoint;
+    }
+    return "https://" + lang + ".akinator.com/" + endpoint;
 }
 
 std::string http_post_req(koto_ctx* ctx, const koto_api* api, const std::string& url, const std::string& body, const std::string& headers) {
@@ -170,6 +202,22 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
 
     const char* raw_args = api->cmd_args(ctx);
     std::string args = raw_args ? trim(raw_args) : "";
+
+    if (args.rfind("proxy", 0) == 0) {
+        std::string p_arg = trim(args.substr(5));
+        api->c_reset(ctx);
+        if (p_arg.empty() || p_arg == "off" || p_arg == "none" || p_arg == "0") {
+            if (api->db_del) api->db_del(ctx, "aki_proxy");
+            api->c_fmt(ctx, "🛑 Прокси/Cloudflare Worker для Акинатора отключён.", KOTO_ENT_BOLD);
+        } else {
+            if (api->db_set) api->db_set(ctx, "aki_proxy", p_arg.c_str());
+            std::string msg = "✅ Прокси/Cloudflare Worker успешно установлен:\n<code>" + p_arg + "</code>\n\nВсе запросы к Акинатору пойдут через него.";
+            api->c_text(ctx, msg.c_str());
+        }
+        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+        else api->c_reply(ctx, 0);
+        return;
+    }
     
     char lang_buf[32] = {0};
     std::string lang = "ru";
@@ -187,7 +235,7 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     else api->c_reply(ctx, 0);
 
     // Call Akinator start game
-    std::string url = "https://" + lang + ".akinator.com/game";
+    std::string url = build_aki_url(ctx, api, lang, "game");
     std::string body = "sid=1&cm=" + std::string(child ? "true" : "false");
     std::string headers = aki_headers(lang);
 
@@ -249,6 +297,23 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
 }
 
 // ── Command: .akistop ────────────────────────────────────────────────────────
+void cmd_akiproxy(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+    const char* raw_args = api->cmd_args(ctx);
+    std::string p_arg = raw_args ? trim(raw_args) : "";
+    api->c_reset(ctx);
+    if (p_arg.empty() || p_arg == "off" || p_arg == "none" || p_arg == "0") {
+        if (api->db_del) api->db_del(ctx, "aki_proxy");
+        api->c_fmt(ctx, "🛑 Прокси/Cloudflare Worker для Акинатора отключён.", KOTO_ENT_BOLD);
+    } else {
+        if (api->db_set) api->db_set(ctx, "aki_proxy", p_arg.c_str());
+        std::string msg = "✅ Прокси/Cloudflare Worker успешно установлен:\n<code>" + p_arg + "</code>\n\nВсе запросы к Акинатору пойдут через него.";
+        api->c_text(ctx, msg.c_str());
+    }
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+    else api->c_reply(ctx, 0);
+}
+
 void cmd_akistop(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
     long long cid = api->chat_id(ctx);
@@ -297,7 +362,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     if (data == "aki:rej") {
         api->cb_answer(ctx, st.lang == "ru" ? "Продолжаем поиск…" : "Continuing search…", 0);
         // Exclude current proposition
-        std::string url = "https://" + st.lang + ".akinator.com/exclude";
+        std::string url = build_aki_url(ctx, api, st.lang, "exclude");
         std::string body = "step=" + url_encode(st.step) +
                            "&progression=" + url_encode(st.prog) +
                            "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
@@ -363,7 +428,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         std::string ans_id = data.substr(8);
         api->cb_answer(ctx, st.lang == "ru" ? "Ответ принят" : "Answer received", 0);
 
-        std::string url = "https://" + st.lang + ".akinator.com/answer";
+        std::string url = build_aki_url(ctx, api, st.lang, "answer");
         std::string body = "step=" + url_encode(st.step) +
                            "&progression=" + url_encode(st.prog) +
                            "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
@@ -443,12 +508,14 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 
 // ── Settings & Commands ──────────────────────────────────────────────────────
 const koto_setting_field SETTINGS[] = {
-    {"lang", "Язык игры (ru / en)", KOTO_FIELD_CHOICE, "ru", "ru,en"}
+    {"lang", "Язык игры (ru / en)", KOTO_FIELD_CHOICE, "ru", "ru,en"},
+    {"proxy", "Прокси или Cloudflare Worker URL для обхода 403", KOTO_FIELD_STR, "", nullptr}
 };
 
 const koto_command COMMANDS[] = {
-    {"aki", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child]"},
-    {"akinator", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child]"},
+    {"aki", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child|proxy <url>]"},
+    {"akinator", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child|proxy <url>]"},
+    {"akiproxy", cmd_akiproxy, KOTO_LEVEL_TRUSTED, "[ru] Задать Cloudflare Worker или прокси для обхода 403 [en] Set proxy or CF worker for Akinator.", "<url|off>"},
     {"akistop", cmd_akistop, KOTO_LEVEL_TRUSTED, "[ru] Остановить текущую игру Акинатор [en] Stop current Akinator game.", nullptr}
 };
 

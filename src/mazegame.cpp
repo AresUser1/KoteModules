@@ -17,7 +17,7 @@
 
 namespace {
 
-constexpr const char* VERSION = "1.0.0";
+constexpr const char* VERSION = "1.0.1";
 constexpr int DEFAULT_MAZE_SIZE = 15; // 15x15 лабиринт (всегда нечетный)
 constexpr int VIEWPORT_SIZE = 7;      // видимая область 7x7
 
@@ -35,6 +35,7 @@ struct Pos {
 };
 
 struct Game {
+    std::string id;
     int64_t chat_id = 0;
     int64_t msg_id = 0;
     int64_t p1_id = 0;
@@ -63,7 +64,68 @@ struct Game {
 };
 
 std::mutex g_mutex;
-std::unordered_map<int64_t, Game> g_games;
+static int g_game_seq = 100;
+std::unordered_map<std::string, Game> g_games_by_id;
+std::unordered_map<int64_t, std::string> g_chat_to_game;
+
+inline long long normalize_cid(long long cid) {
+    if (cid > 1000000000LL && cid < 1000000000000LL) {
+        return -1000000000000LL - cid;
+    }
+    return cid;
+}
+
+inline long long bare_cid(long long cid) {
+    if (cid < -1000000000000LL) {
+        return -cid - 1000000000000LL;
+    }
+    return cid;
+}
+
+Game* find_maze_game(const std::string& target_id, long long cid, long long sender) {
+    if (!target_id.empty()) {
+        auto it = g_games_by_id.find(target_id);
+        if (it != g_games_by_id.end()) return &it->second;
+        try {
+            long long tid = std::stoll(target_id);
+            auto it2 = g_chat_to_game.find(tid);
+            if (it2 != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it2->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
+            it2 = g_chat_to_game.find(normalize_cid(tid));
+            if (it2 != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it2->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
+        } catch (...) {}
+    }
+    if (cid != 0) {
+        auto it = g_chat_to_game.find(cid);
+        if (it != g_chat_to_game.end()) {
+            auto git = g_games_by_id.find(it->second);
+            if (git != g_games_by_id.end()) return &git->second;
+        }
+        it = g_chat_to_game.find(normalize_cid(cid));
+        if (it != g_chat_to_game.end()) {
+            auto git = g_games_by_id.find(it->second);
+            if (git != g_games_by_id.end()) return &git->second;
+        }
+        it = g_chat_to_game.find(bare_cid(cid));
+        if (it != g_chat_to_game.end()) {
+            auto git = g_games_by_id.find(it->second);
+            if (git != g_games_by_id.end()) return &git->second;
+        }
+    }
+    if (sender != 0) {
+        auto it = g_chat_to_game.find(sender);
+        if (it != g_chat_to_game.end()) {
+            auto git = g_games_by_id.find(it->second);
+            if (git != g_games_by_id.end()) return &git->second;
+        }
+    }
+    return nullptr;
+}
 
 // ── Генератор лабиринта (DFS / Recursive Backtracker) ───────────────────────
 
@@ -96,6 +158,7 @@ Game generate_new_maze(int64_t chat_id, int64_t p1_id, const std::string& p1_nam
     std::mt19937 rng(static_cast<unsigned int>(time(nullptr) ^ (chat_id << 4)));
 
     Game g;
+    g.id = "mzg_" + std::to_string(++g_game_seq);
     g.chat_id = chat_id;
     g.p1_id = p1_id;
     g.p1_name = p1_name;
@@ -224,25 +287,25 @@ void render_game_message(koto_ctx* ctx, const koto_api* api, const Game& g) {
     api->c_fmt(ctx, "\n🏁 Выход | 🔥 Огонь | ⬛️ Стена\nby kote", KOTO_ENT_ITALIC);
 
     // Добавляем инлайн-кнопки
-    std::string cid_str = std::to_string(g.chat_id);
+    std::string gid = g.id.empty() ? std::to_string(g.chat_id) : g.id;
     if (!g.is_finished) {
         // Управление движением
-        api->c_button(ctx, "⬆️", ("mzg:m:-1:0:" + cid_str).c_str(), 1);
+        api->c_button(ctx, "⬆️", ("mzg:m:-1:0:" + gid).c_str(), 1);
 
-        api->c_button(ctx, "⬅️", ("mzg:m:0:-1:" + cid_str).c_str(), 1);
-        api->c_button(ctx, "⬇️", ("mzg:m:1:0:" + cid_str).c_str(), 0);
-        api->c_button(ctx, "➡️", ("mzg:m:0:1:" + cid_str).c_str(), 0);
+        api->c_button(ctx, "⬅️", ("mzg:m:0:-1:" + gid).c_str(), 1);
+        api->c_button(ctx, "⬇️", ("mzg:m:1:0:" + gid).c_str(), 0);
+        api->c_button(ctx, "➡️", ("mzg:m:0:1:" + gid).c_str(), 0);
 
         if (api->c_button_ex) {
-            api->c_button_ex(ctx, "🏳️ Сдаться", ("mzg:s:" + cid_str).c_str(), 1, KOTO_BTN_DANGER, 0);
+            api->c_button_ex(ctx, "🏳️ Сдаться", ("mzg:s:" + gid).c_str(), 1, KOTO_BTN_DANGER, 0);
         } else {
-            api->c_button(ctx, "🏳️ Сдаться", ("mzg:s:" + cid_str).c_str(), 1);
+            api->c_button(ctx, "🏳️ Сдаться", ("mzg:s:" + gid).c_str(), 1);
         }
     } else {
         if (api->c_button_ex) {
-            api->c_button_ex(ctx, "🔄 Новая игра", ("mzg:n:" + cid_str).c_str(), 1, KOTO_BTN_SUCCESS, 0);
+            api->c_button_ex(ctx, "🔄 Новая игра", ("mzg:n:" + gid).c_str(), 1, KOTO_BTN_SUCCESS, 0);
         } else {
-            api->c_button(ctx, "🔄 Новая игра", ("mzg:n:" + cid_str).c_str(), 1);
+            api->c_button(ctx, "🔄 Новая игра", ("mzg:n:" + gid).c_str(), 1);
         }
     }
 }
@@ -278,7 +341,7 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
             api->cb_answer(ctx, "🔥 Вы сгорели в ловушке! Игра окончена.", 1);
         }
         render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, g.chat_id, mid, 0);
+        api->c_edit_message(ctx, 0, mid, 0);
         return;
     }
 
@@ -303,7 +366,7 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
     }
 
     render_game_message(ctx, api, g);
-    api->c_edit_message(ctx, g.chat_id, mid, 0);
+    api->c_edit_message(ctx, 0, mid, 0);
 }
 
 // ── Команда старта: .maze / .mg / .лабиринт ────────────────────────────────
@@ -346,7 +409,11 @@ void cmd_maze(koto_ctx* ctx, const koto_api* api) {
     g.msg_id = (cmd_mid > 0) ? (cmd_mid + 1) : 0;
 
     std::lock_guard<std::mutex> lock(g_mutex);
-    g_games[cid] = g;
+    g_games_by_id[g.id] = g;
+    g_chat_to_game[cid] = g.id;
+    g_chat_to_game[normalize_cid(cid)] = g.id;
+    g_chat_to_game[bare_cid(cid)] = g.id;
+    if (sender != 0) g_chat_to_game[sender] = g.id;
 }
 
 void cmd_mazestop(koto_ctx* ctx, const koto_api* api) {
@@ -355,8 +422,8 @@ void cmd_mazestop(koto_ctx* ctx, const koto_api* api) {
     if (cid == 0) cid = sender;
 
     std::lock_guard<std::mutex> lock(g_mutex);
-    auto it = g_games.find(cid);
-    if (it == g_games.end() || it->second.is_finished) {
+    Game* gp = find_maze_game("", cid, sender);
+    if (!gp || gp->is_finished) {
         api->c_reset(ctx);
         api->c_fmt(ctx, "⚠️ Нет активной игры в Лабиринт.", KOTO_ENT_ITALIC);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
@@ -364,14 +431,15 @@ void cmd_mazestop(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    Game& g = it->second;
+    Game& g = *gp;
     g.is_finished = true;
     g.end_reason = "🏳️ Игра была остановлена.";
 
     render_game_message(ctx, api, g);
 
     if (g.msg_id != 0) {
-        api->c_edit_message(ctx, g.chat_id, g.msg_id, 0);
+        int64_t target_chat = (g.chat_id != 0 && g.chat_id != cid) ? g.chat_id : 0;
+        api->c_edit_message(ctx, target_chat, g.msg_id, 0);
     } else {
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
         else api->c_reply(ctx, 0);
@@ -389,14 +457,34 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     long long mid = api->cb_message_id(ctx);
     long long sender = api->sender_id(ctx);
 
+    std::string target_id;
+    int move_dr = 0, move_dc = 0;
+    bool is_move = false;
+
+    if (data.rfind("mzg:m:", 0) == 0) {
+        is_move = true;
+        size_t c1 = data.find(':', 6);
+        if (c1 != std::string::npos) {
+            size_t c2 = data.find(':', c1 + 1);
+            if (c2 != std::string::npos) {
+                target_id = data.substr(c2 + 1);
+                sscanf(data.c_str(), "mzg:m:%d:%d", &move_dr, &move_dc);
+            }
+        }
+    } else if (data.rfind("mzg:s:", 0) == 0) {
+        target_id = data.substr(6);
+    } else if (data.rfind("mzg:n:", 0) == 0) {
+        target_id = data.substr(6);
+    }
+
     std::unique_lock<std::mutex> lock(g_mutex);
-    auto it = g_games.find(cid);
-    if (it == g_games.end()) {
+    Game* gp = find_maze_game(target_id, cid, sender);
+    if (!gp) {
         api->cb_answer(ctx, "Игра не найдена", 0);
         return;
     }
 
-    Game& g = it->second;
+    Game& g = *gp;
     if (mid != 0) g.msg_id = mid;
 
     // Сдаться: mzg:s:<cid>
@@ -431,19 +519,25 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 
         api->cb_answer(ctx, "🏳️ Сдались!", 0);
         render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, g.chat_id, mid, 0);
+        api->c_edit_message(ctx, 0, mid, 0);
         return;
     }
 
     // Новая игра: mzg:n:<cid>
     if (data.rfind("mzg:n:", 0) == 0) {
+        std::string old_id = g.id;
         Game new_g = generate_new_maze(g.chat_id, g.p1_id, g.p1_name, g.p2_id, g.p2_name, g.rows);
         new_g.msg_id = mid;
         g = new_g;
+        g_games_by_id[g.id] = g;
+        g_chat_to_game[g.chat_id] = g.id;
+        g_chat_to_game[normalize_cid(g.chat_id)] = g.id;
+        g_chat_to_game[bare_cid(g.chat_id)] = g.id;
+        if (g.p1_id != 0) g_chat_to_game[g.p1_id] = g.id;
 
         api->cb_answer(ctx, "🔄 Лабиринт перестроен!", 0);
         render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, g.chat_id, mid, 0);
+        api->c_edit_message(ctx, 0, mid, 0);
         return;
     }
 
@@ -454,11 +548,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
             return;
         }
 
-        int dr = 0, dc = 0;
-        long long dummy_cid = 0;
-        if (sscanf(data.c_str(), "mzg:m:%d:%d:%lld", &dr, &dc, &dummy_cid) < 2) {
-            return;
-        }
+        int dr = move_dr, dc = move_dc;
 
         int player_num = 1;
         if (g.is_multiplayer) {
@@ -496,13 +586,10 @@ int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long sender = api->sender_id(ctx);
 
     std::lock_guard<std::mutex> lock(g_mutex);
-    auto it = g_games.find(cid);
-    if (it == g_games.end() && sender != 0) {
-        it = g_games.find(sender);
-    }
-    if (it != g_games.end() && !it->second.is_finished) {
-        if (it->second.msg_id == 0 || std::abs(it->second.msg_id - r_mid) <= 15) {
-            it->second.msg_id = r_mid;
+    Game* gp = find_maze_game("", cid, sender);
+    if (gp && !gp->is_finished) {
+        if (gp->msg_id == 0 || std::abs(gp->msg_id - r_mid) <= 15) {
+            gp->msg_id = r_mid;
         }
     }
     return 0;
