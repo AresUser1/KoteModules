@@ -2828,8 +2828,8 @@
       "name": "wordle",
       "display_name": "Wordle (Отгадай слово)",
       "author": "Kote",
-      "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок, защитой от утечек .wset и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer (by kote).",
-      "version": "1.2.0",
+      "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок, защитой от утечек .wset и мультиплеером без добавления в trust (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer without trust requirement (by kote).",
+      "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -2889,17 +2889,17 @@
           "usage": ""
         }
       ],
-      "size": 98752,
-      "sha256": "c39efaed51a3a0b3c0279d3950718d2581ad0cc8ce7136bbe0072174b3162652",
+      "size": 102760,
+      "sha256": "9f70198bf5eab1104288497203c13ca64a2c3ce95e7970618448a5539a8e995f",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/wordle.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 98752,
-      "sha256_arm64": "c39efaed51a3a0b3c0279d3950718d2581ad0cc8ce7136bbe0072174b3162652",
+      "size_arm64": 102760,
+      "sha256_arm64": "9f70198bf5eab1104288497203c13ca64a2c3ce95e7970618448a5539a8e995f",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/wordle.so",
-      "size_arm32": 64588,
-      "sha256_arm32": "89b1d1e9047d4674d87168cbbe57cad4f4264b659d79baf21e3c23d7e56628a3",
+      "size_arm32": 68956,
+      "sha256_arm32": "eaf1136588154f444fe46fbdd714227d249316e7dadcd0369897289681f4166b",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/wordle.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp"
     }
