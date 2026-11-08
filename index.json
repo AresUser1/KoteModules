@@ -2828,14 +2828,29 @@
       "name": "wordle",
       "display_name": "Wordle (Отгадай слово)",
       "author": "Kote",
-      "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board and multiplayer (by kote).",
-      "version": "1.1.0",
+      "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок, защитой от утечек .wset и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer (by kote).",
+      "version": "1.2.0",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
         {
+          "name": "wset",
+          "doc": "[ru] Задать секретное слово заранее в Избранном без утечек [en] Stage word in advance without leaks",
+          "usage": "<слово> [подсказка]"
+        },
+        {
+          "name": "wordleset",
+          "doc": "[ru] Быстрый алиас для .wset [en] Fast alias for .wset",
+          "usage": "<слово> [подсказка]"
+        },
+        {
+          "name": "wclear",
+          "doc": "[ru] Сбросить подготовленное слово [en] Clear staged word",
+          "usage": ""
+        },
+        {
           "name": "wordle",
-          "doc": "[ru] Запустить игру Wordle (соло или .wordle <слово> [подсказка]) [en] Start Wordle game (solo or custom word)",
+          "doc": "[ru] Запуск игры (с заготовленным словом или .w rnd) [en] Start Wordle game",
           "usage": "[слово] [подсказка]"
         },
         {
@@ -2874,17 +2889,17 @@
           "usage": ""
         }
       ],
-      "size": 88152,
-      "sha256": "39fc36ef6d6d9233693db53211bc16deb79df801c8cca5e684f6e38d699e75ef",
+      "size": 98752,
+      "sha256": "c39efaed51a3a0b3c0279d3950718d2581ad0cc8ce7136bbe0072174b3162652",
       "url": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/wordle.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 88152,
-      "sha256_arm64": "39fc36ef6d6d9233693db53211bc16deb79df801c8cca5e684f6e38d699e75ef",
+      "size_arm64": 98752,
+      "sha256_arm64": "c39efaed51a3a0b3c0279d3950718d2581ad0cc8ce7136bbe0072174b3162652",
       "url_arm64": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-arm64-v8a/wordle.so",
-      "size_arm32": 53444,
-      "sha256_arm32": "61102b5cc70d0b87c0ccd1ce534e8125f78a54f0ebcd8ddb92a2ff0f934951ff",
+      "size_arm32": 64588,
+      "sha256_arm32": "89b1d1e9047d4674d87168cbbe57cad4f4264b659d79baf21e3c23d7e56628a3",
       "url_arm32": "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=dist/android-armeabi-v7a/wordle.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp"
     }

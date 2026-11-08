@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr const char* VERSION = "1.1.0";
+constexpr const char* VERSION = "1.2.0";
 
 // ── Встроенный словарь 5-буквенных существительных ─────────────────────────
 const char* const DICTIONARY[] = {
@@ -189,7 +189,7 @@ std::vector<int> evaluate_wordle(const std::vector<std::string>& target,
     return result;
 }
 
-// ── Структура игры ─────────────────────────────────────────────────────────
+// ── Структура игры и подготовленных слов ────────────────────────────────────
 
 struct GuessRecord {
     std::string word_raw;
@@ -217,8 +217,68 @@ struct Game {
     time_t last_active = 0;
 };
 
+struct StagedWord {
+    std::string word;
+    std::vector<std::string> letters;
+    std::string hint;
+    time_t created_at = 0;
+};
+
 std::unordered_map<int64_t, Game> g_games;
+std::unordered_map<int64_t, StagedWord> g_staged_words;
 std::mutex g_mutex;
+
+// Вспомогательные функции для работы с подготовленными словами
+bool get_staged_word(koto_ctx* ctx, const koto_api* api, int64_t sender, StagedWord& out) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    auto it = g_staged_words.find(sender);
+    if (it != g_staged_words.end() && !it->second.word.empty()) {
+        out = it->second;
+        return true;
+    }
+
+    // Проверяем персистентную базу
+    if (api->db_get) {
+        std::string key = "wstg_" + std::to_string(sender);
+        char buf[512] = {0};
+        int len = api->db_get(ctx, key.c_str(), buf, sizeof(buf));
+        if (len > 0) {
+            std::string raw(buf);
+            size_t sep = raw.find('\t');
+            std::string w = (sep != std::string::npos) ? raw.substr(0, sep) : raw;
+            std::string h = (sep != std::string::npos) ? raw.substr(sep + 1) : "";
+            auto lets = utf8_split_letters(w);
+            if (!lets.empty()) {
+                out.word = w;
+                out.letters = lets;
+                out.hint = h;
+                out.created_at = time(nullptr);
+                g_staged_words[sender] = out;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void clear_staged_word(koto_ctx* ctx, const koto_api* api, int64_t sender) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_staged_words.erase(sender);
+    if (api->db_del) {
+        std::string key = "wstg_" + std::to_string(sender);
+        api->db_del(ctx, key.c_str());
+    }
+}
+
+void save_staged_word(koto_ctx* ctx, const koto_api* api, int64_t sender, const StagedWord& stg) {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_staged_words[sender] = stg;
+    if (api->db_set) {
+        std::string key = "wstg_" + std::to_string(sender);
+        std::string val = stg.word + "\t" + stg.hint;
+        api->db_set(ctx, key.c_str(), val.c_str());
+    }
+}
 
 // ── Отрисовка сообщения и инлайн-кнопок ─────────────────────────────────────
 
@@ -335,6 +395,82 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
     add_game_buttons(ctx, api, g);
 }
 
+// ── Подготовка слова заранее без утечек: .wset ─────────────────────────────
+
+void cmd_wset(koto_ctx* ctx, const koto_api* api) {
+    long long sender = api->sender_id(ctx);
+
+    const char* raw_args = api->cmd_args(ctx);
+    while (raw_args && (*raw_args == ' ' || *raw_args == '\t')) raw_args++;
+
+    if (!raw_args || !*raw_args) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "📝 Подготовка секретного слова заранее\n\n", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, "Использование:\n.wset <слово> [подсказка]\n\n", KOTO_ENT_CODE);
+        api->c_fmt(ctx, "Пример в «Избранном»:\n.wset пират Морской разбойник\n\n", KOTO_ENT_ITALIC);
+        api->c_fmt(ctx, "После этого напишите .w в любом чате для старта без утечки слова!\nby kote", KOTO_ENT_ITALIC);
+        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+        else api->c_reply(ctx, 0);
+        return;
+    }
+
+    std::string args = raw_args;
+    std::string word_part;
+    std::string hint_part;
+
+    size_t space_pos = args.find_first_of(" \t");
+    if (space_pos != std::string::npos) {
+        word_part = args.substr(0, space_pos);
+        hint_part = args.substr(space_pos + 1);
+        while (!hint_part.empty() && (hint_part.front() == ' ' || hint_part.front() == '\t')) {
+            hint_part.erase(0, 1);
+        }
+    } else {
+        word_part = args;
+    }
+
+    auto letters = utf8_split_letters(word_part);
+    if (letters.size() < 3 || letters.size() > 8 || !is_all_alpha(letters)) {
+        api->c_reset(ctx);
+        api->c_fmt(ctx, "⚠️ Загадайте слово от 3 до 8 букв (только буквы без пробелов)!\n\nПример:\n.wset пират Морской разбойник\n\nby kote", KOTO_ENT_BOLD);
+        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+        else api->c_reply(ctx, 0);
+        return;
+    }
+
+    std::string lower_word;
+    for (const auto& l : letters) lower_word += l;
+
+    StagedWord stg;
+    stg.word = lower_word;
+    stg.letters = letters;
+    stg.hint = hint_part;
+    stg.created_at = time(nullptr);
+    save_staged_word(ctx, api, sender, stg);
+
+    api->c_reset(ctx);
+    std::string success = "✅ Слово «" + format_spaced_upper(letters) + "» успешно подготовлено!\n\n";
+    api->c_fmt(ctx, success.c_str(), KOTO_ENT_BOLD);
+    std::string details = "📏 Длина: " + std::to_string(letters.size()) + " букв\n";
+    if (!hint_part.empty()) {
+        details += "💡 Подсказка: " + hint_part + "\n";
+    }
+    details += "\n🔒 Безопасный запуск:\nТеперь зайдите в нужный чат/группу и отправьте .w (или .w go).\nИгра запустится с этим словом, и никто (даже с модами и логами) не сможет его увидеть!\n\nby kote";
+    api->c_fmt(ctx, details.c_str(), KOTO_ENT_ITALIC);
+
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+    else api->c_reply(ctx, 0);
+}
+
+void cmd_wclear(koto_ctx* ctx, const koto_api* api) {
+    long long sender = api->sender_id(ctx);
+    clear_staged_word(ctx, api, sender);
+    api->c_reset(ctx);
+    api->c_fmt(ctx, "🗑 Подготовленное слово сброшено.\n\nby kote", KOTO_ENT_ITALIC);
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+    else api->c_reply(ctx, 0);
+}
+
 // ── Обработчик запуска: .wordle / .w ───────────────────────────────────────
 
 void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
@@ -351,27 +487,42 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
 
     std::string args = raw_args ? raw_args : "";
 
-    // Если аргументов нет — выводим инструкцию, как загадать слово для игры
-    if (args.empty()) {
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "⚠️ Вы не указали слово для игры!\n\n", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, "Использование:\n", KOTO_ENT_BOLD);
-        api->c_fmt(ctx, "• .w <слово> [подсказка] — загадать слово для чата\n", KOTO_ENT_CODE);
-        api->c_fmt(ctx, "• .w rnd — случайное слово от бота (соло)\n\n", KOTO_ENT_CODE);
-        api->c_fmt(ctx, "Пример:\n.w кошка Домашнее животное с усами\n\n", KOTO_ENT_ITALIC);
-        api->c_fmt(ctx, "by kote", KOTO_ENT_ITALIC);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
-        return;
-    }
-
     Game g;
     g.chat_id = cid;
     g.creator_id = sender;
     g.last_active = time(nullptr);
     g.max_attempts = 6;
 
-    if (args == "rnd" || args == "rand" || args == "random" || args == "рандом" || args == "ранд") {
+    // 1. Проверяем, есть ли заготовленное слово через .wset
+    StagedWord stg;
+    bool has_staged = get_staged_word(ctx, api, sender, stg);
+
+    if (args.empty() || args == "go" || args == "start") {
+        if (has_staged) {
+            // Запускаем безопасную игру с заранее подготовленным словом!
+            g.creator_name = name_buf;
+            g.is_custom = true;
+            g.target_word = stg.word;
+            g.target_letters = stg.letters;
+            g.target_len = (int)stg.letters.size();
+            g.hint = stg.hint;
+            // Расходуем заготовку
+            clear_staged_word(ctx, api, sender);
+        } else {
+            // Заготовки нет и аргументов нет — выводим инструкцию с защитой от утечек
+            api->c_reset(ctx);
+            api->c_fmt(ctx, "⚠️ Слово для игры не задано!\n\n", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, "🛡️ Защита от модов и пинга (рекомендуется):\n", KOTO_ENT_BOLD);
+            api->c_fmt(ctx, "1. В «Избранном» напишите:\n.wset <слово> [подсказка]\n", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "2. Напишите в этом чате: .w\n\n", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "🎲 Одиночная игра от бота:\n.w rnd\n\n", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "⚡ Задать напрямую в чате:\n.w <слово> [подсказка]\n\n", KOTO_ENT_CODE);
+            api->c_fmt(ctx, "by kote", KOTO_ENT_ITALIC);
+            if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+            else api->c_reply(ctx, 0);
+            return;
+        }
+    } else if (args == "rnd" || args == "rand" || args == "random" || args == "рандом" || args == "ранд") {
         // Случайное слово от бота
         g.is_custom = false;
         g.creator_name = "Бот (случайное)";
@@ -379,7 +530,7 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
         g.target_letters = utf8_split_letters(g.target_word);
         g.target_len = (int)g.target_letters.size();
     } else {
-        // Пользователь загадал слово
+        // Прямое задание слова в чате (.w <слово> [подсказка])
         g.creator_name = name_buf;
         g.is_custom = true;
 
@@ -731,7 +882,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         std::lock_guard<std::mutex> lock(g_mutex);
         auto it = g_games.find(cid);
         if (it != g_games.end() && it->second.is_custom) {
-            api->cb_answer(ctx, "Чтобы начать новую игру, напишите: .w <слово> [подсказка]", 1);
+            api->cb_answer(ctx, "Чтобы начать новую игру, задайте .wset <слово> или .w rnd", 1);
             return;
         }
 
@@ -758,9 +909,12 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 // ── Декларация команд и модуля ─────────────────────────────────────────────
 
 const koto_command COMMANDS[] = {
-    {"wordle", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Игра Отгадай слово: .w <слово> [подсказка] или .w rnd [en] Wordle game: .w <word> [hint] or .w rnd", "[word] [hint]"},
-    {"w", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[word] [hint]"},
-    {"word", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[word] [hint]"},
+    {"wset", cmd_wset, KOTO_LEVEL_ALL, "[ru] Задать секретное слово заранее в Избранном без утечек [en] Stage word in advance without leaks", "<слово> [подсказка]"},
+    {"wordleset", cmd_wset, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wset [en] Fast alias for .wset", "<слово> [подсказка]"},
+    {"wclear", cmd_wclear, KOTO_LEVEL_ALL, "[ru] Сбросить подготовленное слово [en] Clear staged word", nullptr},
+    {"wordle", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Запуск игры (с заготовленным словом или .w rnd) [en] Start Wordle game", "[слово] [подсказка]"},
+    {"w", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[слово] [подсказка]"},
+    {"word", cmd_wordle, KOTO_LEVEL_ALL, "[ru] Быстрый алиас для .wordle [en] Fast alias for .wordle", "[слово] [подсказка]"},
     {"g", cmd_guess, KOTO_LEVEL_ALL, "[ru] Предложить слово в игре Wordle [en] Submit a guess in Wordle", "<слово>"},
     {"guess", cmd_guess, KOTO_LEVEL_ALL, "[ru] Предложить слово в игре Wordle [en] Submit a guess in Wordle", "<слово>"},
     {"whint", cmd_hint, KOTO_LEVEL_ALL, "[ru] Показать подсказку к текущему слову [en] Show hint for current word", nullptr},
@@ -771,7 +925,7 @@ const koto_command COMMANDS[] = {
 const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "wordle",
-    "[ru] Отгадай слово (Wordle) с цветным полем из инлайн-кнопок и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board and multiplayer (by kote).",
+    "[ru] Отгадай слово (Wordle) с цветным полем из кнопок, защитой от утечек .wset и мультиплеером (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer (by kote).",
     VERSION,
     26,
     0,
