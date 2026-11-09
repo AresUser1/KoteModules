@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.1.1";
+constexpr const char* VERSION = "1.1.2";
 
 // Helper URL encoding
 std::string url_encode(const std::string& value) {
@@ -52,8 +52,17 @@ std::string html_unescape(const std::string& str) {
     return res;
 }
 
-std::string aki_headers(const std::string& lang) {
+std::string aki_form_headers(const std::string& lang, const std::string& referer) {
     return "Content-Type: application/x-www-form-urlencoded\r\n"
+           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\r\n"
+           "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+           "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
+           "Origin: https://" + lang + ".akinator.com\r\n"
+           "Referer: " + referer + "\r\n";
+}
+
+std::string aki_ajax_headers(const std::string& lang) {
+    return "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
            "X-Requested-With: XMLHttpRequest\r\n"
            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\r\n"
            "Accept: application/json, text/javascript, */*; q=0.01\r\n"
@@ -228,22 +237,28 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
     else api->c_reply(ctx, 0);
 
-    // Call Akinator start game: 1. GET to init session and cookies
-    std::string url = build_aki_url(ctx, api, lang, "game");
+    // Call Akinator start game: 3-step browser handshake to bypass Cloudflare
+    // 1. GET /game to initialize cookies
+    std::string game_url = build_aki_url(ctx, api, lang, "game");
     if (api->http_get) {
-        std::vector<unsigned char> init_buf(4096, 0);
-        api->http_get(ctx, url.c_str(), init_buf.data(), (int)init_buf.size());
+        std::vector<unsigned char> init_buf(64 * 1024, 0);
+        api->http_get(ctx, game_url.c_str(), init_buf.data(), (int)init_buf.size());
     }
 
-    // 2. POST with established session
-    std::string body = "sid=1&cm=" + std::string(child ? "true" : "false");
-    std::string headers = aki_headers(lang);
+    // 2. POST /theme-selection (normal browser form post)
+    std::string theme_url = build_aki_url(ctx, api, lang, "theme-selection");
+    std::string theme_body = "cm=" + std::string(child ? "true" : "false") + "&anim=true";
+    std::string theme_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/game");
+    http_post_req(ctx, api, theme_url, theme_body, theme_headers);
 
-    std::string resp = http_post_req(ctx, api, url, body, headers);
+    // 3. POST /game with sid=1 (normal browser form post, returning HTML of the game)
+    std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false") + "&anim=true";
+    std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/theme-selection");
+    std::string resp = http_post_req(ctx, api, game_url, game_body, game_headers);
     if (resp.empty()) {
         api->c_reset(ctx);
         api->c_fmt(ctx, lang == "ru" ? "❌ Ошибка подключения к серверу Akinator." : "❌ Failed to connect to Akinator server.", KOTO_ENT_BOLD);
-        api->c_edit(ctx, 0);
+        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0); else api->c_reply(ctx, 0);
         return;
     }
 
@@ -251,12 +266,13 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     std::string session, step = "1", question;
     try {
         std::smatch m;
-        std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"])");
-        std::regex ses_re2(R"(session['"]\)\.val\(['"]([^'"]+)['"])");
-        if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2)) {
+        std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"]\))");
+        std::regex ses_re2(R"(session['"]\s*:\s*['"]([^'"]+)['"])");
+        std::regex ses_re3(R"(session['"]\)\.val\(['"]([^'"]+)['"]\))");
+        if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2) || std::regex_search(resp, m, ses_re3)) {
             session = m[1].str();
         }
-        std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"])");
+        std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"]\))");
         if (std::regex_search(resp, m, step_re)) {
             step = m[1].str();
         }
@@ -269,7 +285,7 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     if (session.empty() || question.empty()) {
         api->c_reset(ctx);
         api->c_fmt(ctx, lang == "ru" ? "❌ Сервис Akinator временно перегружен или недоступен." : "❌ Akinator service is temporarily busy.", KOTO_ENT_BOLD);
-        api->c_edit(ctx, 0);
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0); else api->c_reply(ctx, 0);
         return;
     }
 
@@ -293,7 +309,7 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     api->c_fmt(ctx, hint.c_str(), KOTO_ENT_ITALIC);
 
     add_question_buttons(ctx, api, lang);
-    api->c_edit(ctx, 0);
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0); else api->c_reply(ctx, 0);
 }
 
 // ── Command: .akistop ────────────────────────────────────────────────────────
@@ -368,7 +384,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
                            "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
                            "&session=" + url_encode(st.session) +
                            "&forward_answer=1";
-        std::string headers = aki_headers(st.lang);
+        std::string headers = aki_ajax_headers(st.lang);
         std::string resp = http_post_req(ctx, api, url, body, headers);
 
         try {
@@ -436,7 +452,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
                            "&step_last_proposition=" + url_encode(st.slp) +
                            "&num_question=" + std::to_string(st.num) +
                            "&session=" + url_encode(st.session);
-        std::string headers = aki_headers(st.lang);
+        std::string headers = aki_ajax_headers(st.lang);
         std::string resp = http_post_req(ctx, api, url, body, headers);
 
         try {
