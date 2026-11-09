@@ -269,12 +269,18 @@ void render_panel(koto_ctx* ctx,const koto_api* api,const SysMetrics& m,bool det
     api->c_button(ctx,"🚫 Закрыть","sys_close",1);
 }
 void render_neofetch(koto_ctx* ctx,const koto_api* api,const SysMetrics& m) {
-    api->c_reset(ctx);std::ostringstream out;
-    out<<"   /\\_/\\     Kotogram\n  ( o.o )\n   > ^ <\n"
-       <<"OS: "<<m.os_name<<"\nHost: "<<m.hostname<<"\nKernel: "<<m.kernel<<"\nArch: "<<m.arch
-       <<"\nUptime: "<<uptime(m.uptime_sec)<<"\nCPU: "<<m.cpu_model<<"\nLoad Average: "<<load_text(m)<<"\n\nRAM\n"<<memory_text(m)
-       <<"\nDisk\n"<<disk_text(m)<<"\n"<<m.process_scope<<"\n"<<process_text(m)<<"\n"<<network_text(m);
-    std::string text = out.str(); while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ')) text.pop_back(); api->c_fmt(ctx, text.c_str(), KOTO_ENT_PRE);
+    api->c_reset(ctx);api->c_emoji(ctx,"💻",ICON_LAPTOP);
+    api->c_fmt(ctx," Kotogram Neofetch\n\n",KOTO_ENT_BOLD);
+    std::ostringstream out;
+    out<<"   /\\_/\\     Kotogram\n  ( o.o )\n   > ^ <\n\n"
+       <<"OS: "<<m.os_name<<"\nHost: "<<m.hostname<<"\nKernel: "<<m.kernel<<" ("<<m.arch<<")\n"
+       <<"Uptime: "<<uptime(m.uptime_sec)<<"\nCPU: "<<m.cpu_model<<"\nLoad Average: "<<load_text(m)<<"\n\n"
+       <<"📊 RAM\n"<<memory_text(m)<<"\n"
+       <<"💾 Накопитель\n"<<disk_text(m)<<"\n"
+       <<"🐾 "<<m.process_scope<<"\n"<<process_text(m)<<"\n"
+       <<"🌐 "<<network_text(m);
+    std::string text = out.str(); while (!text.empty() && (text.back() == '\n' || text.back() == '\r' || text.back() == ' ')) text.pop_back();
+    api->c_text(ctx, text.c_str());
     api->c_button(ctx,"🔄 Обновить","sys_neofetch",0);api->c_button(ctx,"💻 Панель","sys_main",0);api->c_button(ctx,"🚫 Закрыть","sys_close",1);
 }
 void cmd_sys(koto_ctx* ctx,const koto_api* api) {
@@ -301,6 +307,6 @@ const koto_command COMMANDS[]={
     {"sysinfo",cmd_sys,KOTO_LEVEL_OWNER,"Система, RAM, накопитель и трафик приложения.",nullptr},
     {"neofetch",cmd_neofetch,KOTO_LEVEL_OWNER,"Характеристики устройства с ASCII-котиком.",nullptr}
 };
-const koto_module MODULE={KOTO_MODULE_ABI,"sysinfo","Метрики устройства и хоста; Android TrafficStats и явная доступность данных.","1.2.0",63,0,COMMANDS,3,nullptr,0,on_callback,nullptr,0,"https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so"};
+const koto_module MODULE={KOTO_MODULE_ABI,"sysinfo","Метрики устройства и хоста; Android TrafficStats и явная доступность данных.","1.2.1",63,0,COMMANDS,3,nullptr,0,on_callback,nullptr,0,"https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/sysinfo.so"};
 }
 extern "C" const koto_module* koto_module_register(){return &MODULE;}

@@ -2827,7 +2827,7 @@
       "display_name": "Мониторинг сервера (SysInfo)",
       "author": "Kote",
       "description": "[ru] Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно. [en] Device hardware specs, RAM, CPU load, and battery info.",
-      "version": "1.1.2",
+      "version": "1.2.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -2851,23 +2851,23 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/sysinfo.cpp",
       "license": "MIT",
       "min_host_version": 63,
-      "size": 239848,
-      "sha256": "04b9704e60e55c76a2a47e161b528c81f01883bb1437b3ec653640ad62dc2d05",
-      "size_arm64": 327584,
-      "sha256_arm64": "c902ab6c553949e60cd9ed8ed8f273b8ed9327287bb687a780a9a2d69626dd0a",
+      "size": 240152,
+      "sha256": "f594ba6d98f4843836a00b24cd0daea20632f31d6a9bb67d8e59f3a2861a9ab1",
+      "size_arm64": 240152,
+      "sha256_arm64": "f594ba6d98f4843836a00b24cd0daea20632f31d6a9bb67d8e59f3a2861a9ab1",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/sysinfo.so",
-      "size_arm32": 262532,
-      "sha256_arm32": "9c638e78b1f9e0757dd365fbdb01639364078d1fbf16bef4fd65bb99505deb54",
+      "size_arm32": 180720,
+      "sha256_arm32": "c943e045d7ab080921c60394c56f764d59db5dc432094e65d245e99a36bcdf62",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/sysinfo.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "04b9704e60e55c76a2a47e161b528c81f01883bb1437b3ec653640ad62dc2d05",
-          "size": 239848,
+          "sha256": "f594ba6d98f4843836a00b24cd0daea20632f31d6a9bb67d8e59f3a2861a9ab1",
+          "size": 240152,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/sysinfo.so"
         },
         "armeabi-v7a": {
-          "sha256": "887da5f9d1a77c37d32e85a118777d5282524968fa414c9368e2afa35bb16361",
-          "size": 180376,
+          "sha256": "c943e045d7ab080921c60394c56f764d59db5dc432094e65d245e99a36bcdf62",
+          "size": 180720,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/sysinfo.so"
         }
       }
