@@ -11,7 +11,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.1.2";
+constexpr const char* VERSION = "1.1.3";
 
 // Helper URL encoding
 std::string url_encode(const std::string& value) {
@@ -54,7 +54,10 @@ std::string html_unescape(const std::string& str) {
 
 std::string aki_form_headers(const std::string& lang, const std::string& referer) {
     return "Content-Type: application/x-www-form-urlencoded\r\n"
-           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\r\n"
+           "User-Agent: Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36\r\n"
+           "sec-ch-ua: \"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"\r\n"
+           "sec-ch-ua-mobile: ?1\r\n"
+           "sec-ch-ua-platform: \"Android\"\r\n"
            "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
            "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
            "Origin: https://" + lang + ".akinator.com\r\n"
@@ -64,7 +67,10 @@ std::string aki_form_headers(const std::string& lang, const std::string& referer
 std::string aki_ajax_headers(const std::string& lang) {
     return "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
            "X-Requested-With: XMLHttpRequest\r\n"
-           "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\r\n"
+           "User-Agent: Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36\r\n"
+           "sec-ch-ua: \"Chromium\";v=\"124\", \"Google Chrome\";v=\"124\", \"Not-A.Brand\";v=\"99\"\r\n"
+           "sec-ch-ua-mobile: ?1\r\n"
+           "sec-ch-ua-platform: \"Android\"\r\n"
            "Accept: application/json, text/javascript, */*; q=0.01\r\n"
            "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
            "Origin: https://" + lang + ".akinator.com\r\n"
@@ -237,27 +243,14 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
     else api->c_reply(ctx, 0);
 
-    // Call Akinator start game: 3-step browser handshake to bypass Cloudflare
-    // 1. GET /game to initialize cookies
+    // Call Akinator start game: direct browser POST /game with mobile Chrome UA
     std::string game_url = build_aki_url(ctx, api, lang, "game");
-    if (api->http_get) {
-        std::vector<unsigned char> init_buf(64 * 1024, 0);
-        api->http_get(ctx, game_url.c_str(), init_buf.data(), (int)init_buf.size());
-    }
-
-    // 2. POST /theme-selection (normal browser form post)
-    std::string theme_url = build_aki_url(ctx, api, lang, "theme-selection");
-    std::string theme_body = "cm=" + std::string(child ? "true" : "false") + "&anim=true";
-    std::string theme_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/game");
-    http_post_req(ctx, api, theme_url, theme_body, theme_headers);
-
-    // 3. POST /game with sid=1 (normal browser form post, returning HTML of the game)
-    std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false") + "&anim=true";
-    std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/theme-selection");
+    std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false");
+    std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/");
     std::string resp = http_post_req(ctx, api, game_url, game_body, game_headers);
-    if (resp.empty()) {
+    if (resp.empty() || resp.find("403 Forbidden") != std::string::npos || resp.find("Attention Required") != std::string::npos || resp.find("cf-turnstile") != std::string::npos) {
         api->c_reset(ctx);
-        api->c_fmt(ctx, lang == "ru" ? "❌ Ошибка подключения к серверу Akinator." : "❌ Failed to connect to Akinator server.", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, lang == "ru" ? "⚠️ Сервер Akinator вернул ошибку 403 (Cloudflare WAF).\nПопробуйте отключить/сменить VPN или укажите рабочий прокси: .aki proxy <url>" : "⚠️ Akinator returned 403 (Cloudflare WAF).\nTry toggling VPN or set a proxy: .aki proxy <url>", KOTO_ENT_BOLD);
         if (api->is_outgoing(ctx)) api->c_edit(ctx, 0); else api->c_reply(ctx, 0);
         return;
     }
@@ -267,9 +260,10 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     try {
         std::smatch m;
         std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"]\))");
-        std::regex ses_re2(R"(session['"]\s*:\s*['"]([^'"]+)['"])");
-        std::regex ses_re3(R"(session['"]\)\.val\(['"]([^'"]+)['"]\))");
-        if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2) || std::regex_search(resp, m, ses_re3)) {
+        std::regex ses_re2(R"(session['"]?\s*:\s*['"]([^'"]+)['"])");
+        std::regex ses_re3(R"(session['"]?\)\.val\(['"]([^'"]+)['"]\))");
+        std::regex ses_re4(R"(name=['"]session['"]\s+value=['"]([^'"]+)['"])");
+        if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2) || std::regex_search(resp, m, ses_re3) || std::regex_search(resp, m, ses_re4)) {
             session = m[1].str();
         }
         std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"]\))");

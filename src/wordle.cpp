@@ -21,7 +21,7 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr const char* VERSION = "1.3.1";
+constexpr const char* VERSION = "1.3.2";
 
 // ── Встроенный словарь 5-буквенных существительных ─────────────────────────
 const char* const DICTIONARY[] = {
@@ -264,6 +264,13 @@ void save_wordle_game_db(koto_ctx* ctx, const koto_api* api, const Game& g) {
         api->db_set(ctx, key.c_str(), s.c_str());
         if (g.chat_id != 0) {
             api->db_set(ctx, ("wrd_active:" + std::to_string(g.chat_id)).c_str(), g.id.c_str());
+            api->db_set(ctx, ("wrd_act:" + std::to_string(g.chat_id)).c_str(), g.id.c_str());
+        }
+        if (g.creator_id != 0) {
+            api->db_set(ctx, ("wrd_act:" + std::to_string(g.creator_id)).c_str(), g.id.c_str());
+        }
+        if (g.target_opponent_id != 0) {
+            api->db_set(ctx, ("wrd_act:" + std::to_string(g.target_opponent_id)).c_str(), g.id.c_str());
         }
     } catch (...) {}
 }
@@ -369,10 +376,31 @@ Game* find_wordle_game(const std::string& target_id, int64_t cid, int64_t sender
     }
     // 3. По sender
     if (sender != 0) {
-        auto it = g_chat_to_game.find(sender);
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        for (int64_t cand : {sender, normalize_cid(sender), bare_cid(sender)}) {
+            auto it = g_chat_to_game.find(cand);
+            if (it != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
+        }
+        if (ctx && api && api->db_get) {
+            char abuf[64] = {0};
+            if (api->db_get(ctx, ("wrd_act:" + std::to_string(sender)).c_str(), abuf, sizeof(abuf)) > 0 && abuf[0]) {
+                Game loaded;
+                if (load_wordle_game_db(ctx, api, abuf, loaded)) {
+                    g_games_by_id[abuf] = loaded;
+                    g_chat_to_game[sender] = abuf;
+                    return &g_games_by_id[abuf];
+                }
+            }
+            if (api->db_get(ctx, ("wrd_active:" + std::to_string(sender)).c_str(), abuf, sizeof(abuf)) > 0 && abuf[0]) {
+                Game loaded;
+                if (load_wordle_game_db(ctx, api, abuf, loaded)) {
+                    g_games_by_id[abuf] = loaded;
+                    g_chat_to_game[sender] = abuf;
+                    return &g_games_by_id[abuf];
+                }
+            }
         }
     }
     return nullptr;
@@ -663,7 +691,7 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
     g.last_active = time(nullptr);
     g.max_attempts = custom_attempts;
 
-    // Проверяем оппонента (ответ на сообщение)
+    // Проверяем оппонента: ответ на сообщение или @юзернейм / ID в аргументах
     long long r_sender = 0;
     if (api->reply_sender_id) r_sender = api->reply_sender_id(ctx);
     if (r_sender != 0 && r_sender != sender) {
@@ -673,6 +701,17 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
             g.target_opponent_name = opp_buf;
         } else {
             g.target_opponent_name = "Игрок_" + std::to_string(r_sender % 10000);
+        }
+    } else {
+        // Проверяем наличие @username в аргументах
+        size_t at_pos = args.find('@');
+        if (at_pos != std::string::npos) {
+            size_t end_m = args.find_first_of(" \t", at_pos);
+            std::string mention = args.substr(at_pos, end_m == std::string::npos ? std::string::npos : end_m - at_pos);
+            g.target_opponent_name = mention;
+            if (end_m != std::string::npos) args.erase(at_pos, end_m - at_pos + 1);
+            else args.erase(at_pos);
+            while (!args.empty() && (args.back() == ' ' || args.back() == '\t')) args.pop_back();
         }
     }
 
@@ -743,11 +782,12 @@ void cmd_wordle(koto_ctx* ctx, const koto_api* api) {
 
     render_game(ctx, api, g);
 
-    if (api->is_outgoing(ctx)) {
-        api->c_edit(ctx, 0);
-    } else {
-        api->c_reply(ctx, 0);
+    // Если команда запущена исходящим сообщением пользователя — удаляем команду и отправляем чистое табло
+    if (api->is_outgoing(ctx) && api->delete_msg) {
+        api->delete_msg(ctx);
     }
+    // Отправляем ВСЕГДА новым сообщением, чтобы экран победы предыдущей игры не перезаписывался!
+    api->c_send(ctx, cid, 0);
 
     int64_t cmd_mid = api->msg_id(ctx);
     g.msg_id = (cmd_mid > 0) ? (cmd_mid + 1) : 0;
@@ -986,7 +1026,10 @@ int on_watch(koto_ctx* ctx, const koto_api* api) {
     if (!gp || gp->is_finished || gp->is_lobby) return 0;
 
     Game& g = *gp;
-    if (r_mid > 0) g.msg_id = r_mid;
+    // Защита от посторонних: в группах ждем ответ ТОЛЬКО от назначенного оппонента
+    if (g.target_opponent_id != 0 && sender != g.target_opponent_id) {
+        return 0; // Игнорируем сообщения посторонних, не отправляем заново и не меняем состояние
+    }
 
     const char* p = raw_txt;
     while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
@@ -1116,7 +1159,9 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 
         api->cb_answer(ctx, "🎮 Вы вошли в игру! Отправляйте догадки: .g <слово>", 0);
         render_game(ctx, api, g);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (cid != 0) ? cid : g.chat_id;
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 
@@ -1134,7 +1179,9 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->cb_answer(ctx, "Лобби отменено.", 0);
         api->c_reset(ctx);
         api->c_fmt(ctx, "🏳️ Лобби игры Wordle отменено создателем.", KOTO_ENT_ITALIC);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (cid != 0) ? cid : g.chat_id;
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 
@@ -1175,7 +1222,9 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         g.is_won = false;
         api->cb_answer(ctx, "🏳️ Вы сдались!", 0);
         render_game(ctx, api, g);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (cid != 0) ? cid : g.chat_id;
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 

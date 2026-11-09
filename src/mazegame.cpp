@@ -19,7 +19,7 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr const char* VERSION = "1.0.2";
+constexpr const char* VERSION = "1.0.3";
 constexpr int DEFAULT_MAZE_SIZE = 15; // 15x15 лабиринт (всегда нечетный)
 constexpr int VIEWPORT_SIZE = 7;      // видимая область 7x7
 
@@ -114,6 +114,12 @@ void save_maze_game_db(koto_ctx* ctx, const koto_api* api, const Game& g) {
         api->db_set(ctx, ("mzg_g:" + g.id).c_str(), s.c_str());
         if (g.chat_id != 0) {
             api->db_set(ctx, ("mzg_act:" + std::to_string(g.chat_id)).c_str(), g.id.c_str());
+        }
+        if (g.p1_id != 0) {
+            api->db_set(ctx, ("mzg_act:" + std::to_string(g.p1_id)).c_str(), g.id.c_str());
+        }
+        if (g.p2_id != 0) {
+            api->db_set(ctx, ("mzg_act:" + std::to_string(g.p2_id)).c_str(), g.id.c_str());
         }
     } catch (...) {}
 }
@@ -213,10 +219,23 @@ Game* find_maze_game(const std::string& target_id, long long cid, long long send
         }
     }
     if (sender != 0) {
-        auto it = g_chat_to_game.find(sender);
-        if (it != g_chat_to_game.end()) {
-            auto git = g_games_by_id.find(it->second);
-            if (git != g_games_by_id.end()) return &git->second;
+        for (long long cand : {sender, normalize_cid(sender), bare_cid(sender)}) {
+            auto it = g_chat_to_game.find(cand);
+            if (it != g_chat_to_game.end()) {
+                auto git = g_games_by_id.find(it->second);
+                if (git != g_games_by_id.end()) return &git->second;
+            }
+        }
+        if (ctx && api && api->db_get) {
+            char buf[64] = {0};
+            if (api->db_get(ctx, ("mzg_act:" + std::to_string(sender)).c_str(), buf, sizeof(buf)) > 0 && buf[0]) {
+                Game loaded;
+                if (load_maze_game_db(ctx, api, buf, loaded)) {
+                    g_games_by_id[buf] = loaded;
+                    g_chat_to_game[sender] = buf;
+                    return &g_games_by_id[buf];
+                }
+            }
         }
     }
     return nullptr;
@@ -437,7 +456,9 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
         }
         save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (g.chat_id != 0) ? g.chat_id : api->chat_id(ctx);
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 
@@ -463,7 +484,9 @@ void apply_move(koto_ctx* ctx, const koto_api* api, Game& g, int player_num, int
 
     save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
-    api->c_edit_message(ctx, 0, mid, 0);
+    long long target_chat = (g.chat_id != 0) ? g.chat_id : api->chat_id(ctx);
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
 }
 
 // ── Команда старта: .maze / .mg / .лабиринт ────────────────────────────────
@@ -563,12 +586,16 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
 
     if (data.rfind("mzg:m:", 0) == 0) {
         is_move = true;
-        size_t c1 = data.find(':', 6);
-        if (c1 != std::string::npos) {
-            size_t c2 = data.find(':', c1 + 1);
-            if (c2 != std::string::npos) {
-                target_id = data.substr(c2 + 1);
-                sscanf(data.c_str(), "mzg:m:%d:%d", &move_dr, &move_dc);
+        size_t p1 = 6;
+        size_t p2 = data.find(':', p1);
+        if (p2 != std::string::npos) {
+            size_t p3 = data.find(':', p2 + 1);
+            if (p3 != std::string::npos) {
+                try {
+                    move_dr = std::stoi(data.substr(p1, p2 - p1));
+                    move_dc = std::stoi(data.substr(p2 + 1, p3 - (p2 + 1)));
+                    target_id = data.substr(p3 + 1);
+                } catch (...) {}
             }
         }
     } else if (data.rfind("mzg:s:", 0) == 0) {
@@ -620,7 +647,9 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->cb_answer(ctx, "🏳️ Сдались!", 0);
         save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (g.chat_id != 0) ? g.chat_id : api->chat_id(ctx);
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 
@@ -639,7 +668,9 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->cb_answer(ctx, "🔄 Лабиринт перестроен!", 0);
         save_maze_game_db(ctx, api, g);
     render_game_message(ctx, api, g);
-        api->c_edit_message(ctx, 0, mid, 0);
+        long long target_chat = (g.chat_id != 0) ? g.chat_id : api->chat_id(ctx);
+    long long target_mid = (mid != 0) ? mid : g.msg_id;
+    api->c_edit_message(ctx, target_chat, target_mid, 0);
         return;
     }
 
