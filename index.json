@@ -2827,7 +2827,7 @@
       "display_name": "Мониторинг сервера (SysInfo)",
       "author": "Kote",
       "description": "[ru] Метрики Android и процесса хоста, трафик приложения; недоступные данные отмечаются явно. [en] Device hardware specs, RAM, CPU load, and battery info.",
-      "version": "1.2.0",
+      "version": "1.1.2",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -2853,11 +2853,11 @@
       "min_host_version": 63,
       "size": 239848,
       "sha256": "04b9704e60e55c76a2a47e161b528c81f01883bb1437b3ec653640ad62dc2d05",
-      "size_arm64": 239848,
-      "sha256_arm64": "04b9704e60e55c76a2a47e161b528c81f01883bb1437b3ec653640ad62dc2d05",
+      "size_arm64": 327584,
+      "sha256_arm64": "c902ab6c553949e60cd9ed8ed8f273b8ed9327287bb687a780a9a2d69626dd0a",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/sysinfo.so",
-      "size_arm32": 180376,
-      "sha256_arm32": "887da5f9d1a77c37d32e85a118777d5282524968fa414c9368e2afa35bb16361",
+      "size_arm32": 262532,
+      "sha256_arm32": "9c638e78b1f9e0757dd365fbdb01639364078d1fbf16bef4fd65bb99505deb54",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/sysinfo.so",
       "architectures": {
         "arm64-v8a": {
