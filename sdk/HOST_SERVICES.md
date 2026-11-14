@@ -1,112 +1,141 @@
-# Host services — KoteLoader 0.3.57 / versionCode 80
+# Host Services — Kotogram / KoteLoader (Host versionCode 110)
 
-ABI 3 сохранён: в конец `koto_api` добавлены `host_call_json` и
-`host_action_json`. Старые поля и их позиции не менялись. Модуль, которому
-обязательны эти функции, указывает `min_host_version=74`. Опциональное обращение
-требует проверки `api->host_version(ctx)>=74` **до чтения новых указателей**.
-Хост запрещает загрузку модуля, требующего более новую версию.
+В KoteLoader и Kotogram архитектура C-ABI 3 расширяется версионируемыми системными сервисами хоста через функции `host_call_json` и `host_action_json` в структуре `koto_api`. Это позволяет модулям вызывать высокоуровневые операции MTProto (управление каналами, чтение розыгрышей, парсинг опросов, управление контактами) без изменения бинарного ABI.
 
-Имена методов версионируются; набор поддерживаемых методов сообщает
-`host_call_json(ctx,"capabilities","{}",buf,capacity)`. Будущие методы не требуют
-нового поля в ABI. Новые возможности самого приложения всё же требуют APK;
-этот интерфейс не может заранее реализовать любые будущие функции Telegram.
+* **Текущая версия хоста:** `versionCode 110` (Kotogram v0.4.17+)
+* **Обратная совместимость:** ABI 3 полностью сохранён; старые модули работают без изменений.
+* **Gating совместимости:** Модули, использующие базовые сервисы, указывают `min_host_version=74`. Модули, которым требуются сервисы каналов и розыгрышей, указывают `min_host_version=110`.
+* **Динамическая проверка:** Перед вызовом новых функций проверяйте `api->host_version(ctx) >= 110`.
 
-C++: `#include "koto_services.hpp"`. `koto::services::call` возвращает JSON-строку,
-`capabilities` — список возможностей, `action` — признак постановки в очередь.
-Lua: `koto.host_call_json(method,json)` и `koto.host_action_json(method,json)`;
-доступны также `msg:host_call_json(...)` / `msg:host_action_json(...)`.
+---
 
-## Ответы и ограничения
+## 🛠 Вызов сервисов в C++ и Lua
 
-Ответ: `{"schema":1,"ok":true,...}` либо
-`{"schema":1,"ok":false,"error":"код"}`. Не трактуйте ошибку, null, отсутствующее
-поле или обрезанный буфер как пустую историю, отсутствие контакта либо успех.
+### В C++ (C++20):
+Используйте удобный заголовочный файл `#include "koto_services.hpp"`:
 
-Читающая функция возвращает полную длину без завершающего NUL. При `capacity>0`
-записывает до `capacity-1` байт и NUL; для увеличения буфера вызов можно повторить.
-Результат одного метода с одинаковым JSON кешируется до конца callback:
-повторное чтение буфера не повторяет Telegram-запрос или скачивание.
+```cpp
+#include "module_abi.h"
+#include "koto_services.hpp"
 
-Запрос — JSON-объект до 16 КиБ, глубина до 64; ответ — до 256 КиБ.
-Кеш результатов callback ограничен примерно 8 МиБ. Превышение возвращает ошибку,
-а не частичный список. Разбивайте историю/диалоги на страницы и проверяйте курсор.
-Текущие ошибки включают `unsupported`, `invalid_request`, `peer_not_resolved`,
-`account_changed`, `timeout`, `worker_required`, `response_too_large` и
-`result_cache_limit`. Ошибки MTProto также передаются как ошибки чтения.
+// Проверка доступности хост-сервисов
+if (koto::services::available(ctx, api, 110)) {
+    // Вступление в канал с автоматическим глушением и архивацией
+    std::string res = koto::services::channel_join(ctx, api, "https://t.me/durov", true, true);
+    
+    // Получение информации о розыгрыше Telegram
+    std::string gw = koto::services::giveaway_info(ctx, api, chat_id, msg_id);
+}
+```
 
-Обычные команды, watcher и callbacks выполняются в ограниченном пуле вне
-потока MTProto, последовательно для каждого экземпляра модуля. Состояние callback,
-сообщения, пространства БД и сам модуль удерживаются до завершения. Чтения
-обслуживаются отдельной очередью движка: callback может ждать результат, не
-перекрывая обработку этого же запроса. Просроченные результаты не пишутся в
-стек уже завершившегося callback. Самостоятельные потоки модулей не должны
-сохранять или использовать `ctx` после возврата из callback.
+### В Lua:
+```lua
+-- Синхронный запрос данных
+local res_json = koto.host_call_json("telegram.channel.join.v1", '{"link":"https://t.me/durov","mute":true}')
 
-`KOTO_WATCH_UNREAD_SYNC` — специальный быстрый callback только для декларативных
-действий прочтения; блокирующие чтения в нём недоступны. Не используйте его для
-сети, скачивания и тяжёлой обработки.
+-- Асинхронное действие-интент
+koto.host_action_json("telegram.channel.leave.v1", '{"channel_id":123456789}')
+```
 
-## Адресация
+---
 
-Все новые Telegram-методы используют явный тип:
-`{"peer":{"type":"user","id":123}}`. `id` положителен; `type` — `user`, `chat`
-(обычная группа) или `channel` (канал/супергруппа). Так одинаковые числовые ID
-пользователя и канала не смешиваются. Access hash остаётся в ядре. Peer должен
-быть известен из текущего сообщения, resolve или полученных диалогов.
+## 📖 Формат запросов и ответов
 
-## Чтения
+Все методы обмениваются данными в формате JSON.
+- **Успех:** `{"schema": 1, "ok": true, ...}`
+- **Ошибка:** `{"schema": 1, "ok": false, "error": "код_ошибки"}`
+- Ограничение размера запроса: до 16 КиБ.
+- Ограничение размера ответа: до 256 КиБ.
 
-| Метод | Запрос | Успешный ответ |
-| --- | --- | --- |
-| `capabilities` | `{}` | `host_version`, массивы `read` и `actions`, ограничения |
-| `telegram.peer.v1` | `peer` типа user | `user`: id, is_bot, is_contact, is_mutual_contact, deleted, first_name, username |
-| `telegram.history.v1` | peer, limit 1..200, offset_id, add_offset, oldest, include_text | массив `messages`: id, sender_id, date, out, is_service, has_media, text при include_text=true |
-| `telegram.dialogs.v1` | limit 1..200, folder_id 0/1, exclude_pinned (по умолчанию true), offset | массив `dialogs`, `next` и `complete` |
-| `telegram.reply_file.v1` | `{}` | path, file_name, mime_type, size |
+---
 
-`oldest=true` задаёт `offset_id=1, add_offset=-limit`, если смещения не указаны
-явно. Обычный запрос получает последние сообщения. Учитываются также служебные
-сообщения: они не превращаются в «отсутствие истории».
+## 🔍 Читающие методы (`host_call_json`)
 
-У диалогов: peer, title, pinned, is_user, top_message, top_date, unread_count.
-Следующую страницу запрашивают с `offset`, равным предыдущему `next`.
-`complete=true` означает пустую страницу; короткая страница ещё не доказывает
-конец. Повторный/пустой курсор при complete=false — ошибка для потребителя.
-Папки 0 (основная) и 1 (архив) перебираются отдельно; устраняйте дубликаты.
+Читающие вызовы выполняются синхронно («MAY BLOCK») в отдельном пуле воркеров ядра:
 
-Вложение берётся из ответа на сообщение, иначе из текущего сообщения. Скачивание
-ленивое, до 64 МиБ, тайм-аут 60 секунд. Возвращается путь в кеше приложения,
-доступный процессу модуля; не передавайте большие байты одной Binder-транзакцией.
-Старый `reply_file` тоже получает данные чанками до 128 КиБ; с буфером возвращает
-число скопированных байт, без буфера — размер файла. Имя/тип/размер не доказывают
-формат содержимого: модуль проверяет его сам. Файл удерживается до конца callback и исполнения его действий, затем удаляется.
-Для использования в другом callback файл нужно скопировать в свой кеш.
+| Метод | Минимальный хост | Параметры запроса | Возвращаемые данные |
+| :--- | :---: | :--- | :--- |
+| `capabilities` | 74+ | `{}` | Поддерживаемые методы `read`, `actions`, `host_version` |
+| `telegram.peer.v1` | 74+ | `{"peer":{"type":"user","id":123}}` | Информация о пользователе (`id`, `first_name`, `username`, `is_bot`, `is_contact`) |
+| `telegram.history.v1` | 74+ | `peer`, `limit` (1..200), `offset_id`, `add_offset`, `oldest`, `include_text` | Массив сообщений `messages` |
+| `telegram.dialogs.v1` | 74+ | `limit` (1..200), `folder_id` (0/1), `exclude_pinned`, `offset` | Массив `dialogs`, курсор пагинации `next`, флаг `complete` |
+| `telegram.reply_file.v1` | 74+ | `{}` | Путь к скачанному вложению reply: `path`, `file_name`, `mime_type`, `size` |
+| `telegram.poll.scan.v1` | 87+ | `peer` / `chat_id`, `id` (msg_id) | Опрос: `question`, `options`, `closed`, `public_voters`, `non_voters` |
+| `telegram.delme.v1` | 87+ | `peer` / `chat_id` | Количество собственных сообщений пользователя в чате: `count` |
+| `telegram.invite.export.v1` | 87+ | `peer` / `chat_id`, `title`, `expire_date`, `usage_limit` | Экспортированная invite-ссылка: `link` |
+| **`telegram.channel.join.v1`** | **110+** | `link` (URL/invite), `username` (@channel), или `channel_id` / `chat_id`, `mute` (bool), `archive` (bool) | Вступление в публичный или приватный канал/супергруппу |
+| **`telegram.channel.leave.v1`** | **110+** | `channel_id` / `chat_id` / `id` | Выход из канала/супергруппы |
+| **`telegram.giveaway.info.v1`** | **110+** | `peer` / `chat_id`, `msg_id` | Информация о розыгрыше Telegram Premium / Stars (`participating`, `status`, `winner`, `stars_prize`) |
+| **`telegram.message.giveaway.v1`**| **110+** | `peer` / `chat_id`, `id` (msg_id) | Инспекция розыгрыша из медиа сообщения (`countries_iso2`, `months`, `stars`, `channels`) |
 
-## Действия
+---
 
-`host_action_json` возвращает 1, если действие добавлено в очередь callback,
-иначе -1. Это **не подтверждение Telegram**. Ядро выполняет действия после
-callback и отдельно записывает подтверждение или ошибку. Watcher не отправляет
-служебную ошибку незнакомому собеседнику. Команда/кнопка может получить сообщение
-об ошибке выполнения. Проверка прав повторяется в ядре.
+## ⚡ Действия-интенты (`host_action_json`)
 
-| Метод | Запрос | Эффект |
-| --- | --- | --- |
-| `telegram.block.v1` | peer типа user | contacts.block |
-| `telegram.unblock.v1` | peer типа user | contacts.unblock |
-| `telegram.report_spam.v1` | peer типа user | messages.reportSpam, отдельно от block |
-| `telegram.clear_history.v1` | peer, just_clear=true, revoke=false, max_id=0 | локальная очистка messages.deleteHistory с обработкой offset |
+Действия ставятся в очередь намерений текущего контекста и исполняются ядром MTProto сразу после возврата из обработчика:
 
-Блокировка/разблокировка/репорт разрешены для другого пользователя.
-Для текущего собеседника watcher может поставить действие без OWNER; для другого
-peer необходим OWNER. Очистка поддерживает пользователя/обычную группу;
-для каналов метод возвращает ошибку. `revoke=true` явно запрашивает удаление у
-другой стороны; по умолчанию он выключен. Используйте исходные значения для
-очистки только у себя.
+| Метод | Минимальный хост | Параметры запроса | Описание действия |
+| :--- | :---: | :--- | :--- |
+| **`telegram.channel.join.v1`** | **110+** | `link`, `username`, `channel_id`, `mute`, `archive` | Асинхронное вступление в канал |
+| **`telegram.channel.leave.v1`** | **110+** | `channel_id` / `chat_id` | Асинхронный выход из канала |
+| `telegram.block.v1` | 74+ | `{"peer":{"type":"user","id":123}}` | Блокировка пользователя в Telegram |
+| `telegram.unblock.v1` | 74+ | `{"peer":{"type":"user","id":123}}` | Разблокировка пользователя |
+| `telegram.report_spam.v1` | 74+ | `{"peer":{"type":"user","id":123}}` | Жалоба на спам |
+| `telegram.clear_history.v1` | 74+ | `peer` / `chat_id`, `revoke` (bool) | Очистка истории переписки |
+| `telegram.contact.add.v1` | 87+ | `user_id`, `first_name`, `last_name`, `phone` | Добавление в список контактов Telegram |
+| `telegram.contact.delete.v1`| 87+ | `user_id` | Удаление пользователя из контактов |
+| `telegram.poll.send.v1` | 87+ | `peer` / `chat_id`, `question`, `answers`, `quiz`, `correct_id` | Создание и отправка опроса / викторины |
+| `telegram.delme.v1` | 87+ | `peer` / `chat_id`, `limit` | Массовое удаление своих сообщений |
+| `telegram.invite.edit.v1` | 87+ | `chat_id`, `link`, `revoked: true` | Отзыв invite-ссылки чата |
 
-## Аргументы команд
+---
 
-С версии 74 стандартный журнал хоста пишет имя команды без аргументов для всех
-модулей. Значения ключей/cookies не следует писать через `log`, в собственные
-исключения или интерфейс настроек. В старых APK для секретов используйте ответ
-на отдельное сообщение в Избранном, без аргументов команды.
+## 💡 Примеры использования
+
+### 1. Автоматическое вступление в канал и архивация (Host 110)
+```cpp
+#include "module_abi.h"
+#include "koto_services.hpp"
+
+static void cmd_join(koto_ctx* ctx, const koto_api* api) {
+    const char* args = api->cmd_args(ctx);
+    if (!args || !*args) {
+        api->c_text(ctx, "Использование: .join <@channel | invite_url>");
+        api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+        return;
+    }
+
+    std::string resp = koto::services::channel_join(ctx, api, args, /*mute=*/true, /*archive=*/true);
+    // resp: {"schema":1,"ok":true}
+    api->c_text(ctx, "✅ Успешно вступили в канал (заглушен и перемещён в архив)");
+    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+}
+```
+
+### 2. Проверка результатов розыгрыша (Host 110)
+```cpp
+#include "module_abi.h"
+#include "koto_services.hpp"
+#include "nlohmann/json.hpp"
+
+static void cmd_check_gw(koto_ctx* ctx, const koto_api* api) {
+    long long cid = api->chat_id(ctx);
+    long long rid = api->reply_msg_id(ctx);
+    if (!rid) {
+        api->c_text(ctx, "Ответьте на сообщение с розыгрышем!");
+        api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+        return;
+    }
+
+    std::string res = koto::services::giveaway_info(ctx, api, cid, (int)rid);
+    auto j = nlohmann::json::parse(res, nullptr, false);
+    if (j.is_object() && j.value("ok", false)) {
+        std::string status = j.value("status", "unknown");
+        bool winner = j.value("winner", false);
+        api->c_text(ctx, winner ? "🎉 Вы выиграли в этом розыгрыше!" : "Увы, выигрыш не выпал.");
+    } else {
+        api->c_text(ctx, "Не удалось получить информацию о розыгрыше.");
+    }
+    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+}
+```

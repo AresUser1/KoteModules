@@ -1,13 +1,28 @@
-# Kote Module SDK 0.4.5
+# Kote Module SDK 0.4.6 (Host versionCode 110)
 
-Официальный набор инструментов для разработки нативных (C/C++) и Lua-модулей юзербота KoteLoader / Kotogram (совместимо с хостом v0.4.16 / код 109+).
+Официальный набор инструментов для разработки нативных (C/C++) и Lua-модулей юзербота KoteLoader / Kotogram.
 
+* **Целевая версия хоста:** `versionCode 110` (Kotogram v0.4.17+)
 * **Архитектуры:** `arm64-v8a` (64-бит) и `armeabi-v7a` (32-бит)
 * **Минимальный Android:** API 26+ (Android 8.0+)
 * **Стандарты:** C11 / C++20, Module ABI 3
-* **Мультиязычность:** Полная поддержка русского и английского языков (RU / EN, `koto_utils::tr`, `koto_utils::is_en`)
-* **Сетевой стек:** Системные `http_get` / `http_post` с автоматическим сохранением сессионных cookie (RFC 6265) и горячей заменой (Hot-Swap) модулей в фоне
+* **Мультиязычность:** Полная поддержка русского и английского языков (RU / EN)
 * **Руководство по 32-битным модулям:** [GUIDE_32BIT.md](GUIDE_32BIT.md)
+* **Руководство по сервисам хоста (110+):** [HOST_SERVICES.md](HOST_SERVICES.md)
+
+---
+
+## 🚀 Что нового в SDK 0.4.6 (Host 110)
+
+1. 🌐 **Поддержка нативных MTProto хост-сервисов управления каналами:**
+   - Высокоуровневые C++ обёртки в `koto_services.hpp`: `channel_join` (вступление по юзернейму, invite-ссылке или ID с автоглушением и архивацией) и `channel_leave`.
+2. 🎁 **Нативный API инспекции медиа и розыгрышей Telegram:**
+   - Методы `giveaway_info` (`payments.getGiveawayInfo`) и `message_giveaway` для проверки статуса участия аккаунта, призов, победителей и стран.
+3. 🛠 **Синхронизированные C++ хелперы:**
+   - Актуализирован `koto_utils.hpp` (`is_en`, `tr` для удобной двуязычности, логгер, парсинг участников чата).
+   - Расширен `koto_services.hpp` готовыми функциями для всех сервисов хоста (каналы, розыгрыши, опросы, контакты, delme).
+4. 🎮 **Новый пример интерактивного модуля:**
+   - Добавлен пример нативной мини-игры «3 в ряд» (`examples/native/match3.cpp`) с динамической сеткой 8х8 на inline-кнопках, подсветкой комбинаций и прогрессией опыта.
 
 ---
 
@@ -16,10 +31,10 @@
 - `include/module_abi.h` — Основной заголовочный файл ABI со всеми функциями хоста (`koto_api`, `koto_ctx`), хелперами мультиязычности (`koto_is_lang_en`, `KOTO_TR`).
 - `include/koto_utils.hpp`, `koto_file.hpp` — Удобные C++ обёртки для работы со строками, памятью, файлами и локализацией (`koto_utils::tr`, `is_en`).
 - `include/nlohmann/json.hpp` — Заголовочная библиотека для работы с JSON.
-- `include/koto_services.hpp` — Доступ к хост-сервисам; подробнее см. [HOST_SERVICES.md](HOST_SERVICES.md).
+- `include/koto_services.hpp` — Доступ к хост-сервисам MTProto (Host 110+); подробнее см. [HOST_SERVICES.md](HOST_SERVICES.md).
 - `GUIDE_32BIT.md` — Подробное руководство по поддержке 32-битной архитектуры и переносу с 64-бит.
 - `src/` — Каталог для исходников вашего нового модуля.
-- `examples/native/` — Полный набор готовых примеров нативных модулей (включая poll, moomod, usermanage, moderation и др.).
+- `examples/native/` — Полный набор готовых примеров нативных модулей (match3, poll, moomod, usermanage, moderation, administration и др.).
 - `examples/lua/` — Примеры скриптовых Lua-модулей; см. [LUA_GUIDE.md](LUA_GUIDE.md).
 - `build.bat` — Скрипт сборки под Windows (NDK clang).
 - `build.sh` — Скрипт сборки под Linux / macOS / WSL.
@@ -50,6 +65,7 @@ static const koto_module MODULE = {
     "my_module",
     "[ru] Полезный модуль для медиа [en] Useful media module",
     "1.1.0",
+    110, // min_host_version (versionCode)
     // ...
 };
 ```
@@ -101,7 +117,7 @@ api.c_text(msg)
 
 ---
 
-## Сборка модулей
+## 🛠 Сборка модулей
 
 ### Под Windows:
 ```cmd
