@@ -17,7 +17,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.3.0";
+constexpr const char* VERSION = "1.4.0";
 
 // ── Утилиты строк и URL ──────────────────────────────────────────────────────
 std::string url_encode(const std::string& value) {
@@ -438,6 +438,18 @@ static const CharacterDef CHARACTERS[] = {
      "110000011100000100000100000010000000"},
     {"IShowSpeed (Даррен Уоткинс)", "Экспрессивный американский стример, фанат Криштиану Роналду", "IShowSpeed", "Energetic American streamer and Ronaldo fan",
      "110000010100000100010001001010000000"},
+    {"Пятёрка (Кирилл Баранов / 5opka)", "Популярный российский Twitch-стример и ютубер по Minecraft в маске/пакете", "5opka", "Popular Russian Twitch streamer in a mask",
+     "110000011100001100010000000010010000"},
+    {"Mazellovvv (Илья Коряков)", "Популярный российский Twitch-стример и рэпер, участник сквада ХАЗЯЕВА", "Mazellovvv", "Russian Twitch streamer and rapper from KHAZYAEVA",
+     "110000011100000100010000100010000000"},
+    {"Хесус (Алексей Губанов / JesusAVGN)", "Популярный российский Twitch-стример и летсплейщик, живущий в США", "JesusAVGN", "Popular Russian Twitch streamer",
+     "110000011100000100010000000010000000"},
+    {"Tenderlybae (Амина Мирзоева)", "Популярная российская стримерша и певица, носившая чёрную маску на лице", "Tenderlybae", "Popular streamer and singer known for her black mask",
+     "101000011100001100010000100010000000"},
+    {"Deepins (Иван / deepins)", "Популярный стример и тиктокер, прославившийся стримами в маске и неоновыми анимациями", "Deepins", "Popular streamer known for face mask and neon effects",
+     "110000011100001100010000000010000000"},
+    {"Стинт (Максим Шабанов / Stint)", "Популярный стример и ютубер по мемам и смешным видео", "Stint", "Popular meme streamer and YouTuber",
+     "110000011100000100010000000010000000"},
 
     // ── Реальные люди: бизнес, IT, музыка, спорт, кино, история ──────────────
     {"Павел Дуров", "Создатель Telegram и ВКонтакте, предприниматель и программист", "Pavel Durov", "Founder of Telegram and VK",
@@ -982,7 +994,7 @@ std::string http_post_req(koto_ctx* ctx, const koto_api* api, const std::string&
 }
 
 // ── Отрисовка кнопок и сообщений ─────────────────────────────────────────────
-void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string& lang, bool show_back = false) {
+void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string& lang, bool show_back = false, const std::string& session = "") {
     bool is_ru = (lang == "ru");
     if (api->c_button_ex) {
         api->c_button_ex(ctx, is_ru ? "✅ Да" : "✅ Yes", "aki:ans:0", 1, KOTO_BTN_SUCCESS, 0);
@@ -995,6 +1007,11 @@ void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string&
             api->c_button_ex(ctx, is_ru ? "⬅️ Назад" : "⬅️ Back", "aki:back", 0, KOTO_BTN_DEFAULT, 0);
         }
         api->c_button_ex(ctx, is_ru ? "🛑 Стоп" : "🛑 Stop", "aki:stop", 1, KOTO_BTN_DANGER, 0);
+        if (session == "ai") {
+            api->c_button_ex(ctx, is_ru ? "🌐 Официальный режим" : "🌐 Official mode", "aki:mode:off", 1, KOTO_BTN_DEFAULT, 0);
+        } else {
+            api->c_button_ex(ctx, is_ru ? "🤖 Режим ИИ (GPT-4o)" : "🤖 AI Mode (GPT-4o)", "aki:mode:ai", 1, KOTO_BTN_DEFAULT, 0);
+        }
     } else {
         api->c_button(ctx, is_ru ? "✅ Да" : "✅ Yes", "aki:ans:0", 1);
         api->c_button(ctx, is_ru ? "❌ Нет" : "❌ No", "aki:ans:1", 0);
@@ -1029,10 +1046,13 @@ void render_question(koto_ctx* ctx, const koto_api* api, const AkiState& st) {
     api->c_text(ctx, "\n\n");
     api->c_fmt(ctx, st.last_q.c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n\n");
-    std::string mode_str = (st.session == "hybrid") ? " [offline]" : "";
+    std::string mode_str;
+    if (st.session == "hybrid") mode_str = " [offline]";
+    else if (st.session == "ai") mode_str = " [AI • GPT-4o]";
+    else mode_str = " [official]";
     std::string hint = (st.lang == "ru" ? "📊 Прогресс: " : "📊 Progress: ") + st.prog + "%" + mode_str + " · by kote";
     api->c_fmt(ctx, hint.c_str(), KOTO_ENT_ITALIC);
-    add_question_buttons(ctx, api, st.lang, st.num > 1);
+    add_question_buttons(ctx, api, st.lang, st.num > 1, st.session);
 }
 
 void render_guess(koto_ctx* ctx, const koto_api* api, const AkiState& st) {
@@ -1097,7 +1117,7 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
 
     // 1. Попытка прямого запуска официального Акинатора (ru.akinator.com)
     std::string game_url = build_aki_url(ctx, api, lang, "game");
-    std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false");
+    std::string game_body = "cm=" + std::string(child ? "true" : "false") + "&sid=1";
     std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/");
     std::string resp = http_post_req(ctx, api, game_url, game_body, game_headers);
     bool official_started = false;
@@ -1232,6 +1252,32 @@ void handle_hybrid_step(koto_ctx* ctx, const koto_api* api, AkiState& st, long l
 }
 
 // ── Callback Handler ─────────────────────────────────────────────────────────
+
+// ── Command: .aiaki (Режим ИИ на базе GPT-4o-mini / FreeGPT) ────────────────
+void cmd_aiaki(koto_ctx* ctx, const koto_api* api) {
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
+
+    long long cid = api->chat_id(ctx);
+    long long sender = api->sender_id ? api->sender_id(ctx) : 0;
+    long long cmd_mid = api->msg_id ? api->msg_id(ctx) : 0;
+
+    AkiState st;
+    st.lang = "ru";
+    st.session = "ai";
+    st.chat_id = cid;
+    st.owner_id = sender;
+    st.msg_id = (cmd_mid > 0) ? (cmd_mid + 1) : 0;
+    st.num = 1;
+    st.prog = "0";
+    st.cur_q_idx = 0;
+    st.last_q = QUESTIONS[0].ru;
+
+    save_state(ctx, api, cid, st);
+    render_question(ctx, api, st);
+    if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+    else api->c_reply(ctx, 0);
+}
+
 void on_callback(koto_ctx* ctx, const koto_api* api) {
     const char* raw_data = api->cb_data(ctx);
     if (!raw_data || std::strncmp(raw_data, "aki:", 4) != 0) return;
@@ -1258,6 +1304,23 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         st.msg_id = mid;
     }
 
+    
+    if (data == "aki:mode:ai") {
+        st.session = "ai";
+        api->cb_answer(ctx, st.lang == "ru" ? "🤖 Переключено на ИИ (GPT-4o)" : "🤖 Switched to AI (GPT-4o)", 0);
+        save_state(ctx, api, target_cid, st);
+        render_question(ctx, api, st);
+        api->c_edit_message(ctx, target_cid, target_mid, 0);
+        return;
+    }
+
+    if (data == "aki:mode:off") {
+        api->cb_answer(ctx, st.lang == "ru" ? "🌐 Перезапуск в официальном режиме…" : "🌐 Restarting in official mode…", 0);
+        clear_state(ctx, api, target_cid, sender, st);
+        cmd_akinator(ctx, api);
+        return;
+    }
+
     if (data == "aki:stop") {
         clear_state(ctx, api, target_cid, sender, st);
         api->cb_answer(ctx, st.lang == "ru" ? "Игра завершена" : "Game ended", 0);
@@ -1268,7 +1331,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     }
 
     if (data == "aki:back") {
-        if (st.session == "hybrid") {
+        if (st.session == "hybrid" || st.session == "ai") {
             if (!st.history.empty()) {
                 st.history.pop_back();
                 st.num = std::max(1, (int)st.history.size() + 1);
@@ -1327,7 +1390,7 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     }
 
     // Встроенный гибридный движок
-    if (st.session == "hybrid") {
+    if (st.session == "hybrid" || st.session == "ai") {
         if (data == "aki:rej") {
             api->cb_answer(ctx, st.lang == "ru" ? "Продолжаем поиск…" : "Continuing search…", 0);
             if (st.history.size() >= 22) {
@@ -1472,8 +1535,9 @@ const koto_setting_field SETTINGS[] = {
 };
 
 const koto_command COMMANDS[] = {
-    {"aki", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child|proxy <url>]"},
-    {"akinator", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить игру Акинатор [en] Start Akinator guessing game.", "[ru|en|--child|proxy <url>]"},
+    {"aki", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить Официальный Акинатор (ru.akinator.com) [en] Start Official Akinator.", "[ru|en|--child|proxy <url>]"},
+    {"akinator", cmd_akinator, KOTO_LEVEL_TRUSTED, "[ru] Запустить Официальный Акинатор (ru.akinator.com) [en] Start Official Akinator.", "[ru|en|--child|proxy <url>]"},
+    {"aiaki", cmd_aiaki, KOTO_LEVEL_TRUSTED, "[ru] Запустить ИИ-Акинатор на базе GPT-4o-mini (без задержек и капчи) [en] Start AI Akinator (GPT-4o-mini).", "[ru|en]"},
     {"akiproxy", cmd_akiproxy, KOTO_LEVEL_TRUSTED, "[ru] Задать опциональный прокси для Акинатора [en] Set optional proxy for Akinator.", "<url|off>"},
     {"akistop", cmd_akistop, KOTO_LEVEL_TRUSTED, "[ru] Остановить текущую игру Акинатор [en] Stop current Akinator game.", nullptr}
 };
@@ -1481,7 +1545,7 @@ const koto_command COMMANDS[] = {
 const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "akinator",
-    "[ru] Акинатор угадает любого задуманного персонажа по вопросам без прокси и ошибок 403 (by kote). [en] Akinator character guessing game (by kote).",
+    "[ru] Акинатор (Официальный сайт + ИИ GPT-4o) угадает любого персонажа по вопросам (by kote). [en] Akinator character guessing game (Official + AI) (by kote).",
     VERSION,
     26,
     0,

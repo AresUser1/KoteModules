@@ -249,17 +249,39 @@
       "name": "akinator",
       "display_name": "Akinator",
       "author": "Kote",
-      "description": "Официальный Акинатор (ru.akinator.com) + автономный гибридный движок без прокси (by kote).",
-      "version": "1.3.0",
+      "description": "[ru] Акинатор (Официальный сайт + ИИ GPT-4o) угадает любого персонажа по вопросам (by kote). [en] Akinator character guessing game (Official + AI) (by kote).",
+      "version": "1.4.0",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
-        ".aki",
-        ".akinator",
-        ".akistop"
+        {
+          "name": "aki",
+          "description": "Запустить Официальный Акинатор (ru.akinator.com)",
+          "args": "[ru|en|--child|proxy <url>]"
+        },
+        {
+          "name": "akinator",
+          "description": "Запустить Официальный Акинатор (ru.akinator.com)",
+          "args": "[ru|en|--child|proxy <url>]"
+        },
+        {
+          "name": "aiaki",
+          "description": "Запустить ИИ-Акинатор на базе GPT-4o-mini (без задержек и капчи)",
+          "args": "[ru|en]"
+        },
+        {
+          "name": "akiproxy",
+          "description": "Задать опциональный прокси для Акинатора",
+          "args": "<url|off>"
+        },
+        {
+          "name": "akistop",
+          "description": "Остановить текущую игру Акинатор",
+          "args": ""
+        }
       ],
       "size": 643664,
-      "sha256": "2a3a28f86659e4326d184aa23f36b794488cc0029ce845a0c0663ad3aba94498",
+      "sha256": "e8d6cff11c64299a8b2f46d53fada3cb4c85f2e4fc7c38e02e37e950027a4ab2",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/akinator.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "license": "MIT",
@@ -282,7 +304,8 @@
           "size": 539212,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/akinator.so"
         }
-      }
+      },
+      "file_size": 492952
     },
     {
       "id": "amnesty",
