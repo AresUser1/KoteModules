@@ -4,6 +4,63 @@
   "updated": "2026-10-26",
   "modules": [
     {
+      "id": "giveaways",
+      "name": "giveaways",
+      "display_name": "Giveaways",
+      "author": "Kote",
+      "description": "[ru] Автоматическое участие в Telegram-розыгрышах (Premium и Stars) с отпиской от спонсоров. [en] Auto participation in Telegram giveaways (Premium & Stars) with auto-leaving sponsor channels.",
+      "version": "2.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "gw",
+          "doc": "[ru] Включить или выключить авто-участие в розыгрышах [en] Toggle auto participation in giveaways",
+          "usage": ""
+        },
+        {
+          "name": "gwst",
+          "doc": "[ru] Показать список всех активных розыгрышей [en] Show active giveaways",
+          "usage": ""
+        },
+        {
+          "name": "gwstats",
+          "doc": "[ru] Подробная статистика участий, побед и спонсорских каналов [en] Show giveaway statistics",
+          "usage": ""
+        },
+        {
+          "name": "gwscan",
+          "doc": "[ru] Просканировать историю чатов на пропущенные розыгрыши [en] Scan chat history for giveaways",
+          "usage": "[лимит]"
+        }
+      ],
+      "size": 433624,
+      "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
+      "license": "MIT",
+      "min_host_version": 87,
+      "size_arm64": 433624,
+      "sha256_arm64": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
+      "size_arm32": 361412,
+      "sha256_arm32": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+          "size": 433624,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
+          "size": 361412,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so"
+        }
+      }
+    },
+    {
       "id": "VoiceToText",
       "name": "VoiceToText",
       "display_name": "Voice to Text",

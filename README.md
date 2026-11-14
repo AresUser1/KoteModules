@@ -16,6 +16,7 @@
 
 | Модуль | Тип | Версия | Команды | Описание |
 | :--- | :---: | :---: | :--- | :--- |
+| **[giveaways](src/giveaways.cpp)** | `Native .so` | `v2.0.0` | `.gw`, `.gwst`, `.gwstats`, `.gwscan` | Автоматическое участие в Telegram-розыгрышах (Premium и Stars) с отпиской от спонсоров. |
 | **[administration](src/administration.cpp)** | `Native .so` | `v1.2.1` | `.admin`, `.unadmin`, `.unrank`, `.untag`, `.rank`, `.adminhelp`, `.admincfg`, `.adminsettings` | Реальные MTProto-действия, шаблоны и панели; требуется исправленное ядро 60+. [Исправления и сборка](docs/ADMINISTRATION_FIX.md). |
 | **[afk](src/afk.cpp)** | `Native .so` | `v2.1.3` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[akinator](src/akinator.cpp)** | Native .so | 1.1.2 | .aki, .akistop, .akilang | Интерактивная игра Акинатор: угадывание персонажей по наводящим вопросам с инлайн-кнопками. |
