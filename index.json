@@ -3837,6 +3837,53 @@
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so"
         }
       }
+    },
+    {
+      "id": "match3",
+      "name": "match3",
+      "display_name": "Три в ряд (Match-3)",
+      "author": "Kote",
+      "description": "[ru] Игра «Три в ряд» (Match-3): сетка 8х8, цветные кружки, система уровней и опыта, подсветка собранных рядов (зелёный/синий каскад) (by kote). [en] Match-3 puzzle game: 8x8 grid, colored circles, levels and XP, match highlight (green/blue cascade) (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "m3",
+          "description": "Запустить игру «Три в ряд» (Match-3)",
+          "args": "[restart|top]"
+        },
+        {
+          "name": "match3",
+          "description": "Запустить игру «Три в ряд» (Match-3)",
+          "args": "[restart|top]"
+        }
+      ],
+      "size": 258888,
+      "file_size": 258888,
+      "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-arm64-v8a/match3.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/match3.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 258888,
+      "sha256_arm64": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-arm64-v8a/match3.so",
+      "size_arm32": 201888,
+      "sha256_arm32": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-armeabi-v7a/match3.so",
+      "architectures": {
+        "arm64-v8a": {
+          "size": 258888,
+          "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-arm64-v8a/match3.so"
+        },
+        "armeabi-v7a": {
+          "size": 201888,
+          "sha256": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-armeabi-v7a/match3.so"
+        }
+      }
     }
   ]
 }
