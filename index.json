@@ -4,6 +4,53 @@
   "updated": "2026-10-26",
   "modules": [
     {
+      "id": "VoiceToText",
+      "name": "VoiceToText",
+      "display_name": "Voice to Text",
+      "author": "Kote",
+      "description": "[ru] Распознавание голосовых и видеосообщений в текст через Google STT (by kote). [en] Voice and video note speech-to-text transcriber (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "v2t",
+          "doc": "[ru] Расшифровать голосовое/видеосообщение в ответ [en] Transcribe voice/video note in reply",
+          "usage": ""
+        },
+        {
+          "name": "v2tauto",
+          "doc": "[ru] Переключить авто-расшифровку входящих [en] Toggle auto-transcribe",
+          "usage": ""
+        }
+      ],
+      "size": 264368,
+      "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 264368,
+      "sha256_arm64": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
+      "size_arm32": 201792,
+      "sha256_arm32": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+          "size": 264368,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
+          "size": 201792,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so"
+        }
+      }
+    },
+    {
       "id": "administration",
       "name": "administration",
       "display_name": "Администрирование чатов",
@@ -275,6 +322,53 @@
           "sha256": "ecd47a5cd7de3c5b23960225159d7b2b3a7e3850909a4fb5771e271d25286b7d",
           "size": 146464,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/aniliberty.so"
+        }
+      }
+    },
+    {
+      "id": "anisearch",
+      "name": "anisearch",
+      "display_name": "AniSearch",
+      "author": "Kote",
+      "description": "[ru] Поиск названия, серии и тайм-кода аниме по скриншоту через Trace.moe (by kote). [en] Search anime title, episode, and timecode by screenshot via Trace.moe (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "anisearch",
+          "doc": "[ru] Поиск аниме по кадру [en] Anime search by frame",
+          "usage": "<url|reply>"
+        },
+        {
+          "name": "aser",
+          "doc": "[ru] Быстрый алиас [en] Quick alias",
+          "usage": "<url|reply>"
+        }
+      ],
+      "size": 204216,
+      "sha256": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/anisearch.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 204216,
+      "sha256_arm64": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so",
+      "size_arm32": 153384,
+      "sha256_arm32": "9b320865f4bf83cc45bd8f7b4f94a96c0e12ea7b0886016cbcc85fea6a944148",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/anisearch.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/anisearch.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
+          "size": 204216,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "9b320865f4bf83cc45bd8f7b4f94a96c0e12ea7b0886016cbcc85fea6a944148",
+          "size": 153384,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/anisearch.so"
         }
       }
     },
@@ -871,6 +965,48 @@
           "sha256": "ad2bba6d5ab9502b3cbd343d4f09a201cb797d5fb95f2a85e345a51f66254d2b",
           "size": 5036,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/copymessage.so"
+        }
+      }
+    },
+    {
+      "id": "datereg",
+      "name": "datereg",
+      "display_name": "Datereg",
+      "author": "Kote",
+      "description": "[ru] Определение примерной даты регистрации и возраста аккаунта Telegram (by kote). [en] Estimate Telegram account registration date and age (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "datereg",
+          "doc": "[ru] Примерная дата регистрации [en] Account registration date",
+          "usage": "[ID|@username]"
+        }
+      ],
+      "size": 60472,
+      "sha256": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/datereg.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 60472,
+      "sha256_arm64": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so",
+      "size_arm32": 31868,
+      "sha256_arm32": "dfd5c109c8e581cecedc881b5ceec2a78ca3b6554ccb809f85be4e888803e714",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/datereg.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/datereg.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
+          "size": 60472,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "dfd5c109c8e581cecedc881b5ceec2a78ca3b6554ccb809f85be4e888803e714",
+          "size": 31868,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/datereg.so"
         }
       }
     },
@@ -1808,6 +1944,68 @@
       }
     },
     {
+      "id": "mazegame",
+      "name": "mazegame",
+      "display_name": "Лабиринт (MazeGame)",
+      "author": "Kote",
+      "description": "[ru] Игра Лабиринт: процедурная генерация, туман войны, ловушки-огонь, одиночная игра и PvP на двоих через кнопки (by kote). [en] Maze game: procedural generation, fog of war, fire traps, solo and 2-player PvP with inline buttons (by kote).",
+      "version": "1.0.3",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "maze",
+          "doc": "[ru] Запуск игры (одному или реплаем на второго игрока) [en] Start maze game (solo or reply to player)",
+          "usage": "[размер]"
+        },
+        {
+          "name": "mg",
+          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
+          "usage": "[размер]"
+        },
+        {
+          "name": "mazegame",
+          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
+          "usage": "[размер]"
+        },
+        {
+          "name": "лабиринт",
+          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
+          "usage": "[размер]"
+        },
+        {
+          "name": "mazestop",
+          "doc": "[ru] Сдаться и завершить игру в лабиринт [en] Surrender and stop maze game",
+          "usage": ""
+        }
+      ],
+      "size": 374144,
+      "sha256": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 374144,
+      "sha256_arm64": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so",
+      "size_arm32": 306976,
+      "sha256_arm32": "b91ee0a7200b8db8c43dc8af511890e632c3d1540935cfd01415fe241f3d3dc2",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mazegame.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
+          "size": 374144,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "b91ee0a7200b8db8c43dc8af511890e632c3d1540935cfd01415fe241f3d3dc2",
+          "size": 306976,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mazegame.so"
+        }
+      }
+    },
+    {
       "id": "moderation",
       "name": "moderation",
       "display_name": "Модерация (Moderation)",
@@ -2571,6 +2769,48 @@
       }
     },
     {
+      "id": "rule34",
+      "name": "rule34",
+      "display_name": "Rule34",
+      "author": "Kote",
+      "description": "[ru] Поиск артов и картинок на Rule34 по тегам (by kote). [en] Rule34 art searcher (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "r34",
+          "doc": "[ru] Поиск артов на Rule34 [en] Search Rule34 arts",
+          "usage": "<теги>"
+        }
+      ],
+      "size": 191296,
+      "sha256": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 191296,
+      "sha256_arm64": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so",
+      "size_arm32": 140448,
+      "sha256_arm32": "e50b57076708aab3ec688d0dbf7bb541d5852fb78456a038b5cfb8fa0c4c18d3",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
+          "size": 191296,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "e50b57076708aab3ec688d0dbf7bb541d5852fb78456a038b5cfb8fa0c4c18d3",
+          "size": 140448,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34.so"
+        }
+      }
+    },
+    {
       "id": "rule34_searcher",
       "name": "rule34_searcher",
       "display_name": "Rule34 Searcher",
@@ -2767,6 +3007,53 @@
           "sha256": "60fc2cb7ae7bf78576abb752d0b45d5e7ce38e1619a322b85f2dc6203d45ee84",
           "size": 21864,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spammer.so"
+        }
+      }
+    },
+    {
+      "id": "spotisaver",
+      "name": "spotisaver",
+      "display_name": "SpotiSaver",
+      "author": "Kote",
+      "description": "[ru] Загрузка информации, обложек и подготовка к скачиванию треков из Spotify (by kote). [en] Spotify track info, covers, and downloader assistant (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "spotsave",
+          "doc": "[ru] Инфо и обложка Spotify [en] Spotify track info and cover",
+          "usage": "<spotify_url>"
+        },
+        {
+          "name": "spoti",
+          "doc": "[ru] Быстрый алиас [en] Quick alias",
+          "usage": "<spotify_url>"
+        }
+      ],
+      "size": 185128,
+      "sha256": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spotisaver.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 185128,
+      "sha256_arm64": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so",
+      "size_arm32": 135652,
+      "sha256_arm32": "3cdb7d7612501a6b8228bae28682581b1857a5b4c3948da849e0007091f7d127",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spotisaver.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/spotisaver.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
+          "size": 185128,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "3cdb7d7612501a6b8228bae28682581b1857a5b4c3948da849e0007091f7d127",
+          "size": 135652,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spotisaver.so"
         }
       }
     },
@@ -3169,53 +3456,6 @@
       }
     },
     {
-      "id": "VoiceToText",
-      "name": "VoiceToText",
-      "display_name": "Voice to Text",
-      "author": "Kote",
-      "description": "[ru] Распознавание голосовых и видеосообщений в текст через Google STT (by kote). [en] Voice and video note speech-to-text transcriber (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "v2t",
-          "doc": "[ru] Расшифровать голосовое/видеосообщение в ответ [en] Transcribe voice/video note in reply",
-          "usage": ""
-        },
-        {
-          "name": "v2tauto",
-          "doc": "[ru] Переключить авто-расшифровку входящих [en] Toggle auto-transcribe",
-          "usage": ""
-        }
-      ],
-      "size": 264368,
-      "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 264368,
-      "sha256_arm64": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
-      "size_arm32": 201792,
-      "sha256_arm32": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-          "size": 264368,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
-          "size": 201792,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so"
-        }
-      }
-    },
-    {
       "id": "weather",
       "name": "weather",
       "display_name": "Погода (Weather)",
@@ -3323,237 +3563,48 @@
       }
     },
     {
-      "id": "datereg",
-      "name": "datereg",
-      "display_name": "Datereg",
-      "author": "Kote",
-      "description": "[ru] Определение примерной даты регистрации и возраста аккаунта Telegram (by kote). [en] Estimate Telegram account registration date and age (by kote).",
-      "version": "1.0.0",
+      "id": "wisp",
+      "name": "wisp",
+      "display_name": "Секретные сообщения (Wisp)",
+      "author": "SynForge",
+      "description": "[ru] Модуль для отправки секретных самоуничтожающихся сообщений с инлайн-кнопкой прочтения, доступной только адресату и отправителю. [en] Secret self-closing messages with inline button accessible only by recipient and sender.",
+      "version": "1.0.4",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
         {
-          "name": "datereg",
-          "doc": "[ru] Примерная дата регистрации [en] Account registration date",
-          "usage": "[ID|@username]"
+          "name": "wisp",
+          "doc": "[ru] Отправить секретное сообщение для указанного пользователя [en] Send a secret message for specified user",
+          "usage": "<id/username> <текст>"
+        },
+        {
+          "name": "wispcfg",
+          "doc": "[ru] Настройки секреток (замена карточки, шаблон текста) [en] Configure secret messages (card closing, template)",
+          "usage": "[close on|off] | [text <шаблон>]"
         }
       ],
-      "size": 60472,
-      "sha256": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/datereg.cpp",
+      "size": 318728,
+      "sha256": "edefa11914bb2542bc6dd7737b83744fa2f6627516d679989e6aa54290af33ce",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wisp.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wisp.cpp",
       "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 60472,
-      "sha256_arm64": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so",
-      "size_arm32": 31868,
-      "sha256_arm32": "dfd5c109c8e581cecedc881b5ceec2a78ca3b6554ccb809f85be4e888803e714",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/datereg.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/datereg.cpp",
+      "min_host_version": 24,
+      "size_arm64": 318728,
+      "sha256_arm64": "edefa11914bb2542bc6dd7737b83744fa2f6627516d679989e6aa54290af33ce",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wisp.so",
+      "size_arm32": 258084,
+      "sha256_arm32": "d9570a5513aa86a4542d32a86ada61d258c85b4f96dd6d2c9387ddf68882f7f9",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wisp.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "c961974c98bba048faf7bb6943e6daf178b5dc398279f9b928c52bea8a59ef7f",
-          "size": 60472,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/datereg.so"
+          "sha256": "edefa11914bb2542bc6dd7737b83744fa2f6627516d679989e6aa54290af33ce",
+          "size": 318728,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wisp.so"
         },
         "armeabi-v7a": {
-          "sha256": "dfd5c109c8e581cecedc881b5ceec2a78ca3b6554ccb809f85be4e888803e714",
-          "size": 31868,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/datereg.so"
-        }
-      }
-    },
-    {
-      "id": "anisearch",
-      "name": "anisearch",
-      "display_name": "AniSearch",
-      "author": "Kote",
-      "description": "[ru] Поиск названия, серии и тайм-кода аниме по скриншоту через Trace.moe (by kote). [en] Search anime title, episode, and timecode by screenshot via Trace.moe (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "anisearch",
-          "doc": "[ru] Поиск аниме по кадру [en] Anime search by frame",
-          "usage": "<url|reply>"
-        },
-        {
-          "name": "aser",
-          "doc": "[ru] Быстрый алиас [en] Quick alias",
-          "usage": "<url|reply>"
-        }
-      ],
-      "size": 204216,
-      "sha256": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/anisearch.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 204216,
-      "sha256_arm64": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so",
-      "size_arm32": 153384,
-      "sha256_arm32": "9b320865f4bf83cc45bd8f7b4f94a96c0e12ea7b0886016cbcc85fea6a944148",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/anisearch.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/anisearch.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "7fac242f7cad99fb5d6047cf503afc9effae7513f6a21d61dc91e21ffac114f8",
-          "size": 204216,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/anisearch.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "9b320865f4bf83cc45bd8f7b4f94a96c0e12ea7b0886016cbcc85fea6a944148",
-          "size": 153384,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/anisearch.so"
-        }
-      }
-    },
-    {
-      "id": "rule34",
-      "name": "rule34",
-      "display_name": "Rule34",
-      "author": "Kote",
-      "description": "[ru] Поиск артов и картинок на Rule34 по тегам (by kote). [en] Rule34 art searcher (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "r34",
-          "doc": "[ru] Поиск артов на Rule34 [en] Search Rule34 arts",
-          "usage": "<теги>"
-        }
-      ],
-      "size": 191296,
-      "sha256": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 191296,
-      "sha256_arm64": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so",
-      "size_arm32": 140448,
-      "sha256_arm32": "e50b57076708aab3ec688d0dbf7bb541d5852fb78456a038b5cfb8fa0c4c18d3",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/rule34.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "bb36effb43fefdeff189d2b2b1618cbe0b27a15b0c808f2eee188adaec0a73bf",
-          "size": 191296,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/rule34.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "e50b57076708aab3ec688d0dbf7bb541d5852fb78456a038b5cfb8fa0c4c18d3",
-          "size": 140448,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34.so"
-        }
-      }
-    },
-    {
-      "id": "spotisaver",
-      "name": "spotisaver",
-      "display_name": "SpotiSaver",
-      "author": "Kote",
-      "description": "[ru] Загрузка информации, обложек и подготовка к скачиванию треков из Spotify (by kote). [en] Spotify track info, covers, and downloader assistant (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "spotsave",
-          "doc": "[ru] Инфо и обложка Spotify [en] Spotify track info and cover",
-          "usage": "<spotify_url>"
-        },
-        {
-          "name": "spoti",
-          "doc": "[ru] Быстрый алиас [en] Quick alias",
-          "usage": "<spotify_url>"
-        }
-      ],
-      "size": 185128,
-      "sha256": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/spotisaver.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 185128,
-      "sha256_arm64": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so",
-      "size_arm32": 135652,
-      "sha256_arm32": "3cdb7d7612501a6b8228bae28682581b1857a5b4c3948da849e0007091f7d127",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spotisaver.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/spotisaver.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "a8af29f89ad74d48fbbe4920604373d2b825c426acda1952770834be8c42cd42",
-          "size": 185128,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/spotisaver.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "3cdb7d7612501a6b8228bae28682581b1857a5b4c3948da849e0007091f7d127",
-          "size": 135652,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spotisaver.so"
-        }
-      }
-    },
-    {
-      "id": "youtube_loader",
-      "name": "youtube_loader",
-      "display_name": "YouTube Loader",
-      "author": "Kote",
-      "description": "[ru] Загрузчик информации, обложек и ссылок на скачивание видео с YouTube (by kote). [en] YouTube video info, thumbnails, and downloader assistant (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "dlvideo",
-          "doc": "[ru] Скачать видео/инфо YouTube [en] Download/info YouTube video",
-          "usage": "<url>"
-        },
-        {
-          "name": "dlv",
-          "doc": "[ru] Быстрый алиас [en] Quick alias",
-          "usage": "<url>"
-        },
-        {
-          "name": "dvlist",
-          "doc": "[ru] Список сайтов [en] Supported sites",
-          "usage": ""
-        },
-        {
-          "name": "dlstop",
-          "doc": "[ru] Остановить загрузки [en] Stop downloads",
-          "usage": ""
-        }
-      ],
-      "size": 190392,
-      "sha256": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/youtube_loader.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 190392,
-      "sha256_arm64": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so",
-      "size_arm32": 140300,
-      "sha256_arm32": "0f3cd9651c707e3f73207689ca054d891b8094d3875838669f799198fda2ec13",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/youtube_loader.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
-          "size": 190392,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "0f3cd9651c707e3f73207689ca054d891b8094d3875838669f799198fda2ec13",
-          "size": 140300,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so"
+          "sha256": "d9570a5513aa86a4542d32a86ada61d258c85b4f96dd6d2c9387ddf68882f7f9",
+          "size": 258084,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wisp.so"
         }
       }
     },
@@ -3650,64 +3701,59 @@
       }
     },
     {
-      "id": "mazegame",
-      "name": "mazegame",
-      "display_name": "Лабиринт (MazeGame)",
+      "id": "youtube_loader",
+      "name": "youtube_loader",
+      "display_name": "YouTube Loader",
       "author": "Kote",
-      "description": "[ru] Игра Лабиринт: процедурная генерация, туман войны, ловушки-огонь, одиночная игра и PvP на двоих через кнопки (by kote). [en] Maze game: procedural generation, fog of war, fire traps, solo and 2-player PvP with inline buttons (by kote).",
-      "version": "1.0.3",
+      "description": "[ru] Загрузчик информации, обложек и ссылок на скачивание видео с YouTube (by kote). [en] YouTube video info, thumbnails, and downloader assistant (by kote).",
+      "version": "1.0.0",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
         {
-          "name": "maze",
-          "doc": "[ru] Запуск игры (одному или реплаем на второго игрока) [en] Start maze game (solo or reply to player)",
-          "usage": "[размер]"
+          "name": "dlvideo",
+          "doc": "[ru] Скачать видео/инфо YouTube [en] Download/info YouTube video",
+          "usage": "<url>"
         },
         {
-          "name": "mg",
-          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
-          "usage": "[размер]"
+          "name": "dlv",
+          "doc": "[ru] Быстрый алиас [en] Quick alias",
+          "usage": "<url>"
         },
         {
-          "name": "mazegame",
-          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
-          "usage": "[размер]"
+          "name": "dvlist",
+          "doc": "[ru] Список сайтов [en] Supported sites",
+          "usage": ""
         },
         {
-          "name": "лабиринт",
-          "doc": "[ru] Быстрый алиас для .maze [en] Fast alias for .maze",
-          "usage": "[размер]"
-        },
-        {
-          "name": "mazestop",
-          "doc": "[ru] Сдаться и завершить игру в лабиринт [en] Surrender and stop maze game",
+          "name": "dlstop",
+          "doc": "[ru] Остановить загрузки [en] Stop downloads",
           "usage": ""
         }
       ],
-      "size": 374144,
-      "sha256": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
+      "size": 190392,
+      "sha256": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/youtube_loader.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 374144,
-      "sha256_arm64": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so",
-      "size_arm32": 306976,
-      "sha256_arm32": "b91ee0a7200b8db8c43dc8af511890e632c3d1540935cfd01415fe241f3d3dc2",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mazegame.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mazegame.cpp",
+      "size_arm64": 190392,
+      "sha256_arm64": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so",
+      "size_arm32": 140300,
+      "sha256_arm32": "0f3cd9651c707e3f73207689ca054d891b8094d3875838669f799198fda2ec13",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/youtube_loader.cpp",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "46eb46cf75cbdd7da14823b54053451c9a295e4b075a13247c9258762d288666",
-          "size": 374144,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mazegame.so"
+          "sha256": "4936c5d572bbae6ffc3b3ee0277d5b935af635eae830aaef1afa84491efc4a41",
+          "size": 190392,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/youtube_loader.so"
         },
         "armeabi-v7a": {
-          "sha256": "b91ee0a7200b8db8c43dc8af511890e632c3d1540935cfd01415fe241f3d3dc2",
-          "size": 306976,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mazegame.so"
+          "sha256": "0f3cd9651c707e3f73207689ca054d891b8094d3875838669f799198fda2ec13",
+          "size": 140300,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so"
         }
       }
     }
