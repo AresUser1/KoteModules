@@ -17,7 +17,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.4.0";
+constexpr const char* VERSION = "1.4.1";
 
 // ── Утилиты строк и URL ──────────────────────────────────────────────────────
 std::string url_encode(const std::string& value) {
