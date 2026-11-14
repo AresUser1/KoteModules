@@ -17,7 +17,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.2.0";
+constexpr const char* VERSION = "1.3.0";
 
 // ── Утилиты строк и URL ──────────────────────────────────────────────────────
 std::string url_encode(const std::string& value) {
@@ -464,6 +464,30 @@ static const CharacterDef CHARACTERS[] = {
      "110000001100000100010000100000001000"},
     {"Моргенштерн (Алишер Моргенштерн)", "Известный русскоязычный рэп-исполнитель и шоумен с татуировкой 666", "Morgenshtern", "Russian rap artist and showman",
      "110000011100000100010000100010000000"},
+    {"Егор Крид (Егор Булаткин)", "Популярный российский поп- и рэп-исполнитель, бывший артист Black Star, стример", "Egor Kreed", "Popular Russian pop and rap artist",
+     "110000011000000100100000100010000000"},
+    {"Nkeeei (Никита Коробыко)", "Популярный русскоязычный рэпер, автор вирусных хитов «Гламур», «Толпы кричат»", "Nkeeei", "Popular Russian-speaking rap artist",
+     "110000011000000100010001100000000000"},
+    {"MACAN (Андрей Косолапов)", "Популярный российский рэп-исполнитель («Юг», «Асфальт», «Останься образом»)", "MACAN", "Russian rap artist",
+     "110000011000000100010000100000000000"},
+    {"OG Buda (Григорий Ляхов)", "Российский рэпер, участник объединения Melon Music", "OG Buda", "Russian rapper from Melon Music",
+     "110000011000000100010000100000000000"},
+    {"Big Baby Tape (Егор Ракитин)", "Популярный российский рэпер и битмейкер в очках («Dragonborn», «Bandana»)", "Big Baby Tape", "Popular Russian rapper and beatmaker",
+     "110000011000000100010010100000000000"},
+    {"Miyagi (Азамат Кудзаев)", "Владикавказский рэпер и музыкант, участник дуэта Miyagi & Эндшпиль", "Miyagi", "Russian hip-hop artist from Vladikavkaz",
+     "110000001000000100010000100000000000"},
+    {"Баста (Василий Вакуленко)", "Легендарный российский рэпер, основатель лейбла Gazgolder, Ноггано", "Basta", "Legendary Russian rapper and producer",
+     "110000001000000100010000100000000000"},
+    {"Шаман (Ярослав Дронов)", "Российский певец и автор песен с белыми дредами («Встанем», «Я русский»)", "SHAMAN", "Russian singer and songwriter",
+     "110000001000000100100000100000000000"},
+    {"Инстасамка (Дарья Зотеева)", "Скандальная рэп-исполнительница и блогерша («За деньги да»)", "Instasamka", "Controversial Russian rap artist and blogger",
+     "101000011000000100010000100010000000"},
+    {"ANNA ASTI (Анна Дзюба)", "Популярная поп-певица, бывшая солистка дуэта Artik & Asti («Царица»)", "Anna Asti", "Popular pop singer",
+     "101000001000000100100000100000000000"},
+    {"Скриптонит (Адиль Жалелов)", "Казахстанский рэпер, музыкант и битмейкер, основатель Musica36", "Scryptonite", "Kazakh rapper and producer",
+     "110000001000000100010000100000000000"},
+    {"Scally Milano (Даниил Дмитриев)", "Российский рэп-исполнитель в жанре скам-рэп", "Scally Milano", "Russian rap artist",
+     "110000011000000100010001100000000000"},
     {"Эминем (Маршалл Мэтерс)", "Легендарный американский рэпер (Slim Shady)", "Eminem", "Legendary American rapper (Marshall Mathers)",
      "110000000100000100110000100000000000"},
     {"Майкл Джексон", "Король поп-музыки, создатель «лунной походки»", "Michael Jackson", "The King of Pop",
@@ -903,7 +927,7 @@ bool query_ai_guess(koto_ctx* ctx, const koto_api* api, const AkiState& st, std:
     return false;
 }
 
-// ── Опциональный прокси к ru.akinator.com (если задан пользователем) ─────────
+// ── Заголовки для прямого подключения к ru.akinator.com ─────────────────────
 std::string aki_form_headers(const std::string& lang, const std::string& referer) {
     return "Content-Type: application/x-www-form-urlencoded\r\n"
            "User-Agent: Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36\r\n"
@@ -916,8 +940,8 @@ std::string aki_form_headers(const std::string& lang, const std::string& referer
 std::string aki_ajax_headers(const std::string& lang) {
     return "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
            "X-Requested-With: XMLHttpRequest\r\n"
-           "User-Agent: Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36\r\n"
            "Accept: application/json, text/javascript, */*; q=0.01\r\n"
+           "User-Agent: Mozilla/5.0 (Linux; Android 14; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.6367.113 Mobile Safari/537.36\r\n"
            "Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7\r\n"
            "Origin: https://" + lang + ".akinator.com\r\n"
            "Referer: https://" + lang + ".akinator.com/game\r\n";
@@ -958,7 +982,7 @@ std::string http_post_req(koto_ctx* ctx, const koto_api* api, const std::string&
 }
 
 // ── Отрисовка кнопок и сообщений ─────────────────────────────────────────────
-void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string& lang) {
+void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string& lang, bool show_back = false) {
     bool is_ru = (lang == "ru");
     if (api->c_button_ex) {
         api->c_button_ex(ctx, is_ru ? "✅ Да" : "✅ Yes", "aki:ans:0", 1, KOTO_BTN_SUCCESS, 0);
@@ -967,6 +991,9 @@ void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string&
 
         api->c_button_ex(ctx, is_ru ? "🤔 Возможно" : "🤔 Probably", "aki:ans:3", 1, KOTO_BTN_PRIMARY, 0);
         api->c_button_ex(ctx, is_ru ? "👎 Скорее нет" : "👎 Probably not", "aki:ans:4", 0, KOTO_BTN_DEFAULT, 0);
+        if (show_back) {
+            api->c_button_ex(ctx, is_ru ? "⬅️ Назад" : "⬅️ Back", "aki:back", 0, KOTO_BTN_DEFAULT, 0);
+        }
         api->c_button_ex(ctx, is_ru ? "🛑 Стоп" : "🛑 Stop", "aki:stop", 1, KOTO_BTN_DANGER, 0);
     } else {
         api->c_button(ctx, is_ru ? "✅ Да" : "✅ Yes", "aki:ans:0", 1);
@@ -975,6 +1002,9 @@ void add_question_buttons(koto_ctx* ctx, const koto_api* api, const std::string&
 
         api->c_button(ctx, is_ru ? "🤔 Возможно" : "🤔 Probably", "aki:ans:3", 1);
         api->c_button(ctx, is_ru ? "👎 Скорее нет" : "👎 Probably not", "aki:ans:4", 0);
+        if (show_back) {
+            api->c_button(ctx, is_ru ? "⬅️ Назад" : "⬅️ Back", "aki:back", 0);
+        }
         api->c_button(ctx, is_ru ? "🛑 Стоп" : "🛑 Stop", "aki:stop", 1);
     }
 }
@@ -999,9 +1029,10 @@ void render_question(koto_ctx* ctx, const koto_api* api, const AkiState& st) {
     api->c_text(ctx, "\n\n");
     api->c_fmt(ctx, st.last_q.c_str(), KOTO_ENT_CODE);
     api->c_text(ctx, "\n\n");
-    std::string hint = (st.lang == "ru" ? "📊 Прогресс: " : "📊 Progress: ") + st.prog + "% · by kote";
+    std::string mode_str = (st.session == "hybrid") ? " [offline]" : "";
+    std::string hint = (st.lang == "ru" ? "📊 Прогресс: " : "📊 Progress: ") + st.prog + "%" + mode_str + " · by kote";
     api->c_fmt(ctx, hint.c_str(), KOTO_ENT_ITALIC);
-    add_question_buttons(ctx, api, st.lang);
+    add_question_buttons(ctx, api, st.lang, st.num > 1);
 }
 
 void render_guess(koto_ctx* ctx, const koto_api* api, const AkiState& st) {
@@ -1064,40 +1095,39 @@ void cmd_akinator(koto_ctx* ctx, const koto_api* api) {
     st.num = 1;
     st.prog = "0";
 
-    // Если пользователь явно настроил внешний прокси — пробуем его, иначе сразу запускаем встроенный гибридный движок без 403!
-    std::string proxy = get_proxy(ctx, api);
-    bool proxy_started = false;
-    if (!proxy.empty()) {
-        std::string game_url = build_aki_url(ctx, api, lang, "game");
-        std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false");
-        std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/");
-        std::string resp = http_post_req(ctx, api, game_url, game_body, game_headers);
-        if (!resp.empty() && resp.find("403 Forbidden") == std::string::npos && resp.find("Attention Required") == std::string::npos && resp.find("cf-turnstile") == std::string::npos) {
-            try {
-                std::smatch m;
-                std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"]\))");
-                std::regex ses_re2(R"(session['"]?\s*:\s*['"]([^'"]+)['"])");
-                std::regex ses_re3(R"(session['"]?\)\.val\(['"]([^'"]+)['"]\))");
-                std::regex ses_re4(R"(name=['"]session['"]\s+value=['"]([^'"]+)['"])");
-                if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2) || std::regex_search(resp, m, ses_re3) || std::regex_search(resp, m, ses_re4)) {
-                    st.session = m[1].str();
-                }
-                std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"]\))");
-                if (std::regex_search(resp, m, step_re)) {
-                    st.step = m[1].str();
-                }
-                std::regex q_re(R"(class="question-text"[^>]*>([^<]+)</p>)");
-                if (std::regex_search(resp, m, q_re)) {
-                    st.last_q = html_unescape(trim(m[1].str()));
-                }
-                if (!st.session.empty() && !st.last_q.empty()) {
-                    proxy_started = true;
-                }
-            } catch (...) {}
-        }
+    // 1. Попытка прямого запуска официального Акинатора (ru.akinator.com)
+    std::string game_url = build_aki_url(ctx, api, lang, "game");
+    std::string game_body = "sid=1&cm=" + std::string(child ? "true" : "false");
+    std::string game_headers = aki_form_headers(lang, "https://" + lang + ".akinator.com/");
+    std::string resp = http_post_req(ctx, api, game_url, game_body, game_headers);
+    bool official_started = false;
+
+    if (!resp.empty() && resp.find("403 Forbidden") == std::string::npos && resp.find("Attention Required") == std::string::npos && resp.find("cf-turnstile") == std::string::npos) {
+        try {
+            std::smatch m;
+            std::regex ses_re1(R"(localStorage\.setItem\(['"]session['"],\s*['"]([^'"]+)['"]\))");
+            std::regex ses_re2(R"(session['"]?\s*:\s*['"]([^'"]+)['"])");
+            std::regex ses_re3(R"(session['"]?\)\.val\(['"]([^'"]+)['"]\))");
+            std::regex ses_re4(R"(name=['"]session['"]\s+value=['"]([^'"]+)['"])");
+            if (std::regex_search(resp, m, ses_re1) || std::regex_search(resp, m, ses_re2) || std::regex_search(resp, m, ses_re3) || std::regex_search(resp, m, ses_re4)) {
+                st.session = m[1].str();
+            }
+            std::regex step_re(R"(localStorage\.setItem\(['"]step['"],\s*['"](\d+)['"]\))");
+            if (std::regex_search(resp, m, step_re)) {
+                st.step = m[1].str();
+            }
+            std::regex q_re(R"(class="question-text"[^>]*>([^<]+)</p>)");
+            if (std::regex_search(resp, m, q_re)) {
+                st.last_q = html_unescape(trim(m[1].str()));
+            }
+            if (!st.session.empty() && !st.last_q.empty()) {
+                official_started = true;
+            }
+        } catch (...) {}
     }
 
-    if (!proxy_started) {
+    if (!official_started) {
+        // Fallback: запуск встроенного гибридного движка
         st.session = "hybrid";
         st.step = "1";
         st.cur_q_idx = 0; // Вопрос #1: Реальный человек?
@@ -1234,6 +1264,48 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
         api->c_reset(ctx);
         api->c_fmt(ctx, st.lang == "ru" ? "🛑 Игра в Акинатора завершена." : "🛑 Akinator game ended.", KOTO_ENT_BOLD);
         api->c_edit_message(ctx, target_cid, target_mid, 0);
+        return;
+    }
+
+    if (data == "aki:back") {
+        if (st.session == "hybrid") {
+            if (!st.history.empty()) {
+                st.history.pop_back();
+                st.num = std::max(1, (int)st.history.size() + 1);
+                handle_hybrid_step(ctx, api, st, target_cid, target_mid, false);
+            } else {
+                api->cb_answer(ctx, st.lang == "ru" ? "Вы на первом вопросе" : "Already at first question", 0);
+            }
+            return;
+        }
+
+        api->cb_answer(ctx, st.lang == "ru" ? "Шаг назад…" : "Going back…", 0);
+        std::string url = build_aki_url(ctx, api, st.lang, "cancel_answer");
+        std::string body = "step=" + url_encode(st.step) +
+                           "&progression=" + url_encode(st.prog) +
+                           "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
+                           "&session=" + url_encode(st.session);
+        std::string headers = aki_ajax_headers(st.lang);
+        std::string resp = http_post_req(ctx, api, url, body, headers);
+        try {
+            json j = json::parse(resp);
+            if (j.contains("question") && !j["question"].is_null()) {
+                st.last_q = html_unescape(j.value("question", ""));
+                if (j.contains("progression")) {
+                    double p = j["progression"].is_number() ? j["progression"].get<double>() : std::stod(j.value("progression", "0"));
+                    st.prog = std::to_string((int)std::round(p));
+                }
+                if (j.contains("step")) {
+                    st.step = j["step"].is_string() ? j["step"].get<std::string>() : std::to_string(j["step"].get<int>());
+                }
+                if (st.num > 1) st.num--;
+                save_state(ctx, api, target_cid, st);
+                render_question(ctx, api, st);
+                api->c_edit_message(ctx, target_cid, target_mid, 0);
+                return;
+            }
+        } catch (...) {}
+        api->cb_answer(ctx, st.lang == "ru" ? "Нельзя вернуться назад" : "Cannot go back", 0);
         return;
     }
 

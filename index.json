@@ -249,8 +249,8 @@
       "name": "akinator",
       "display_name": "Akinator",
       "author": "Kote",
-      "description": "Акинатор угадает любого задуманного персонажа по вопросам без прокси и ошибок 403 (by kote).",
-      "version": "1.2.0",
+      "description": "Официальный Акинатор (ru.akinator.com) + автономный гибридный движок без прокси (by kote).",
+      "version": "1.3.0",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -258,28 +258,28 @@
         ".akinator",
         ".akistop"
       ],
-      "size": 636808,
-      "sha256": "129d4fd75d33a99d31127bd93fd4522dbd9aab5fcaa606433d4fd395f89dd08d",
+      "size": 643664,
+      "sha256": "2a3a28f86659e4326d184aa23f36b794488cc0029ce845a0c0663ad3aba94498",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/akinator.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 636808,
-      "sha256_arm64": "129d4fd75d33a99d31127bd93fd4522dbd9aab5fcaa606433d4fd395f89dd08d",
+      "size_arm64": 643664,
+      "sha256_arm64": "2a3a28f86659e4326d184aa23f36b794488cc0029ce845a0c0663ad3aba94498",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/akinator.so",
-      "size_arm32": 531556,
-      "sha256_arm32": "093a59d1e4ec7e9121b661bbb7c1ef977cb8254589739cb64a0b1c34898a7522",
+      "size_arm32": 539212,
+      "sha256_arm32": "d8db460ef316e6b94650da8cfd25bc5a7bc6c2fdc0cc50701f3efde76bcbcf4b",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/akinator.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "129d4fd75d33a99d31127bd93fd4522dbd9aab5fcaa606433d4fd395f89dd08d",
-          "size": 636808,
+          "sha256": "2a3a28f86659e4326d184aa23f36b794488cc0029ce845a0c0663ad3aba94498",
+          "size": 643664,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/akinator.so"
         },
         "armeabi-v7a": {
-          "sha256": "093a59d1e4ec7e9121b661bbb7c1ef977cb8254589739cb64a0b1c34898a7522",
-          "size": 531556,
+          "sha256": "d8db460ef316e6b94650da8cfd25bc5a7bc6c2fdc0cc50701f3efde76bcbcf4b",
+          "size": 539212,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/akinator.so"
         }
       }
