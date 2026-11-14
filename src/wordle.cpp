@@ -21,7 +21,7 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr const char* VERSION = "1.3.2";
+constexpr const char* VERSION = "1.3.3";
 
 // ── Встроенный словарь 5-буквенных существительных ─────────────────────────
 const char* const DICTIONARY[] = {
@@ -200,6 +200,7 @@ struct Game {
     bool is_won = false;
     std::string winner_name;
     time_t last_active = 0;
+    std::string status_msg;
 };
 
 struct StagedWord {
@@ -248,6 +249,7 @@ void save_wordle_game_db(koto_ctx* ctx, const koto_api* api, const Game& g) {
         j["is_won"] = g.is_won;
         j["is_lobby"] = g.is_lobby;
         j["winner_name"] = g.winner_name;
+        j["status_msg"] = g.status_msg;
         j["last_active"] = (long long)g.last_active;
         json atts = json::array();
         for (const auto& a : g.attempts) {
@@ -301,6 +303,7 @@ bool load_wordle_game_db(koto_ctx* ctx, const koto_api* api, const std::string& 
         out.is_won = j.value("is_won", false);
         out.is_lobby = j.value("is_lobby", false);
         out.winner_name = j.value("winner_name", "");
+        out.status_msg = j.value("status_msg", "");
         out.last_active = (time_t)j.value("last_active", 0LL);
         out.attempts.clear();
         if (j.contains("attempts")) {
@@ -564,6 +567,9 @@ void render_game(koto_ctx* ctx, const koto_api* api, const Game& g) {
         api->c_fmt(ctx, "Отправляйте догадки: .g <слово> (или ответом на это сообщение)\n", KOTO_ENT_CODE);
     }
 
+    if (!g.status_msg.empty()) {
+        api->c_fmt(ctx, ("\n" + g.status_msg + "\n\n").c_str(), KOTO_ENT_BOLD);
+    }
     api->c_fmt(ctx, "🟩 Верно | 🟦 Есть не там | 🟥 Нет\nby kote", KOTO_ENT_ITALIC);
     add_game_buttons(ctx, api, g);
 }
@@ -809,46 +815,77 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
     if (!gp || gp->is_finished) return false;
 
     Game& g = *gp;
+    int64_t target_chat = (cid != 0) ? cid : g.chat_id;
+
+    // Синхронизируем reply_msg_id как сообщение игры
+    long long r_mid = api->reply_msg_id ? api->reply_msg_id(ctx) : 0;
+    if (r_mid != 0 && (g.msg_id == 0 || g.msg_id != r_mid)) {
+        g.msg_id = r_mid;
+    }
 
     // Если игра в лобби — нельзя угадывать без присоединения
     if (g.is_lobby) {
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "⏳ Игра ждет оппонента! Нажмите «Присоединиться» на табло.", KOTO_ENT_ITALIC);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        if (api->is_outgoing(ctx)) {
+            api->c_reset(ctx);
+            api->c_fmt(ctx, "⏳ Игра ждет оппонента! Нажмите «Присоединиться» на табло.", KOTO_ENT_ITALIC);
+            api->c_edit(ctx, 0);
+        } else if (g.msg_id != 0) {
+            g.status_msg = "⏳ " + sender_name + ": игра ждет оппонента! Нажмите «Присоединиться».";
+            save_wordle_game_db(ctx, api, g);
+            render_game(ctx, api, g);
+            api->c_edit_message(ctx, target_chat, g.msg_id, 0);
+        }
         return true;
     }
 
     // Защита оппонента: если игра привязана к конкретному игроку, посторонние не могут ходить
     if (g.target_opponent_id != 0 && sender != g.target_opponent_id) {
-        // В группах просто игнорируем посторонних без спама в чат
         return true;
     }
 
     // Автор загадки не может сам отгадывать своё слово
     if (g.is_custom && sender == g.creator_id) {
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "❌ Вы сами загадали это слово! Ждите ответа соперника.", KOTO_ENT_ITALIC);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        if (api->is_outgoing(ctx)) {
+            api->c_reset(ctx);
+            api->c_fmt(ctx, "❌ Вы сами загадали это слово! Ждите ответа соперника.", KOTO_ENT_ITALIC);
+            api->c_edit(ctx, 0);
+        } else if (g.msg_id != 0) {
+            g.status_msg = "❌ " + sender_name + ": создатель слова не может отгадывать!";
+            save_wordle_game_db(ctx, api, g);
+            render_game(ctx, api, g);
+            api->c_edit_message(ctx, target_chat, g.msg_id, 0);
+        }
         return true;
     }
 
     auto raw_letters = utf8_split_letters(guess_text);
     if ((int)raw_letters.size() != g.target_len) {
-        std::string err = "❌ В слове должно быть " + std::to_string(g.target_len) + " букв (вы ввели " + std::to_string(raw_letters.size()) + ")!";
-        api->c_reset(ctx);
-        api->c_fmt(ctx, err.c_str(), KOTO_ENT_BOLD);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        std::string err = "❌ " + sender_name + ": в слове должно быть " + std::to_string(g.target_len) + " букв (введено " + std::to_string(raw_letters.size()) + ")!";
+        if (api->is_outgoing(ctx)) {
+            api->c_reset(ctx);
+            api->c_fmt(ctx, err.c_str(), KOTO_ENT_BOLD);
+            api->c_edit(ctx, 0);
+        } else if (g.msg_id != 0) {
+            g.status_msg = err;
+            save_wordle_game_db(ctx, api, g);
+            render_game(ctx, api, g);
+            api->c_edit_message(ctx, target_chat, g.msg_id, 0);
+        }
         return true;
     }
 
     if (!is_all_alpha(raw_letters)) {
-        api->c_reset(ctx);
-        api->c_fmt(ctx, "❌ Используйте только буквы!", KOTO_ENT_BOLD);
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        std::string err = "❌ " + sender_name + ": используйте только буквы!";
+        if (api->is_outgoing(ctx)) {
+            api->c_reset(ctx);
+            api->c_fmt(ctx, err.c_str(), KOTO_ENT_BOLD);
+            api->c_edit(ctx, 0);
+        } else if (g.msg_id != 0) {
+            g.status_msg = err;
+            save_wordle_game_db(ctx, api, g);
+            render_game(ctx, api, g);
+            api->c_edit_message(ctx, target_chat, g.msg_id, 0);
+        }
         return true;
     }
 
@@ -863,10 +900,17 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
     // Проверяем повторы
     for (const auto& att : g.attempts) {
         if (att.word_raw == lower_guess) {
-            api->c_reset(ctx);
-            api->c_fmt(ctx, "⚠️ Это слово уже проверялось в текущей игре!", KOTO_ENT_ITALIC);
-            if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-            else api->c_reply(ctx, 0);
+            std::string err = "⚠️ " + sender_name + ": слово «" + lower_guess + "» уже проверялось!";
+            if (api->is_outgoing(ctx)) {
+                api->c_reset(ctx);
+                api->c_fmt(ctx, err.c_str(), KOTO_ENT_ITALIC);
+                api->c_edit(ctx, 0);
+            } else if (g.msg_id != 0) {
+                g.status_msg = err;
+                save_wordle_game_db(ctx, api, g);
+                render_game(ctx, api, g);
+                api->c_edit_message(ctx, target_chat, g.msg_id, 0);
+            }
             return true;
         }
     }
@@ -880,6 +924,7 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
     rec.player_name = sender_name;
     g.attempts.push_back(rec);
     g.last_active = time(nullptr);
+    g.status_msg = ""; // Сбрасываем ошибку при успешной попытке
 
     // Проверка победы (все 2)
     bool won = true;
@@ -896,7 +941,7 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
         g.is_won = false;
     }
 
-    // Удаляем команду .g <слово>, чтобы не засорять чат
+    // Удаляем команду .g <слово>, чтобы не засорять чат (если отправлено самим пользователем)
     if (api->is_outgoing(ctx) && api->delete_msg) {
         api->delete_msg(ctx);
     }
@@ -904,12 +949,11 @@ bool process_guess(koto_ctx* ctx, const koto_api* api, int64_t cid, int64_t send
     save_wordle_game_db(ctx, api, g);
     render_game(ctx, api, g);
 
-    int64_t target_chat = (cid != 0) ? cid : g.chat_id;
     if (g.msg_id != 0) {
+        // Всегда обновляем текущее табло игры на месте!
         api->c_edit_message(ctx, target_chat, g.msg_id, 0);
-    } else {
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+    } else if (api->is_outgoing(ctx)) {
+        api->c_edit(ctx, 0);
     }
 
     return true;
@@ -1017,6 +1061,7 @@ int on_watch(koto_ctx* ctx, const koto_api* api) {
         Game* gp = find_wordle_game("", cid, sender);
         if (gp && !gp->is_finished && cur_mid > 0) {
             gp->msg_id = cur_mid;
+            save_wordle_game_db(ctx, api, *gp);
         }
         return 0;
     }

@@ -17,7 +17,7 @@
 namespace {
 using json = nlohmann::json;
 
-constexpr const char* VERSION = "1.4.1";
+constexpr const char* VERSION = "1.4.2";
 
 // ── Утилиты строк и URL ──────────────────────────────────────────────────────
 std::string url_encode(const std::string& value) {
@@ -697,7 +697,13 @@ void clear_state(koto_ctx* ctx, const koto_api* api, long long chat_id, long lon
 // ── Математическое ядро Байесовского Акинатора + AI ──────────────────────────
 bool is_excluded(const AkiState& st, const CharacterDef& c) {
     for (const auto& ex : st.excluded) {
+        if (ex.empty()) continue;
         if (ex == c.name_ru || ex == c.name_en) return true;
+        std::string ex_low = ex;
+        std::string ru_low = c.name_ru;
+        for (char& ch : ex_low) ch = (char)tolower((unsigned char)ch);
+        for (char& ch : ru_low) ch = (char)tolower((unsigned char)ch);
+        if (ru_low.find(ex_low) != std::string::npos || ex_low.find(ru_low) != std::string::npos) return true;
     }
     return false;
 }
@@ -720,20 +726,21 @@ void compute_posteriors(const AkiState& st, std::vector<double>& probs, int& bes
             if (tv == '?') continue;
             bool has = (tv == '1');
             double mult = 1.0;
+            bool is_fundamental = (qa.q_idx == 0 || qa.q_idx == 1 || qa.q_idx == 2 || qa.q_idx == 3 || qa.q_idx == 6 || qa.q_idx == 15 || qa.q_idx == 28);
             switch (qa.ans) {
                 case 0: // Да
-                    mult = has ? 0.92 : 0.06;
-                    if (!has) contradictions[i]++;
+                    mult = has ? 0.98 : (is_fundamental ? 0.001 : 0.05);
+                    if (!has) contradictions[i] += (is_fundamental ? 3 : 1);
                     break;
                 case 1: // Нет
-                    mult = has ? 0.06 : 0.92;
-                    if (has) contradictions[i]++;
+                    mult = has ? (is_fundamental ? 0.001 : 0.05) : 0.98;
+                    if (has) contradictions[i] += (is_fundamental ? 3 : 1);
                     break;
                 case 3: // Возможно
-                    mult = has ? 0.76 : 0.24;
+                    mult = has ? 0.76 : (is_fundamental ? 0.10 : 0.24);
                     break;
                 case 4: // Скорее нет
-                    mult = has ? 0.24 : 0.76;
+                    mult = has ? (is_fundamental ? 0.10 : 0.24) : 0.76;
                     break;
                 default: // Не знаю
                     mult = 1.0;
@@ -1031,10 +1038,12 @@ void add_guess_buttons(koto_ctx* ctx, const koto_api* api, const std::string& la
     if (api->c_button_ex) {
         api->c_button_ex(ctx, is_ru ? "✅ Да, это он!" : "✅ Yes, that's him!", "aki:win", 1, KOTO_BTN_SUCCESS, 0);
         api->c_button_ex(ctx, is_ru ? "❌ Это не он" : "❌ Not him", "aki:rej", 0, KOTO_BTN_DANGER, 0);
+        api->c_button_ex(ctx, is_ru ? "⬅️ Назад" : "⬅️ Back", "aki:back", 0, KOTO_BTN_DEFAULT, 0);
         api->c_button_ex(ctx, is_ru ? "🛑 Стоп" : "🛑 Stop", "aki:stop", 1, KOTO_BTN_DEFAULT, 0);
     } else {
         api->c_button(ctx, is_ru ? "✅ Да, это он!" : "✅ Yes, that's him!", "aki:win", 1);
         api->c_button(ctx, is_ru ? "❌ Это не он" : "❌ Not him", "aki:rej", 0);
+        api->c_button(ctx, is_ru ? "⬅️ Назад" : "⬅️ Back", "aki:back", 0);
         api->c_button(ctx, is_ru ? "🛑 Стоп" : "🛑 Stop", "aki:stop", 1);
     }
 }
@@ -1207,11 +1216,11 @@ void handle_hybrid_step(koto_ctx* ctx, const koto_api* api, AkiState& st, long l
 
     bool ready_to_guess = false;
     if (!force_continue_questions) {
-        if (st.history.size() >= 5 && max_prob >= 0.58 && best_contradictions <= 1 && steps_since_guess >= 3) {
+        if (st.history.size() >= 9 && max_prob >= 0.85 && best_contradictions == 0 && steps_since_guess >= 4) {
             ready_to_guess = true;
-        } else if (st.history.size() >= 10 && max_prob >= 0.32 && steps_since_guess >= 4) {
+        } else if (st.history.size() >= 13 && max_prob >= 0.65 && best_contradictions <= 1 && steps_since_guess >= 4) {
             ready_to_guess = true;
-        } else if (st.history.size() >= 14 && steps_since_guess >= 4) {
+        } else if (st.history.size() >= 18 && steps_since_guess >= 4) {
             ready_to_guess = true;
         }
     }
@@ -1331,44 +1340,29 @@ void on_callback(koto_ctx* ctx, const koto_api* api) {
     }
 
     if (data == "aki:back") {
-        if (st.session == "hybrid" || st.session == "ai") {
-            if (!st.history.empty()) {
-                st.history.pop_back();
-                st.num = std::max(1, (int)st.history.size() + 1);
-                handle_hybrid_step(ctx, api, st, target_cid, target_mid, false);
-            } else {
-                api->cb_answer(ctx, st.lang == "ru" ? "Вы на первом вопросе" : "Already at first question", 0);
-            }
-            return;
-        }
+        if (!st.history.empty()) {
+            QAEntry last_qa = st.history.back();
+            st.history.pop_back();
+            st.cur_q_idx = last_qa.q_idx;
+            st.last_q = last_qa.q_text;
+            st.num = (int)st.history.size() + 1;
 
-        api->cb_answer(ctx, st.lang == "ru" ? "Шаг назад…" : "Going back…", 0);
-        std::string url = build_aki_url(ctx, api, st.lang, "cancel_answer");
-        std::string body = "step=" + url_encode(st.step) +
-                           "&progression=" + url_encode(st.prog) +
-                           "&sid=1&cm=" + std::string(st.child_mode ? "true" : "false") +
-                           "&session=" + url_encode(st.session);
-        std::string headers = aki_ajax_headers(st.lang);
-        std::string resp = http_post_req(ctx, api, url, body, headers);
-        try {
-            json j = json::parse(resp);
-            if (j.contains("question") && !j["question"].is_null()) {
-                st.last_q = html_unescape(j.value("question", ""));
-                if (j.contains("progression")) {
-                    double p = j["progression"].is_number() ? j["progression"].get<double>() : std::stod(j.value("progression", "0"));
-                    st.prog = std::to_string((int)std::round(p));
-                }
-                if (j.contains("step")) {
-                    st.step = j["step"].is_string() ? j["step"].get<std::string>() : std::to_string(j["step"].get<int>());
-                }
-                if (st.num > 1) st.num--;
-                save_state(ctx, api, target_cid, st);
-                render_question(ctx, api, st);
-                api->c_edit_message(ctx, target_cid, target_mid, 0);
-                return;
-            }
-        } catch (...) {}
-        api->cb_answer(ctx, st.lang == "ru" ? "Нельзя вернуться назад" : "Cannot go back", 0);
+            std::vector<double> probs;
+            int best_idx = 0;
+            double max_prob = 0.0;
+            int best_contra = 0;
+            compute_posteriors(st, probs, best_idx, max_prob, best_contra);
+
+            int prog_val = std::min(97, std::max((int)st.history.size() * 6, (int)std::round(max_prob * 100.0)));
+            st.prog = std::to_string(prog_val);
+
+            save_state(ctx, api, target_cid, st);
+            render_question(ctx, api, st);
+            api->c_edit_message(ctx, target_cid, target_mid, 0);
+            api->cb_answer(ctx, st.lang == "ru" ? "⬅️ Шаг назад" : "⬅️ Step back", 0);
+        } else {
+            api->cb_answer(ctx, st.lang == "ru" ? "Вы на первом вопросе" : "Already at first question", 0);
+        }
         return;
     }
 

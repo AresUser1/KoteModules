@@ -250,7 +250,7 @@
       "display_name": "Akinator",
       "author": "Kote",
       "description": "[ru] Акинатор (Официальный сайт + ИИ GPT-4o) угадает любого персонажа по вопросам (by kote). [en] Akinator character guessing game (Official + AI) (by kote).",
-      "version": "1.4.1",
+      "version": "1.4.2",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -280,32 +280,32 @@
           "args": ""
         }
       ],
-      "size": 492952,
-      "sha256": "8b71eb4b324a809bc2be14fd0d79f4952326b213658e65dbeee8862030007f47",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.1/android-arm64-v8a/akinator.so",
+      "size": 493320,
+      "sha256": "b98342b12c746f2fc083c2d7cf3ef51fedbf15e8f39579b1a2d9d2e2e67fa8ac",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-arm64-v8a/akinator.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 492952,
-      "sha256_arm64": "8b71eb4b324a809bc2be14fd0d79f4952326b213658e65dbeee8862030007f47",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.1/android-arm64-v8a/akinator.so",
-      "size_arm32": 396208,
-      "sha256_arm32": "aa481639fc1607be766f658841608a04582beb580f364ffcb5ee685843c05032",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.1/android-armeabi-v7a/akinator.so",
+      "size_arm64": 493320,
+      "sha256_arm64": "b98342b12c746f2fc083c2d7cf3ef51fedbf15e8f39579b1a2d9d2e2e67fa8ac",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-arm64-v8a/akinator.so",
+      "size_arm32": 396032,
+      "sha256_arm32": "b9873fbd09cdcc06f8f663f3ec9544cad0b722259f7572fe5662c926a03c36bc",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-armeabi-v7a/akinator.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/akinator.cpp",
       "architectures": {
         "arm64-v8a": {
-          "size": 492952,
-          "sha256": "8b71eb4b324a809bc2be14fd0d79f4952326b213658e65dbeee8862030007f47",
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.1/android-arm64-v8a/akinator.so"
+          "size": 493320,
+          "sha256": "b98342b12c746f2fc083c2d7cf3ef51fedbf15e8f39579b1a2d9d2e2e67fa8ac",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-arm64-v8a/akinator.so"
         },
         "armeabi-v7a": {
-          "size": 396208,
-          "sha256": "aa481639fc1607be766f658841608a04582beb580f364ffcb5ee685843c05032",
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.1/android-armeabi-v7a/akinator.so"
+          "size": 396032,
+          "sha256": "b9873fbd09cdcc06f8f663f3ec9544cad0b722259f7572fe5662c926a03c36bc",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-armeabi-v7a/akinator.so"
         }
       },
-      "file_size": 492952
+      "file_size": 493320
     },
     {
       "id": "amnesty",
@@ -3694,7 +3694,7 @@
       "display_name": "Wordle (Отгадай слово)",
       "author": "Kote",
       "description": "[ru] Игра Отгадай слово (Wordle) с цветным полем из инлайн-кнопок, защитой от утечек .wset и мультиплеером без добавления в trust (by kote). [en] Wordle guessing game with colored inline buttons board, .wset anti-leak staging and multiplayer without trust requirement (by kote).",
-      "version": "1.3.2",
+      "version": "1.3.3",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -3754,31 +3754,32 @@
           "usage": ""
         }
       ],
-      "size": 468024,
-      "sha256": "a46ed21975fb64b3bcf4131676f772f3b5c0eb21f081c2a18c1634370e6d2f02",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wordle.so",
+      "size": 355336,
+      "sha256": "a4d654a88a0b4725eb722e326da7a5111c117062c1578427fe6771d49364a578",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-arm64-v8a/wordle.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
       "license": "MIT",
       "min_host_version": 26,
-      "size_arm64": 468024,
-      "sha256_arm64": "a46ed21975fb64b3bcf4131676f772f3b5c0eb21f081c2a18c1634370e6d2f02",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wordle.so",
-      "size_arm32": 388196,
-      "sha256_arm32": "e95241d8f8c2a7e17bd47840f3868a033bb009a592aad0bcf0b1268b825c9b19",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wordle.so",
+      "size_arm64": 355336,
+      "sha256_arm64": "a4d654a88a0b4725eb722e326da7a5111c117062c1578427fe6771d49364a578",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-arm64-v8a/wordle.so",
+      "size_arm32": 284912,
+      "sha256_arm32": "d529caad6603fffc31a53bfb5fcb3857be0dae156d0b7b38e62e5a8fd44aad8b",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-armeabi-v7a/wordle.so",
       "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wordle.cpp",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "a46ed21975fb64b3bcf4131676f772f3b5c0eb21f081c2a18c1634370e6d2f02",
-          "size": 468024,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wordle.so"
+          "size": 355336,
+          "sha256": "a4d654a88a0b4725eb722e326da7a5111c117062c1578427fe6771d49364a578",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-arm64-v8a/wordle.so"
         },
         "armeabi-v7a": {
-          "sha256": "e95241d8f8c2a7e17bd47840f3868a033bb009a592aad0bcf0b1268b825c9b19",
-          "size": 388196,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wordle.so"
+          "size": 284912,
+          "sha256": "d529caad6603fffc31a53bfb5fcb3857be0dae156d0b7b38e62e5a8fd44aad8b",
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-armeabi-v7a/wordle.so"
         }
-      }
+      },
+      "file_size": 355336
     },
     {
       "id": "youtube_loader",
