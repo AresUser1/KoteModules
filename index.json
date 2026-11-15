@@ -728,7 +728,7 @@
       "display_name": "BanWord",
       "author": "dend1yya (@AuroraModules) / Ported to C++ ABI 3 by Kote",
       "description": "[ru] Модуль для управления запрещёнными словами в чате (kick, mute, delete, авто-фильтрация). [en] Filter and moderate chat messages with forbidden words.",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -763,27 +763,27 @@
           "usage": ""
         }
       ],
-      "size": 66096,
-      "sha256": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
+      "size": 66544,
+      "sha256": "c85ac0e3c602eb99bb7a670225663f9d32a831f160ce7e9bea91b678a8c86a08",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/banword.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/banword.cpp",
       "license": "GNU AGPLv3",
       "min_host_version": 60,
-      "size_arm64": 66096,
-      "sha256_arm64": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
+      "size_arm64": 66544,
+      "sha256_arm64": "c85ac0e3c602eb99bb7a670225663f9d32a831f160ce7e9bea91b678a8c86a08",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/banword.so",
-      "size_arm32": 32412,
-      "sha256_arm32": "9c4f8b21ca6c2eddc9163b9998ace9193d583e15a86073351b0c08b982563075",
+      "size_arm32": 32788,
+      "sha256_arm32": "a9a7a0bafd6f8c7e942deacae04a082a6bd4363ac23b7b83c738787c6fa6ec4a",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/banword.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "161ca7a5890cd4ca07e455686bb222dad4c55453c3897d66f2048b95249f3eab",
-          "size": 66096,
+          "sha256": "c85ac0e3c602eb99bb7a670225663f9d32a831f160ce7e9bea91b678a8c86a08",
+          "size": 66544,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/banword.so"
         },
         "armeabi-v7a": {
-          "sha256": "9c4f8b21ca6c2eddc9163b9998ace9193d583e15a86073351b0c08b982563075",
-          "size": 32412,
+          "sha256": "a9a7a0bafd6f8c7e942deacae04a082a6bd4363ac23b7b83c738787c6fa6ec4a",
+          "size": 32788,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/banword.so"
         }
       }

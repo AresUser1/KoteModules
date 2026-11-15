@@ -506,9 +506,9 @@ static const koto_setting_field SETTINGS[] = {
 
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
-    "BanWord",
+    "banword",
     "Модуль для управления запрещёнными словами в чате.",
-    "1.1.0",
+    "1.1.1",
     60,
     0,
     COMMANDS,
