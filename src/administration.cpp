@@ -86,13 +86,21 @@ void save_configs(koto_ctx* ctx,const koto_api* api,const std::map<std::string,s
     for (auto& [name,hash]:values) text+=name+"\t"+hash+"\n";
     api->db_set(ctx,"saved_admin_configs",text.c_str());
 }
-std::string panel_key(long long token) { return "admin_panel_"+std::to_string(token%64); }
+inline long long bare_chat(long long id) {
+    constexpr long long off = 1000000000000LL;
+    if (id <= -off) return -(id + off);
+    if (id < 0) return -id;
+    return id;
+}
+std::string panel_key(long long token) { return "admin_panel_" + std::to_string(token); }
 Json new_panel(koto_ctx* ctx,const koto_api* api,const char* kind) {
-    long long seq=api->db_get_int(ctx,"admin_panel_seq",0);
-    if (seq<0 || seq>=9000000000000000000LL) seq=0;
-    ++seq; api->db_set_int(ctx,"admin_panel_seq",seq);
+    long long seq = api->db_get_int(ctx, "admin_panel_seq", 0);
+    long long now_sec = (long long)std::time(nullptr);
+    if (seq < now_sec) seq = now_sec;
+    else ++seq;
+    api->db_set_int(ctx, "admin_panel_seq", seq);
     return Json{{"token",seq},{"revision",1},{"owner",api->sender_id(ctx)},
-                {"chat",api->chat_id(ctx)},{"kind",kind},{"expires",(long long)std::time(nullptr)+86400},
+                {"chat",api->chat_id(ctx)},{"kind",kind},{"expires",now_sec+7*86400},
                 {"hash",current_hash(ctx,api)},{"uid",0},{"rank",""}};
 }
 void save_panel(koto_ctx* ctx,const koto_api* api,const Json& panel) {
@@ -215,10 +223,19 @@ void on_callback(koto_ctx* ctx,const koto_api* api) {
     auto raw=read_db(ctx,api,panel_key(token));
     auto p=Json::parse(raw,nullptr,false);
     if (!p.is_object() || p.value("token",0LL)!=token || p.value("expires",0LL)<(long long)std::time(nullptr)) { api->cb_answer(ctx,"Панель устарела. Откройте новую командой .admin.",0); return; }
-    long long sender=api->sender_id(ctx),chat=api->chat_id(ctx);
-    if ((sender!=p.value("owner",0LL) && sender!=api->get_me(ctx)) || (chat && chat!=p.value("chat",0LL))) { api->cb_answer(ctx,"Это чужая панель.",1); return; }
+    long long sender = api->sender_id(ctx);
+    long long owner = p.value("owner", 0LL);
+    long long me = api->get_me(ctx);
+    bool is_owner = (sender != 0 && (sender == owner || sender == me));
+    if (!is_owner) {
+        api->cb_answer(ctx, "Это чужая панель.", 1);
+        return;
+    }
     if (p.value("revision",0LL)!=revision) { api->cb_answer(ctx,"Панель обновилась. Нажмите актуальную кнопку.",0); return; }
     std::string kind=p.value("kind","");
+    long long edit_chat = api->chat_id(ctx) ? api->chat_id(ctx) : p.value("chat", 0LL);
+    long long edit_msg = api->cb_message_id(ctx);
+
     if (fields[2]=="close") {
         api->db_del(ctx,panel_key(token).c_str()); api->c_reset(ctx); api->c_text(ctx,"Панель закрыта.");
     } else if (fields[2]=="toggle" && fields.size()==4 && (kind=="template" || kind=="user")) {
@@ -241,9 +258,14 @@ void on_callback(koto_ctx* ctx,const koto_api* api) {
         api->db_del(ctx,panel_key(token).c_str()); // Prevent double application.
         auto hash=p.at("hash").get<std::string>(),rank=p.at("rank").get<std::string>();
         api->admin_action(ctx,KOTO_ADMIN_PROMOTE,p.at("chat").get<long long>(),p.at("uid").get<long long>(),hash.c_str(),rank.c_str());
-        api->cb_answer(ctx,"Выполняю запрос Telegram…",0); return;
+        api->c_reset(ctx);
+        std::string txt = "🛡 Назначение администратора\nПользователь: " + std::to_string(p.at("uid").get<long long>()) + "\n⏳ Применяю права администратора…";
+        api->c_text(ctx, txt.c_str());
+        api->c_edit_message(ctx, edit_chat, edit_msg, KOTO_FMT_PLAIN);
+        api->cb_answer(ctx,"Выполняю запрос Telegram…",0);
+        return;
     } else { api->cb_answer(ctx,"Это действие недоступно.",0); return; }
-    api->c_edit_message(ctx,api->chat_id(ctx),api->cb_message_id(ctx),KOTO_FMT_PLAIN);
+    api->c_edit_message(ctx,edit_chat,edit_msg,KOTO_FMT_PLAIN);
     api->cb_answer(ctx,"",0);
 }
 const koto_command COMMANDS[]={
@@ -257,7 +279,7 @@ const koto_command COMMANDS[]={
     {"adminsettings",cmd_adminsettings,KOTO_LEVEL_TRUSTED,"Открыть шаблон прав",nullptr}
 };
 const koto_module MODULE={KOTO_MODULE_ABI,"administration","Управление администраторами через реальные MTProto-запросы, шаблоны и панели",
-    "1.3.0",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
+    "1.3.1",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so"};
 }
 extern "C" const koto_module* koto_module_register(void) { return &MODULE; }
