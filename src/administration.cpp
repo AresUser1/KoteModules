@@ -18,9 +18,11 @@ const Right RIGHTS[]={
     {"delete","Удаление"},{"ban","Бан"},{"invite","Приглашения"},
     {"pin","Закрепление"},{"call","Звонки"},{"add_admins","Назначение админов"},
     {"anon","Анонимность"},{"poststory","Публикация историй"},
-    {"editstory","Редактирование историй"},{"delstory","Удаление историй"}
+    {"editstory","Редактирование историй"},{"delstory","Удаление историй"},
+    {"topics","Темы"},{"welcome","Приветствия"},{"tag","Теги участников"}
 };
-constexpr const char* DEFAULT_HASH="0001111100000";
+constexpr int RIGHTS_COUNT = (int)(sizeof(RIGHTS)/sizeof(RIGHTS[0]));
+constexpr const char* DEFAULT_HASH="0001111100000000";
 std::mutex panel_mutex;
 std::string trim(std::string s) {
     size_t first=s.find_first_not_of(" \t\r\n");
@@ -32,7 +34,14 @@ bool integer(const std::string& s,long long& value) {
     auto parsed=std::from_chars(s.data(),s.data()+s.size(),value);
     return parsed.ec==std::errc{} && parsed.ptr==s.data()+s.size() && value>0;
 }
-bool valid_hash(const std::string& s) { return s.size()==13 && s.find_first_not_of("01")==std::string::npos; }
+bool valid_hash(const std::string& s) {
+    return (s.size()==13 || s.size()==16) && s.find_first_not_of("01")==std::string::npos;
+}
+std::string normalize_hash(std::string h) {
+    if (!valid_hash(h)) return DEFAULT_HASH;
+    if (h.size() < (size_t)RIGHTS_COUNT) h.append((size_t)RIGHTS_COUNT - h.size(), '0');
+    return h;
+}
 size_t characters(const std::string& s) {
     return (size_t)std::count_if(s.begin(),s.end(),[](unsigned char c){return (c&0xc0)!=0x80;});
 }
@@ -70,14 +79,14 @@ std::string read_db(koto_ctx* ctx,const koto_api* api,const std::string& key) {
 }
 std::string current_hash(koto_ctx* ctx,const koto_api* api) {
     auto hash=read_db(ctx,api,"admin_rights_template");
-    return valid_hash(hash)?hash:DEFAULT_HASH;
+    return normalize_hash(hash);
 }
 std::map<std::string,std::string> configs(koto_ctx* ctx,const koto_api* api) {
     std::map<std::string,std::string> result;
     std::istringstream lines(read_db(ctx,api,"saved_admin_configs"));
     for (std::string line;std::getline(lines,line);) {
         auto tab=line.find('\t');
-        if (tab!=std::string::npos && valid_hash(line.substr(tab+1))) result[line.substr(0,tab)]=line.substr(tab+1);
+        if (tab!=std::string::npos && valid_hash(line.substr(tab+1))) result[line.substr(0,tab)]=normalize_hash(line.substr(tab+1));
     }
     return result;
 }
@@ -123,15 +132,15 @@ void render(koto_ctx* ctx,const koto_api* api,const Json& p) {
         auto names=p.at("names").get<std::vector<std::string>>();
         for (size_t i=0;i<names.size();++i) button(ctx,api,p,names[i],"load",(int)i);
     } else {
-        std::string hash=p.at("hash").get<std::string>();
+        std::string hash=normalize_hash(p.value("hash",""));
         api->c_text(ctx,kind=="user"?"🛡 Назначение администратора\n":"⚙ Шаблон прав администратора\n");
         if (kind=="user") {
             std::string line="Пользователь: "+std::to_string(p.at("uid").get<long long>())+"\n";
-            auto rank=p.at("rank").get<std::string>();
+            auto rank=p.value("rank","");
             if (!rank.empty()) line+="Ранг: "+rank+"\n";
             api->c_text(ctx,line.c_str());
         }
-        for (int i=0;i<13;++i) {
+        for (int i=0;i<RIGHTS_COUNT;++i) {
             bool on=hash[(size_t)i]=='1';
             button(ctx,api,p,std::string(on?"✅ ":"▫ ")+RIGHTS[i].title,"toggle",i,i%3==0,on?KOTO_BTN_SUCCESS:0);
         }
@@ -242,8 +251,8 @@ void on_callback(koto_ctx* ctx,const koto_api* api) {
         long long index=0;
         if (fields[3]=="0") index=0;
         else if (!integer(fields[3],index)) { api->cb_answer(ctx,"Некорректное право.",1); return; }
-        auto hash=p.value("hash","");
-        if (index>=13 || !valid_hash(hash)) { api->cb_answer(ctx,"Некорректное право.",1); return; }
+        auto hash=normalize_hash(p.value("hash",""));
+        if (index>=RIGHTS_COUNT) { api->cb_answer(ctx,"Некорректное право.",1); return; }
         hash[(size_t)index]=hash[(size_t)index]=='1'?'0':'1'; p["hash"]=hash;
         if (kind=="template") api->db_set(ctx,"admin_rights_template",hash.c_str());
         p["revision"]=revision+1; save_panel(ctx,api,p); render(ctx,api,p);
@@ -256,13 +265,19 @@ void on_callback(koto_ctx* ctx,const koto_api* api) {
         api->db_del(ctx,panel_key(token).c_str()); api->c_reset(ctx); api->c_text(ctx,"✅ Шаблон прав загружен.");
     } else if (fields[2]=="confirm" && kind=="user") {
         api->db_del(ctx,panel_key(token).c_str()); // Prevent double application.
-        auto hash=p.at("hash").get<std::string>(),rank=p.at("rank").get<std::string>();
-        api->admin_action(ctx,KOTO_ADMIN_PROMOTE,p.at("chat").get<long long>(),p.at("uid").get<long long>(),hash.c_str(),rank.c_str());
+        auto hash=normalize_hash(p.value("hash",""));
+        auto rank=p.value("rank","");
+        std::string promote_hash=hash;
+        if (api->host_version(ctx) < 111 && promote_hash.size() > 13) {
+            promote_hash = promote_hash.substr(0, 13);
+        }
+        api->admin_action(ctx,KOTO_ADMIN_PROMOTE,p.at("chat").get<long long>(),p.at("uid").get<long long>(),promote_hash.c_str(),rank.c_str());
         api->c_reset(ctx);
-        std::string txt = "🛡 Назначение администратора\nПользователь: " + std::to_string(p.at("uid").get<long long>()) + "\n⏳ Применяю права администратора…";
+        std::string txt = "🛡 Назначение администратора\nПользователь: " + std::to_string(p.at("uid").get<long long>()) + "\n✅ Права администратора успешно назначены!";
+        if (!rank.empty()) txt += "\nРанг: " + rank;
         api->c_text(ctx, txt.c_str());
         api->c_edit_message(ctx, edit_chat, edit_msg, KOTO_FMT_PLAIN);
-        api->cb_answer(ctx,"Выполняю запрос Telegram…",0);
+        api->cb_answer(ctx,"✅ Права назначены",0);
         return;
     } else { api->cb_answer(ctx,"Это действие недоступно.",0); return; }
     api->c_edit_message(ctx,edit_chat,edit_msg,KOTO_FMT_PLAIN);
@@ -279,7 +294,7 @@ const koto_command COMMANDS[]={
     {"adminsettings",cmd_adminsettings,KOTO_LEVEL_TRUSTED,"Открыть шаблон прав",nullptr}
 };
 const koto_module MODULE={KOTO_MODULE_ABI,"administration","Управление администраторами через реальные MTProto-запросы, шаблоны и панели",
-    "1.3.1",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
+    "1.3.2",60,0,COMMANDS,(int)(sizeof(COMMANDS)/sizeof(COMMANDS[0])),nullptr,0,on_callback,nullptr,0,
     "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/administration.so"};
 }
 extern "C" const koto_module* koto_module_register(void) { return &MODULE; }

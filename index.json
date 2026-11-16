@@ -113,7 +113,7 @@
       "display_name": "Администрирование чатов",
       "author": "Kote",
       "description": "[ru] Модуль для управления администраторами и правами в чатах с шаблонами прав и инлайн-панелями быстрой настройки. [en] Administration through real MTProto queries, rights templates, and panels.",
-      "version": "1.3.1",
+      "version": "1.3.2",
       "kind": "so",
       "abi": "arm64-v8a, armeabi-v7a",
       "commands": [
@@ -164,21 +164,21 @@
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/administration.cpp",
       "license": "MIT",
       "min_host_version": 60,
-      "size_arm64": 283200,
-      "sha256_arm64": "ee8c44f0416371c15943a509f76885fd4614a57f02459700fa66d229341395e5",
+      "size_arm64": 283880,
+      "sha256_arm64": "94feb3b1bb4af209f9c0aed752531aaaa737c1fd96cd3ac7049c50596eac0f14",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/administration.so",
-      "size_arm32": 218832,
-      "sha256_arm32": "8651a23f90e5422419f246bd022f9c169c7b96e4e057fdd62430152f3f8f0f40",
+      "size_arm32": 219436,
+      "sha256_arm32": "d1920989bc4758b86daf7d5554d40e26a3327d4b5dea9f356d003aad4daa8278",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/administration.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "ee8c44f0416371c15943a509f76885fd4614a57f02459700fa66d229341395e5",
-          "size": 283200,
+          "sha256": "94feb3b1bb4af209f9c0aed752531aaaa737c1fd96cd3ac7049c50596eac0f14",
+          "size": 283880,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/administration.so"
         },
         "armeabi-v7a": {
-          "sha256": "8651a23f90e5422419f246bd022f9c169c7b96e4e057fdd62430152f3f8f0f40",
-          "size": 218832,
+          "sha256": "d1920989bc4758b86daf7d5554d40e26a3327d4b5dea9f356d003aad4daa8278",
+          "size": 219436,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/administration.so"
         }
       }
