@@ -5,7 +5,7 @@
     {
       "id": "kote",
       "name": "Kote",
-      "author": "Kote",
+      "author": "Коте, Kote, SynForge, KeyZenD, AuroraModules",
       "channel": "@KoteLoaderModules",
       "description": "Официальные и портированные C++ и Lua модули для Kotogram",
       "repo_url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/index.json",

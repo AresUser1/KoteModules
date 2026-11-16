@@ -58,7 +58,8 @@
           "size": 361412,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "VoiceToText",
@@ -105,7 +106,8 @@
           "size": 201792,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "administration",
@@ -181,7 +183,8 @@
           "size": 219436,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/administration.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "afk",
@@ -242,7 +245,8 @@
           "size": 36532,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/afk.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "akinator",
@@ -305,7 +309,8 @@
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.4.2/android-armeabi-v7a/akinator.so"
         }
       },
-      "file_size": 493320
+      "file_size": 493320,
+      "verified": true
     },
     {
       "id": "amnesty",
@@ -352,7 +357,8 @@
           "size": 123596,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/amnesty.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "aniliberty",
@@ -403,7 +409,8 @@
           "size": 146464,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/aniliberty.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "anisearch",
@@ -450,7 +457,8 @@
           "size": 153384,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/anisearch.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "auto_manager",
@@ -516,7 +524,8 @@
           "size": 17484,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/auto_manager.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "autolast",
@@ -587,7 +596,8 @@
           "size": 28640,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/autolast.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "autoresponder",
@@ -633,7 +643,8 @@
           "size": 34060,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/autoresponder.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "bakusearch",
@@ -674,7 +685,8 @@
           "size": 41932,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/bakusearch.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "banall",
@@ -720,7 +732,8 @@
           "size": 140464,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/banall.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "banword",
@@ -786,7 +799,8 @@
           "size": 32788,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/banword.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "calculator",
@@ -827,7 +841,8 @@
           "size": 27436,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/calculator.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "chat",
@@ -893,7 +908,8 @@
           "size": 153856,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/chat.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "checkers",
@@ -944,7 +960,8 @@
           "size": 25820,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/checkers.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "chess",
@@ -1000,7 +1017,8 @@
           "size": 26768,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/chess.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "copymessage",
@@ -1046,7 +1064,8 @@
           "size": 5036,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/copymessage.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "datereg",
@@ -1088,7 +1107,8 @@
           "size": 31868,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/datereg.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "delme",
@@ -1134,7 +1154,8 @@
           "size": 158344,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/delme.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "dep",
@@ -1180,7 +1201,8 @@
           "size": 6816,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/dep.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "doom",
@@ -1227,7 +1249,8 @@
           "size": 250172,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/doom.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "dox",
@@ -1273,7 +1296,8 @@
           "size": 285768,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/dox.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "freegpt",
@@ -1320,7 +1344,8 @@
           "size": 20960,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/freegpt.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "gemini_web",
@@ -1411,7 +1436,8 @@
           "size": 3924772,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gemini_web.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "id",
@@ -1457,7 +1483,8 @@
           "size": 8476,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/id.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "idprem",
@@ -1498,7 +1525,8 @@
           "size": 9356,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/idprem.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "inviter",
@@ -1569,7 +1597,8 @@
           "size": 194520,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/inviter.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "iris",
@@ -1631,7 +1660,8 @@
           "size": 226008,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/iris.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "kotserv",
@@ -1677,7 +1707,8 @@
           "size": 48380,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/kotserv.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "link_manager",
@@ -1738,7 +1769,8 @@
           "size": 403980,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/link_manager.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "mafia_multitool",
@@ -1909,7 +1941,8 @@
           "size": 185964,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mafia_multitool.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "mafia_triggers",
@@ -1980,7 +2013,8 @@
           "size": 69660,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mafia_triggers.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "mass_notifier",
@@ -2021,7 +2055,8 @@
           "size": 16388,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mass_notifier.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "mazegame",
@@ -2083,7 +2118,8 @@
           "size": 306976,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mazegame.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "moderation",
@@ -2214,7 +2250,8 @@
           "size": 228324,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/moderation.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "moomod",
@@ -2290,7 +2327,8 @@
           "size": 13268,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/moomod.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "music",
@@ -2336,7 +2374,8 @@
           "size": 6540,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/music.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "nekospy",
@@ -2403,7 +2442,8 @@
           "size": 25328,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nekospy.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "omni",
@@ -2450,7 +2490,8 @@
           "size": 241868,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/omni.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "picme",
@@ -2492,7 +2533,8 @@
           "size": 14572,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/picme.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "pmbl",
@@ -2568,7 +2610,8 @@
           "size": 261224,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/pmbl.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "poll",
@@ -2624,7 +2667,8 @@
           "size": 260264,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/poll.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "profile_manager",
@@ -2695,7 +2739,8 @@
           "size": 30336,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/profile_manager.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "quotes",
@@ -2745,7 +2790,8 @@
           "size": 56308,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/Quotes.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "rp",
@@ -2846,7 +2892,8 @@
           "size": 101292,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rp.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "rule34",
@@ -2888,7 +2935,8 @@
           "size": 140448,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "rule34_searcher",
@@ -2935,7 +2983,8 @@
           "size": 196764,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/rule34_searcher.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "scrapper",
@@ -2996,7 +3045,8 @@
           "size": 215216,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/scrapper.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "spam_ban",
@@ -3042,7 +3092,8 @@
           "size": 7380,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spam_ban.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "spammer",
@@ -3088,7 +3139,8 @@
           "size": 21864,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spammer.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "spotisaver",
@@ -3135,7 +3187,8 @@
           "size": 135652,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/spotisaver.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "stags",
@@ -3186,7 +3239,8 @@
           "size": 190268,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/stags.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "sysinfo",
@@ -3237,7 +3291,8 @@
           "size": 180720,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/sysinfo.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "tagger",
@@ -3343,7 +3398,8 @@
           "size": 98268,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/tagger.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "top",
@@ -3384,7 +3440,8 @@
           "size": 156696,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/top.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "tt_dl",
@@ -3425,7 +3482,8 @@
           "size": 32872,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/tt_dl.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "usermanage",
@@ -3491,7 +3549,8 @@
           "size": 92884,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/usermanage.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "virustotalchecker",
@@ -3533,7 +3592,8 @@
           "size": 153876,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/virustotalchecker.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "weather",
@@ -3589,7 +3649,8 @@
           "size": 248044,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/weather.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "whois",
@@ -3640,7 +3701,8 @@
           "size": 222732,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/whois.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "wisp",
@@ -3686,7 +3748,8 @@
           "size": 258084,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wisp.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "wordle",
@@ -3779,7 +3842,8 @@
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.3.3/android-armeabi-v7a/wordle.so"
         }
       },
-      "file_size": 355336
+      "file_size": 355336,
+      "verified": true
     },
     {
       "id": "youtube_loader",
@@ -3836,7 +3900,8 @@
           "size": 140300,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/youtube_loader.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "match3",
@@ -3883,7 +3948,8 @@
           "sha256": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/v1.0.0/android-armeabi-v7a/match3.so"
         }
-      }
+      },
+      "verified": true
     },
     {
       "id": "nft_info",
@@ -3924,7 +3990,8 @@
           "size": 41868,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nft_info.so"
         }
-      }
+      },
+      "verified": true
     }
   ]
 }
