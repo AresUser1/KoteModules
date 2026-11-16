@@ -1,11 +1,11 @@
-# Host Services — Kotogram / KoteLoader (Host versionCode 110)
+# Host Services — Kotogram / KoteLoader (Host versionCode 111)
 
-В KoteLoader и Kotogram архитектура C-ABI 3 расширяется версионируемыми системными сервисами хоста через функции `host_call_json` и `host_action_json` в структуре `koto_api`. Это позволяет модулям вызывать высокоуровневые операции MTProto (управление каналами, чтение розыгрышей, парсинг опросов, управление контактами) без изменения бинарного ABI.
+В KoteLoader и Kotogram архитектура C-ABI 3 расширяется версионируемыми системными сервисами хоста через функции `host_call_json` и `host_action_json` в структуре `koto_api`. Это позволяет модулям вызывать высокоуровневые операции MTProto (управление каналами, чтение розыгрышей, парсинг опросов, управление контактами, уникальные подарки и поиск контактов) без изменения бинарного ABI.
 
-* **Текущая версия хоста:** `versionCode 110` (Kotogram v0.4.17+)
+* **Текущая версия хоста:** `versionCode 111` (Kotogram v0.4.18+)
 * **Обратная совместимость:** ABI 3 полностью сохранён; старые модули работают без изменений.
-* **Gating совместимости:** Модули, использующие базовые сервисы, указывают `min_host_version=74`. Модули, которым требуются сервисы каналов и розыгрышей, указывают `min_host_version=110`.
-* **Динамическая проверка:** Перед вызовом новых функций проверяйте `api->host_version(ctx) >= 110`.
+* **Gating совместимости:** Модули, использующие базовые сервисы, указывают `min_host_version=74`. Модули, которым требуются сервисы каналов и розыгрышей, указывают `min_host_version=110`. Модули уникальных подарков указывают `min_host_version=111`.
+* **Динамическая проверка:** Перед вызовом новых функций проверяйте `api->host_version(ctx) >= 111`.
 
 ---
 
@@ -67,6 +67,8 @@ koto.host_action_json("telegram.channel.leave.v1", '{"channel_id":123456789}')
 | **`telegram.channel.leave.v1`** | **110+** | `channel_id` / `chat_id` / `id` | Выход из канала/супергруппы |
 | **`telegram.giveaway.info.v1`** | **110+** | `peer` / `chat_id`, `msg_id` | Информация о розыгрыше Telegram Premium / Stars (`participating`, `status`, `winner`, `stars_prize`) |
 | **`telegram.message.giveaway.v1`**| **110+** | `peer` / `chat_id`, `id` (msg_id) | Инспекция розыгрыша из медиа сообщения (`countries_iso2`, `months`, `stars`, `channels`) |
+| **`telegram.stargift.info.v1`** | **111+** | `slug` (например `"SnakeBox-190727"`) | Информация об уникальном подарке Telegram (NFT): владелец, адрес TON, атрибуты |
+| **`telegram.contacts.search.v1`** | **111+** | `q` (поисковая строка), `limit` (1..50) | Поиск пользователей и контактов в Telegram по имени / юзернейму |
 
 ---
 
@@ -112,6 +114,28 @@ static void cmd_join(koto_ctx* ctx, const koto_api* api) {
 }
 ```
 
+### 3. Получение информации об уникальном подарке (Host 111)
+```cpp
+#include "module_abi.h"
+#include "koto_services.hpp"
+#include "nlohmann/json.hpp"
+
+static void cmd_nft(koto_ctx* ctx, const koto_api* api) {
+    std::string slug = "SnakeBox-190727";
+    std::string res = koto::services::stargift_info(ctx, api, slug);
+    auto j = nlohmann::json::parse(res, nullptr, false);
+    if (j.is_object() && j.value("ok", false)) {
+        std::string title = j.value("title", "");
+        int num = j.value("num", 0);
+        std::string owner = j.value("owner_name", "Скрыт");
+        api->c_text(ctx, ("🎁 Подарок: " + title + " #" + std::to_string(num) + "\nВладелец: " + owner).c_str());
+    } else {
+        api->c_text(ctx, "Подарок не найден или скрыт.");
+    }
+    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+}
+```
+
 ### 2. Проверка результатов розыгрыша (Host 110)
 ```cpp
 #include "module_abi.h"
@@ -135,6 +159,28 @@ static void cmd_check_gw(koto_ctx* ctx, const koto_api* api) {
         api->c_text(ctx, winner ? "🎉 Вы выиграли в этом розыгрыше!" : "Увы, выигрыш не выпал.");
     } else {
         api->c_text(ctx, "Не удалось получить информацию о розыгрыше.");
+    }
+    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+}
+```
+
+### 3. Получение информации об уникальном подарке (Host 111)
+```cpp
+#include "module_abi.h"
+#include "koto_services.hpp"
+#include "nlohmann/json.hpp"
+
+static void cmd_nft(koto_ctx* ctx, const koto_api* api) {
+    std::string slug = "SnakeBox-190727";
+    std::string res = koto::services::stargift_info(ctx, api, slug);
+    auto j = nlohmann::json::parse(res, nullptr, false);
+    if (j.is_object() && j.value("ok", false)) {
+        std::string title = j.value("title", "");
+        int num = j.value("num", 0);
+        std::string owner = j.value("owner_name", "Скрыт");
+        api->c_text(ctx, ("🎁 Подарок: " + title + " #" + std::to_string(num) + "\nВладелец: " + owner).c_str());
+    } else {
+        api->c_text(ctx, "Подарок не найден или скрыт.");
     }
     api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
 }

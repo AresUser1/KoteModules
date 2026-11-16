@@ -178,6 +178,104 @@ static void edit_err(koto_ctx* ctx, const koto_api* api, const char* msg_utf8) {
     api->c_edit(ctx, 0);
 }
 
+// ── Резервное извлечение через ssstik.io ──────────────────────────────────────
+static bool fetch_via_ssstik(koto_ctx* ctx, const koto_api* api, const std::string& raw_url,
+                             std::string& out_title, std::string& out_play, std::vector<std::string>& out_images) {
+    if (!api || !api->http_post) return false;
+
+    // Очищаем параметры отслеживания (?_r=1...)
+    std::string clean_url = raw_url;
+    size_t qp = clean_url.find('?');
+    if (qp != std::string::npos) clean_url = clean_url.substr(0, qp);
+
+    std::string enc = url_encode(clean_url);
+    std::string post_data = "id=" + enc + "&locale=en&tt=0";
+    std::string headers =
+        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n"
+        "Origin: https://ssstik.io\r\n"
+        "Referer: https://ssstik.io/en\r\n"
+        "HX-Request: true\r\n"
+        "HX-Trigger: _gcaptcha_pt\r\n"
+        "HX-Target: target\r\n"
+        "HX-Current-URL: https://ssstik.io/en\r\n"
+        "Content-Type: application/x-www-form-urlencoded; charset=UTF-8";
+
+    std::vector<unsigned char> buf(512 * 1024);
+    long long n = api->http_post(ctx, "https://ssstik.io/abc?url=dl", post_data.c_str(),
+                                 headers.c_str(), buf.data(), (int)buf.size());
+    if (n <= 0) return false;
+
+    std::string html((const char*)buf.data(), (size_t)n);
+
+    // Заголовок
+    size_t tp = html.find("<p class=\"maintext\">");
+    if (tp != std::string::npos) {
+        tp += 20;
+        size_t te = html.find("</p>", tp);
+        if (te != std::string::npos) {
+            out_title = trim(html.substr(tp, te - tp));
+        }
+    }
+    if (out_title.empty()) {
+        size_t h2p = html.find("<h2>");
+        if (h2p != std::string::npos) {
+            h2p += 4;
+            size_t h2e = html.find("</h2>", h2p);
+            if (h2e != std::string::npos) {
+                out_title = trim(html.substr(h2p, h2e - h2p));
+            }
+        }
+    }
+
+    // Прямой URL видео: href="https://tikcdn.io/ssstik/... (исключая /m/ и /a/ и /p/)
+    size_t vp = html.find("href=\"https://tikcdn.io/ssstik/");
+    while (vp != std::string::npos) {
+        vp += 6;
+        size_t ve = html.find('"', vp);
+        if (ve != std::string::npos) {
+            std::string u = html.substr(vp, ve - vp);
+            if (u.find("/m/") == std::string::npos &&
+                u.find("/a/") == std::string::npos &&
+                u.find("/p/") == std::string::npos) {
+                out_play = u;
+                break;
+            }
+        }
+        vp = html.find("href=\"https://tikcdn.io/ssstik/", vp + 1);
+    }
+
+    // Запасной поиск кнопки without_watermark
+    if (out_play.empty()) {
+        size_t wmp = html.find("without_watermark");
+        if (wmp != std::string::npos) {
+            size_t hp = html.rfind("href=\"", wmp);
+            if (hp != std::string::npos) {
+                hp += 6;
+                size_t he = html.find('"', hp);
+                if (he != std::string::npos) {
+                    std::string u = html.substr(hp, he - hp);
+                    if (u.rfind("http", 0) == 0 && u.find("/m/") == std::string::npos) {
+                        out_play = u;
+                    }
+                }
+            }
+        }
+    }
+
+    // Фото-слайды (если фотоальбом)
+    size_t ip = html.find("https://tikcdn.io/ssstik/p/");
+    while (ip != std::string::npos) {
+        size_t ie = html.find_first_of("\"' \t\r\n", ip);
+        if (ie != std::string::npos) {
+            std::string img_url = html.substr(ip, ie - ip);
+            out_images.push_back(img_url);
+            ip = html.find("https://tikcdn.io/ssstik/p/", ie);
+        } else break;
+    }
+
+    return !out_play.empty() || !out_images.empty();
+}
+
 static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     const char* raw = api->cmd_args(ctx);
     std::string args = trim(raw ? raw : "");
@@ -226,9 +324,35 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     api->c_fmt(ctx, "\xF0\x9F\x94\x8D \xD0\x9F\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB0\xD1\x8E \xD0\xB8\xD0\xBD\xD1\x84\xD0\xBE\xD1\x80\xD0\xBC\xD0\xB0\xD1\x86\xD0\xB8\xD1\x8E...", KOTO_ENT_ITALIC); // 🔍 Получаю информацию...
     api->c_edit(ctx, 0);
 
-    std::string body = http_get_str(ctx, api, std::string(API_PREFIX) + url_encode(link));
-    if (body.empty() || body.find("\"code\":0") == std::string::npos) {
-        edit_err(ctx, api, "\xE2\x9D\x8C \xD0\x9E\xD1\x88\xD0\xB8\xD0\xB1\xD0\xBA\xD0\xB0 API: \xD0\xBD\xD0\xB5 \xD1\x83\xD0\xB4\xD0\xB0\xD0\xBB\xD0\xBE\xD1\x81\xD1\x8C \xD0\xBF\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB8\xD1\x82\xD1\x8C \xD0\xB4\xD0\xB0\xD0\xBD\xD0\xBD\xD1\x8B\xD0\xB5."); // ❌ Ошибка API: не удалось получить данные.
+    std::string title;
+    std::string play;
+    std::vector<std::string> images;
+
+    // Сначала пробуем быстрый TikWM API
+    std::string enc = url_encode(link);
+    std::string body = http_get_str(ctx, api, std::string(API_PREFIX) + enc);
+    if (!body.empty() && body.find("\"code\":0") != std::string::npos) {
+        size_t dpos = body.find("\"data\"");
+        size_t mpos = body.find("\"music_info\"");
+        std::string data_scope = (dpos == std::string::npos)
+            ? body
+            : (mpos != std::string::npos && mpos > dpos ? body.substr(dpos, mpos - dpos) : body.substr(dpos));
+        title = json_str(data_scope, "title");
+        images = json_str_array(body, "images");
+        if (images.empty()) {
+            play = json_str(data_scope, "play");
+            if (play.empty()) play = json_str(data_scope, "hdplay");
+            if (play.empty()) play = json_str(data_scope, "wmplay");
+        }
+    }
+
+    // Если TikWM упал с 502/таймаутом или не дал видео — фоллбэк на SSSTik
+    if (play.empty() && images.empty()) {
+        fetch_via_ssstik(ctx, api, link, title, play, images);
+    }
+
+    if (play.empty() && images.empty()) {
+        edit_err(ctx, api, "\xE2\x9D\x8C \xD0\xA1\xD0\xB5\xD1\x80\xD0\xB2\xD0\xB5\xD1\x80\xD1\x8B TikTok \xD0\xBD\xD0\xB5 \xD0\xBE\xD1\x82\xD0\xB2\xD0\xB5\xD1\x82\xD0\xB8\xD0\xBB\xD0\xB8 (502 / \xD1\x82\xD0\xB0\xD0\xB9\xD0\xBC\xD0\xB0\xD1\x83\xD1\x82). \xD0\x9F\xD0\xBE\xD0\xB2\xD1\x82\xD0\xBE\xD1\x80\xD0\xB8\xD1\x82\xD0\xB5 \xD1\x87\xD0\xB5\xD1\x80\xD0\xB5\xD0\xB7 \xD0\xBF\xD0\xB0\xD1\x80\xD1\x83 \xD1\x81\xD0\xB5\xD0\xBA\xD1\x83\xD0\xBD\xD0\xB4."); // ❌ Серверы TikTok не ответили (502 / таймаут). Повторите через пару секунд.
         return;
     }
 
@@ -240,16 +364,7 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     bool full = caption_full(ctx, api);
 
-    // Заголовок (data.title идёт до music_info).
-    size_t dpos = body.find("\"data\"");
-    size_t mpos = body.find("\"music_info\"");
-    std::string data_scope = (dpos == std::string::npos)
-        ? body
-        : (mpos != std::string::npos && mpos > dpos ? body.substr(dpos, mpos - dpos) : body.substr(dpos));
-    std::string title = json_str(data_scope, "title");
-
     // ── Фото-альбом ───────────────────────────────────────────────────────────
-    std::vector<std::string> images = json_str_array(body, "images");
     if (!images.empty()) {
         compose_caption(ctx, api, title, full);   // подпись = композер (на 1-м фото)
         if (api->c_send_album) {
@@ -270,9 +385,6 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
     }
 
     // ── Видео / GIF ─────────────────────────────────────────────────────────
-    std::string play = json_str(data_scope, "play");
-    if (play.empty()) play = json_str(data_scope, "hdplay");
-    if (play.empty()) play = json_str(data_scope, "wmplay");
     if (play.empty()) {
         edit_err(ctx, api, "\xE2\x9D\x8C \xD0\x9D\xD0\xB5 \xD0\xBD\xD0\xB0\xD0\xB9\xD0\xB4\xD0\xB5\xD0\xBD \xD0\xBF\xD1\x80\xD1\x8F\xD0\xBC\xD0\xBE\xD0\xB9 URL \xD0\xB2\xD0\xB8\xD0\xB4\xD0\xB5\xD0\xBE."); // ❌ Не найден прямой URL видео.
         return;

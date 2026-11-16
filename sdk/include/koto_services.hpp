@@ -154,4 +154,16 @@ inline bool invite_revoke(koto_ctx* ctx, const koto_api* api, long long chat_id,
     return action(ctx, api, "telegram.invite.edit.v1", req);
 }
 
+// ─── Unique Star Gifts & Contacts Search ────────────────────────────────────
+
+inline std::string stargift_info(koto_ctx* ctx, const koto_api* api, const std::string& slug) {
+    std::string req = "{\"slug\":\"" + slug + "\"}";
+    return call(ctx, api, "telegram.stargift.info.v1", req);
+}
+
+inline std::string contacts_search(koto_ctx* ctx, const koto_api* api, const std::string& query, int limit = 10) {
+    std::string req = "{\"q\":\"" + query + "\",\"limit\":" + std::to_string(limit) + "}";
+    return call(ctx, api, "telegram.contacts.search.v1", req);
+}
+
 } // namespace koto::services
