@@ -3460,25 +3460,25 @@
         }
       ],
       "size": 71416,
-      "sha256": "1eaee1c07be92c0115bb8f1b3d5d17d3c1e10c09751e07c8708a798d623823e0",
+      "sha256": "ef41a0238c5db1285dedd8176c1f75f348a4447e1cb61054a55614ad85b7627d",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/tt_dl.so",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/tt_dl.cpp",
       "license": "MIT",
       "min_host_version": 24,
       "size_arm64": 71416,
-      "sha256_arm64": "1eaee1c07be92c0115bb8f1b3d5d17d3c1e10c09751e07c8708a798d623823e0",
+      "sha256_arm64": "ef41a0238c5db1285dedd8176c1f75f348a4447e1cb61054a55614ad85b7627d",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/tt_dl.so",
       "size_arm32": 32872,
-      "sha256_arm32": "aab27944fd1920afde4ef741c2eaea15823aa32974468ff5b29777f939e7a8e2",
+      "sha256_arm32": "92b9b79bcbb882bb3d8cc7d2ebd545c915af9697dad03e8977705ac4f59a881a",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/tt_dl.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "1eaee1c07be92c0115bb8f1b3d5d17d3c1e10c09751e07c8708a798d623823e0",
+          "sha256": "ef41a0238c5db1285dedd8176c1f75f348a4447e1cb61054a55614ad85b7627d",
           "size": 71416,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/tt_dl.so"
         },
         "armeabi-v7a": {
-          "sha256": "aab27944fd1920afde4ef741c2eaea15823aa32974468ff5b29777f939e7a8e2",
+          "sha256": "92b9b79bcbb882bb3d8cc7d2ebd545c915af9697dad03e8977705ac4f59a881a",
           "size": 32872,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/tt_dl.so"
         }

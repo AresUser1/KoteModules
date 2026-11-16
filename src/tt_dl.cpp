@@ -409,7 +409,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tt_dl",
     "[ru] Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3. [en] Download TikTok content (video, GIF, photo albums). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
-    "1.6.0",
+    "1.7.0",
     24,
     0,
     COMMANDS,
