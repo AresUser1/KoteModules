@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updated": "2026-11-16",
+  "verified_authors": [
+    {
+      "id": "kote",
+      "name": "Kote (Официальный)",
+      "author": "Kote",
+      "channel": "@KoteLoaderModules",
+      "description": "Официальные и портированные C++ и Lua модули для Kotogram",
+      "repo_url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/index.json",
+      "mirrors": [
+        "https://gitflic.ru/project/koteyka/kotemodules/blob/raw?file=index.json",
+        "https://raw.githubusercontent.com/AresUser1/KoteModules/main/index.json",
+        "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/index.json"
+      ],
+      "is_official": true,
+      "default_enabled": true
+    }
+  ]
+}
