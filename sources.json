@@ -4,7 +4,7 @@
   "verified_authors": [
     {
       "id": "kote",
-      "name": "Kote (Официальный)",
+      "name": "Kote",
       "author": "Kote",
       "channel": "@KoteLoaderModules",
       "description": "Официальные и портированные C++ и Lua модули для Kotogram",
