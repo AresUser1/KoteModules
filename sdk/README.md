@@ -1,26 +1,30 @@
-# Kote Module SDK 0.4.7 (Host versionCode 111)
+# Kote Module SDK 0.4.8 (Host versionCode 112)
 
 Официальный набор инструментов для разработки нативных (C/C++) и Lua-модулей юзербота KoteLoader / Kotogram.
 
-* **Целевая версия хоста:** `versionCode 111` (Kotogram v0.4.18+)
+* **Целевая версия хоста:** `versionCode 112` (Kotogram v0.4.18+)
 * **Архитектуры:** `arm64-v8a` (64-бит) и `armeabi-v7a` (32-бит)
 * **Минимальный Android:** API 26+ (Android 8.0+)
 * **Стандарты:** C11 / C++20, Module ABI 3
 * **Мультиязычность:** Полная поддержка русского и английского языков (RU / EN)
 * **Руководство по 32-битным модулям:** [GUIDE_32BIT.md](GUIDE_32BIT.md)
-* **Руководство по сервисам хоста (111+):** [HOST_SERVICES.md](HOST_SERVICES.md)
+* **Руководство по сервисам хоста (112+):** [HOST_SERVICES.md](HOST_SERVICES.md)
 
 ---
 
-## 🚀 Что нового в SDK 0.4.7 (Host 111)
+## 🚀 Что нового в SDK 0.4.8 (Host 112)
 
-1. 🎁 **Поддержка нативных MTProto хост-сервисов уникальных подарков (NFT):**
-   - Добавлен системный сервис `telegram.stargift.info.v1` и C++ обёртка `stargift_info` в `koto_services.hpp` (вызов MTProto `payments.getUniqueStarGift` для получения атрибутов, редкости, владельца и адреса смарт-контракта в сети TON).
-2. 🔍 **Системный поиск контактов Telegram:**
-   - Добавлен системный сервис `telegram.contacts.search.v1` и C++ обёртка `contacts_search` в `koto_services.hpp` (вызов MTProto `contacts.search` с ограничением лимита).
-3. 📦 **Новые и обновлённые примеры модулей:**
-   - `examples/native/nft_info.cpp` — инспекция уникальных подарков Telegram с разрешением владельца и проверкой статуса чейна TON.
-   - `examples/native/tt_dl.cpp` — загрузка видео и фотоальбомов TikTok с каскадным фоллбэком.
+1. 🎁 **Нативные MTProto-сервисы подарков и Telegram Stars:**
+   - `telegram.stargifts.saved.v1` (`stargifts_saved`) — список сохранённых подарков пользователя с пагинацией (`payments.getSavedStarGifts`).
+   - `telegram.stargift.value.v1` (`stargift_value`) — оценка стоимости коллекционного NFT-подарка (`payments.getUniqueStarGiftValueInfo`).
+   - `telegram.stars.summary.v1` (`stars_summary`) — баланс и сводка транзакций Telegram Stars (`payments.getStarsStatus`).
+2. 🛡️ **Нативные MTProto-сервисы управления чатом и заявками:**
+   - `telegram.chat.default_rights.v1` (`chat_default_rights`) — изменение прав участников по умолчанию (`messages.editChatDefaultBannedRights`).
+   - `telegram.chat.slowmode.v1` (`chat_slowmode`) — включение и настройка медленного режима (`channels.toggleSlowMode`).
+   - `telegram.join_requests.list.v1` (`join_requests_list`) и `telegram.join_requests.resolve_all.v1` (`join_requests_resolve_all`) — просмотр и массовое одобрение/отклонение заявок на вступление.
+   - `telegram.chat.participants.v1` (`chat_participants`) — получение списков участников, ботов и удалённых аккаунтов (`channels.getParticipants` / `messages.getFullChat`).
+3. 🔧 **Улучшения `koto_services.hpp` и `HOST_SERVICES.md`:**
+   - Добавлены C++20 обёртки для всех 8 новых сервисов Host 112 и обновлена документация.
 
 ---
 

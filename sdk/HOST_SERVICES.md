@@ -1,11 +1,11 @@
-# Host Services — Kotogram / KoteLoader (Host versionCode 111)
+# Host Services — Kotogram / KoteLoader (Host versionCode 112)
 
-В KoteLoader и Kotogram архитектура C-ABI 3 расширяется версионируемыми системными сервисами хоста через функции `host_call_json` и `host_action_json` в структуре `koto_api`. Это позволяет модулям вызывать высокоуровневые операции MTProto (управление каналами, чтение розыгрышей, парсинг опросов, управление контактами, уникальные подарки и поиск контактов) без изменения бинарного ABI.
+В KoteLoader и Kotogram архитектура C-ABI 3 расширяется версионируемыми системными сервисами хоста через функции `host_call_json` и `host_action_json` в структуре `koto_api`. Это позволяет модулям вызывать высокоуровневые операции MTProto (управление каналами, чтение розыгрышей, парсинг опросов, управление контактами, уникальные подарки, статистика подарков/Stars и поиск контактов) без изменения бинарного ABI.
 
-* **Текущая версия хоста:** `versionCode 111` (Kotogram v0.4.18+)
+* **Текущая версия хоста:** `versionCode 112` (Kotogram v0.4.18+)
 * **Обратная совместимость:** ABI 3 полностью сохранён; старые модули работают без изменений.
-* **Gating совместимости:** Модули, использующие базовые сервисы, указывают `min_host_version=74`. Модули, которым требуются сервисы каналов и розыгрышей, указывают `min_host_version=110`. Модули уникальных подарков указывают `min_host_version=111`.
-* **Динамическая проверка:** Перед вызовом новых функций проверяйте `api->host_version(ctx) >= 111`.
+* **Gating совместимости:** Модули, использующие базовые сервисы, указывают `min_host_version=74`. Модули каналов и розыгрышей — `min_host_version=110`. Модули уникальных подарков — `min_host_version=111`. Модули сохранённых подарков и статистики Stars — `min_host_version=112`.
+* **Динамическая проверка:** Перед вызовом новых функций проверяйте `api->host_version(ctx) >= 112`.
 
 ---
 
@@ -69,6 +69,14 @@ koto.host_action_json("telegram.channel.leave.v1", '{"channel_id":123456789}')
 | **`telegram.message.giveaway.v1`**| **110+** | `peer` / `chat_id`, `id` (msg_id) | Инспекция розыгрыша из медиа сообщения (`countries_iso2`, `months`, `stars`, `channels`) |
 | **`telegram.stargift.info.v1`** | **111+** | `slug` (например `"SnakeBox-190727"`) | Информация об уникальном подарке Telegram (NFT): владелец, адрес TON, атрибуты |
 | **`telegram.contacts.search.v1`** | **111+** | `q` (поисковая строка), `limit` (1..50) | Поиск пользователей и контактов в Telegram по имени / юзернейму |
+| **`telegram.stargifts.saved.v1`** | **112+** | `self` / `user_id` / `username`, `offset`, `limit` (1..100) | Список сохранённых подарков профиля (обычные, лимитированные, NFT, скрытые) |
+| **`telegram.stargift.value.v1`** | **112+** | `slug` | Оценочная стоимость уникального NFT-подарка (`currency`, `value`, `floor_price`, `average_price`) |
+| **`telegram.stars.summary.v1`** | **112+** | `limit` (1..100), `max_pages` (1..200) | Текущий баланс Telegram Stars и сводка транзакций (`total_tx`, `sent`, `received`) |
+| **`telegram.chat.default_rights.v1`** | **112+** | `chat_id`, `closed` (bool) или флаги `send_*`, `until_date` | Закрытие/открытие чата и настройка прав участников по умолчанию |
+| **`telegram.chat.slowmode.v1`** | **112+** | `chat_id`, `seconds` (`0..3600`) | Включение/отключение медленного режима (Slow Mode) в супергруппе |
+| **`telegram.join_requests.list.v1`** | **112+** | `chat_id`, `limit` (1..100) | Список заявок на вступление в чат/канал (`count`, `requests[]`) |
+| **`telegram.join_requests.resolve_all.v1`** | **112+** | `chat_id`, `approved` (bool), `link` (опц.) | Массовое одобрение или отклонение всех заявок на вступление |
+| **`telegram.chat.participants.v1`** | **112+** | `chat_id`, `offset`, `limit` (1..200) | Список участников супергруппы с датой вступления (`date`), ролью и флагами (`is_bot`, `deleted`) |
 
 ---
 

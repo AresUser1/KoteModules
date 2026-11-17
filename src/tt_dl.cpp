@@ -47,6 +47,27 @@ static std::string to_lower(std::string s) {
     return s;
 }
 
+static std::string extract_tiktok_url(const std::string& s) {
+    size_t pos = s.find("tiktok.com/");
+    if (pos == std::string::npos) pos = s.find("douyin.com/");
+    if (pos != std::string::npos) {
+        size_t start = s.rfind("http", pos);
+        if (start != std::string::npos) {
+            size_t end = s.find_first_of(" \t\r\n", pos);
+            if (end == std::string::npos) return s.substr(start);
+            return s.substr(start, end - start);
+        }
+    }
+    size_t h = s.find("http://");
+    if (h == std::string::npos) h = s.find("https://");
+    if (h != std::string::npos) {
+        size_t end = s.find_first_of(" \t\r\n", h);
+        if (end == std::string::npos) return s.substr(h);
+        return s.substr(h, end - h);
+    }
+    return "";
+}
+
 // Снять JSON-экранирование в строковом значении (\/ \" \\ \n \t \uXXXX базово).
 static std::string json_unescape(const std::string& s) {
     std::string out;
@@ -106,6 +127,7 @@ static std::string json_str(const std::string& scope, const std::string& key) {
     }
     return json_unescape(raw);
 }
+
 // Собрать строки массива "key":[ "...", "..." ].
 static std::vector<std::string> json_str_array(const std::string& body, const std::string& key) {
     std::vector<std::string> out;
@@ -172,10 +194,20 @@ static void compose_caption(koto_ctx* ctx, const koto_api* api, const std::strin
     api->c_fmt(ctx, "\xF0\x9F\x93\xA5 \xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB0\xD0\xBD\xD0\xBE \xD1\x87\xD0\xB5\xD1\x80\xD0\xB5\xD0\xB7 KoteLoader", KOTO_ENT_ITALIC); // 📥 Скачано через KoteLoader
 }
 
-static void edit_err(koto_ctx* ctx, const koto_api* api, const char* msg_utf8) {
+static void edit_msg(koto_ctx* ctx, const koto_api* api, const char* msg_utf8, int fmt_flag) {
     api->c_reset(ctx);
-    api->c_fmt(ctx, msg_utf8, KOTO_ENT_BOLD);
-    api->c_edit(ctx, 0);
+    api->c_fmt(ctx, msg_utf8, fmt_flag);
+    if (api->is_outgoing && api->is_outgoing(ctx)) {
+        api->c_edit(ctx, 0);
+    } else if (api->c_reply) {
+        api->c_reply(ctx, 0);
+    } else {
+        api->c_edit(ctx, 0);
+    }
+}
+
+static void edit_err(koto_ctx* ctx, const koto_api* api, const char* msg_utf8) {
+    edit_msg(ctx, api, msg_utf8, KOTO_ENT_BOLD);
 }
 
 // ── Резервное извлечение через ssstik.io ──────────────────────────────────────
@@ -277,7 +309,7 @@ static bool fetch_via_ssstik(koto_ctx* ctx, const koto_api* api, const std::stri
 }
 
 static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
-    const char* raw = api->cmd_args(ctx);
+    const char* raw = api->cmd_args ? api->cmd_args(ctx) : nullptr;
     std::string args = trim(raw ? raw : "");
 
     // ── Переключение режима подписи ──────────────────────────────────────────
@@ -287,42 +319,43 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
         if (mode == "full") {
             if (api->cfg_set) api->cfg_set(ctx, "caption_full", "1");
             api->db_set_int(ctx, "caption_full", 1);
-            api->c_reset(ctx);
-            api->c_fmt(ctx, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: ", KOTO_ENT_BOLD); // ✅ Режим подписи:
-            api->c_text(ctx, "\xD0\xBF\xD0\xBE\xD0\xBB\xD0\xBD\xD1\x8B\xD0\xB9 (\xD0\xBD\xD0\xB0\xD0\xB7\xD0\xB2\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5 + \xD0\xBA\xD1\x80\xD0\xB5\xD0\xB4\xD0\xB8\xD1\x82\xD1\x8B)"); // полный (название + кредиты)
-            api->c_edit(ctx, 0);
+            edit_msg(ctx, api, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: \xD0\xBF\xD0\xBE\xD0\xBB\xD0\xBD\xD1\x8B\xD0\xB9 (\xD0\xBD\xD0\xB0\xD0\xB7\xD0\xB2\xD0\xB0\xD0\xBD\xD0\xB8\xD0\xB5 + \xD0\xBA\xD1\x80\xD0\xB5\xD0\xB4\xD0\xB8\xD1\x82\xD1\x8B)", KOTO_ENT_BOLD);
             return;
         } else if (mode == "short") {
             if (api->cfg_set) api->cfg_set(ctx, "caption_full", "0");
             api->db_set_int(ctx, "caption_full", 0);
-            api->c_reset(ctx);
-            api->c_fmt(ctx, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: ", KOTO_ENT_BOLD); // ✅ Режим подписи:
-            api->c_text(ctx, "\xD0\xBA\xD1\x80\xD0\xB0\xD1\x82\xD0\xBA\xD0\xB8\xD0\xB9 (\xD1\x82\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xBA\xD0\xBE \xD0\xBA\xD1\x80\xD0\xB5\xD0\xB4\xD0\xB8\xD1\x82\xD1\x8B)"); // краткий (только кредиты)
-            api->c_edit(ctx, 0);
+            edit_msg(ctx, api, "\xE2\x9C\x85 \xD0\xA0\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC \xD0\xBF\xD0\xBE\xD0\xB4\xD0\xBF\xD0\xB8\xD1\x81\xD0\xB8: \xD0\xBA\xD1\x80\xD0\xB0\xD1\x82\xD0\xBA\xD0\xB8\xD0\xB9 (\xD1\x82\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xBA\xD0\xBE \xD0\xBA\xD1\x80\xD0\xB5\xD0\xB4\xD0\xB8\xD1\x82\xD1\x8B)", KOTO_ENT_BOLD);
             return;
         } else {
             std::string cur = caption_full(ctx, api) ? "full" : "short";
-            api->c_reset(ctx);
-            api->c_fmt(ctx, ("\xE2\x84\xB9\xEF\xB8\x8F \xD0\xA2\xD0\xB5\xD0\xBA\xD1\x83\xD1\x89\xD0\xB8\xD0\xB9 \xD1\x80\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC: " + cur + "\n\xD0\x98\xD1\x81\xD0\xBF\xD0\xBE\xD0\xBB\xD1\x8C\xD0\xB7\xD1\x83\xD0\xB9: .tt caption full / short").c_str(), KOTO_ENT_ITALIC); // ℹ️ Текущий режим: ... Используй: ...
-            api->c_edit(ctx, 0);
+            std::string msg = "\xE2\x84\xB9\xEF\xB8\x8F \xD0\xA2\xD0\xB5\xD0\xBA\xD1\x83\xD1\x89\xD0\xB8\xD0\xB9 \xD1\x80\xD0\xB5\xD0\xB6\xD0\xB8\xD0\xBC: " + cur + "\n\xD0\x98\xD1\x81\xD0\xBF\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB0\xD1\x8E: .tt caption full / short";
+            edit_msg(ctx, api, msg.c_str(), KOTO_ENT_ITALIC);
             return;
         }
     }
 
+    // Поддержка ответа на сообщение со ссылкой
+    if (args.empty() && api->reply_text) {
+        const char* rep = api->reply_text(ctx);
+        if (rep && rep[0]) {
+            args = trim(rep);
+        }
+    }
+
     if (args.empty()) {
-        edit_err(ctx, api, "\xE2\x9D\x8C \xD0\xA3\xD0\xBA\xD0\xB0\xD0\xB6\xD0\xB8\xD1\x82\xD0\xB5 \xD1\x81\xD1\x81\xD1\x8B\xD0\xBB\xD0\xBA\xD1\x83 \xD0\xBD\xD0\xB0 TikTok."); // ❌ Укажите ссылку на TikTok.
+        edit_err(ctx, api, "\xE2\x9D\x8C \xD0\xA3\xD0\xBA\xD0\xB0\xD0\xB6\xD0\xB8\xD1\x82\xD0\xB5 \xD1\x81\xD1\x81\xD1\x8B\xD0\xBB\xD0\xBA\xD1\x83 \xD0\xBD\xD0\xB0 TikTok \xD0\xB8\xD0\xBB\xD0\xB8 \xD0\xBE\xD1\x82\xD0\xB2\xD0\xB5\xD1\x82\xD1\x8C\xD1\x82\xD0\xB5 \xD0\xBD\xD0\xB0 \xD0\xBD\xD0\xB5\xD1\x91."); // ❌ Укажите ссылку на TikTok или ответьте на неё.
         return;
     }
 
-    // Первое слово = ссылка.
-    std::string link = args;
-    size_t sp = link.find_first_of(" \t\n");
-    if (sp != std::string::npos) link = link.substr(0, sp);
+    std::string link = extract_tiktok_url(args);
+    if (link.empty()) {
+        link = args;
+        size_t sp = link.find_first_of(" \t\n");
+        if (sp != std::string::npos) link = link.substr(0, sp);
+    }
 
-    // 1. Моментальный статус "Получаю информацию..."
-    api->c_reset(ctx);
-    api->c_fmt(ctx, "\xF0\x9F\x94\x8D \xD0\x9F\xD0\xBE\xD0\xBB\xD1\x83\xD1\x87\xD0\xB0\xD1\x8E \xD0\xB8\xD0\xBD\xD1\x84\xD0\xBE\xD1\x80\xD0\xBC\xD0\xB0\xD1\x86\xD0\xB8\xD1\x8E...", KOTO_ENT_ITALIC); // 🔍 Получаю информацию...
-    api->c_edit(ctx, 0);
+    // 1. Моментальный визуальный статус "Скачиваю TikTok..." сразу при старте
+    edit_msg(ctx, api, "\xE2\x8F\xB3 \xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD1\x8E TikTok...", KOTO_ENT_ITALIC); // ⏳ Скачиваю TikTok...
 
     std::string title;
     std::string play;
@@ -356,10 +389,8 @@ static void cmd_tt(koto_ctx* ctx, const koto_api* api) {
         return;
     }
 
-    // 2. Статус "Скачиваю..."
-    api->c_reset(ctx);
-    api->c_fmt(ctx, "\xF0\x9F\x93\xA5 \xD0\xA1\xD0\xBA\xD0\xB0\xD1\x87\xD0\xB8\xD0\xB2\xD0\xB0\xD1\x8E...", KOTO_ENT_ITALIC); // 📥 Скачиваю...
-    api->c_edit(ctx, 0);
+    // 2. Статус отправки
+    edit_msg(ctx, api, "\xF0\x9F\x93\xA5 \xD0\x9E\xD1\x82\xD0\xBF\xD1\x80\xD0\xB0\xD0\xB2\xD0\xBB\xD1\x8F\xD1\x8E...", KOTO_ENT_ITALIC); // 📥 Отправляю...
 
     long long cid = api->chat_id(ctx);
     bool full = caption_full(ctx, api);
@@ -409,7 +440,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "tt_dl",
     "[ru] Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3. [en] Download TikTok content (video, GIF, photo albums). C++ ABI 3.", // "Скачивание видео из TikTok (видео, гифки, фото-альбомы). C++ ABI 3."
-    "1.7.0",
+    "1.7.1",
     24,
     0,
     COMMANDS,

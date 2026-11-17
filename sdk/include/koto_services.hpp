@@ -166,4 +166,49 @@ inline std::string contacts_search(koto_ctx* ctx, const koto_api* api, const std
     return call(ctx, api, "telegram.contacts.search.v1", req);
 }
 
+// ─── Host 112+: Saved Star Gifts, Unique Value Info & Stars Summary ────────
+
+inline std::string stargifts_saved(koto_ctx* ctx, const koto_api* api, const std::string& request_json) {
+    return call(ctx, api, "telegram.stargifts.saved.v1", request_json);
+}
+
+inline std::string stargift_value(koto_ctx* ctx, const koto_api* api, const std::string& slug) {
+    std::string req = "{\"slug\":\"" + slug + "\"}";
+    return call(ctx, api, "telegram.stargift.value.v1", req);
+}
+
+inline std::string stars_summary(koto_ctx* ctx, const koto_api* api, int max_pages = 30) {
+    std::string req = "{\"limit\":100,\"max_pages\":" + std::to_string(max_pages) + "}";
+    return call(ctx, api, "telegram.stars.summary.v1", req);
+}
+
+// ─── Host 112+: Chat Rights, SlowMode, Join Requests & Participants ────────
+
+inline std::string chat_set_closed(koto_ctx* ctx, const koto_api* api, long long chat_id, bool closed, int until_date = 0) {
+    std::string req = "{\"chat_id\":" + std::to_string(chat_id) + ",\"closed\":" + (closed ? "true" : "false");
+    if (until_date > 0) req += ",\"until_date\":" + std::to_string(until_date);
+    req += "}";
+    return call(ctx, api, "telegram.chat.default_rights.v1", req);
+}
+
+inline std::string chat_slowmode(koto_ctx* ctx, const koto_api* api, long long chat_id, int seconds) {
+    std::string req = "{\"chat_id\":" + std::to_string(chat_id) + ",\"seconds\":" + std::to_string(seconds) + "}";
+    return call(ctx, api, "telegram.chat.slowmode.v1", req);
+}
+
+inline std::string join_requests_list(koto_ctx* ctx, const koto_api* api, long long chat_id, int limit = 50) {
+    std::string req = "{\"chat_id\":" + std::to_string(chat_id) + ",\"limit\":" + std::to_string(limit) + "}";
+    return call(ctx, api, "telegram.join_requests.list.v1", req);
+}
+
+inline std::string join_requests_resolve_all(koto_ctx* ctx, const koto_api* api, long long chat_id, bool approved) {
+    std::string req = "{\"chat_id\":" + std::to_string(chat_id) + ",\"approved\":" + (approved ? "true" : "false") + "}";
+    return call(ctx, api, "telegram.join_requests.resolve_all.v1", req);
+}
+
+inline std::string chat_participants(koto_ctx* ctx, const koto_api* api, long long chat_id, int offset = 0, int limit = 100) {
+    std::string req = "{\"chat_id\":" + std::to_string(chat_id) + ",\"offset\":" + std::to_string(offset) + ",\"limit\":" + std::to_string(limit) + "}";
+    return call(ctx, api, "telegram.chat.participants.v1", req);
+}
+
 } // namespace koto::services
