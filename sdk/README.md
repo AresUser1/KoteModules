@@ -1,14 +1,30 @@
-# Kote Module SDK 0.4.8 (Host versionCode 112)
+# Kote Module SDK 0.4.9 (Host versionCode 113)
 
 Официальный набор инструментов для разработки нативных (C/C++) и Lua-модулей юзербота KoteLoader / Kotogram.
 
-* **Целевая версия хоста:** `versionCode 112` (Kotogram v0.4.18+)
+* **Целевая версия хоста:** `versionCode 113` (Kotogram / KoteLoader v0.4.19+)
 * **Архитектуры:** `arm64-v8a` (64-бит) и `armeabi-v7a` (32-бит)
 * **Минимальный Android:** API 26+ (Android 8.0+)
 * **Стандарты:** C11 / C++20, Module ABI 3
 * **Мультиязычность:** Полная поддержка русского и английского языков (RU / EN)
 * **Руководство по 32-битным модулям:** [GUIDE_32BIT.md](GUIDE_32BIT.md)
 * **Руководство по сервисам хоста (112+):** [HOST_SERVICES.md](HOST_SERVICES.md)
+
+---
+
+## 🚀 Что нового в SDK 0.4.9 (Host 113)
+
+1. ⚡ **Универсальный мгновенный сброс действий (Live Action Flush):**
+   - Добавлена поддержка немедленного применения и отправки действий (`api->c_edit`, `api->c_reply`, `api->c_send`, `api->delete_msg`, `api->react`) прямо во время выполнения команды модуля, до перехода к долгим синхронным операциям (загрузка медиафайлов, HTTP-запросы к внешним API, обработка данных).
+   - Поддерживается как в нативных C/C++ модулях ABI 3 (`native_module.cpp`), так и в скриптовом рантайме Lua 5.4 (`lua_module.cpp`).
+   - Позволяет модулям моментально менять текст сообщения на статус выполнения (например, *"⏳ Обработка..."*), гарантируя, что пользователь увидит актуальное состояние без задержек.
+
+2. ✂️ **Автоматическая нормализация и защита от лимита подписей MTProto (Safe Caption Truncation):**
+   - В ядро и JNI-мост внедрена защита от RPC-ошибки `400: MEDIA_CAPTION_TOO_LONG` при отправке фото, видео, файлов и альбомов с длинными описаниями из внешних источников.
+   - Движок производит строгий подсчёт UTF-16 code units (лимит Telegram 1024 / 1020 символов с многоточием `...`) и автоматически валидирует и корректирует границы сущностей форматирования (`sanitize_message_entities`), полностью исключая сбои отправки.
+
+3. 🔒 **Повышение стабильности многопоточного моста:**
+   - Оптимизирована синхронизация между рабочими потоками JNI, хост-сервисом и очередью команд ядра, исключающая взаимные блокировки при старте и перезапуске приложения.
 
 ---
 
@@ -48,97 +64,49 @@
 
 Начиная с версии хоста 0.4.11+, юзербот поддерживает выбор языка интерфейса (`RU` / `EN` / `System Default`). Модули могут легко адаптироваться под выбранный язык пользователя.
 
-### 1. Описание модуля и команд (для .help и .minfo)
-Используйте теги `[ru]` и `[en]` в строках описания модуля и документации команд:
-
+### 1. Локализация описаний команд и модуля
+В полях `description`, `usage` и описаниях параметров настроек можно указывать локализованные строки с префиксами `[ru]` и `[en]`:
 ```c
-static const koto_command COMMANDS[] = {
-    {
-        "mycmd",
-        &cmd_mycmd,
-        KOTO_LEVEL_ALL,
-        "[ru] Скачать видео или фото [en] Download video or photo",
-        "[ru] <ссылка> [en] <url>"
-    }
-};
-
 static const koto_module MODULE = {
     KOTO_MODULE_ABI,
-    "my_module",
-    "[ru] Полезный модуль для медиа [en] Useful media module",
-    "1.1.0",
-    110, // min_host_version (versionCode)
-    // ...
+    "sample",
+    "[ru] Пример модуля на C++ ABI 3. [en] Sample module on C++ ABI 3.",
+    "1.0.0",
+    24,
+    0,
+    COMMANDS, sizeof(COMMANDS)/sizeof(COMMANDS[0]),
+    ...
 };
 ```
-Хост KoteLoader автоматически извлечёт нужную строку в зависимости от языка пользователя.
+Хост автоматически извлечёт нужную часть строки в зависимости от языка, выбранного в настройках приложения.
 
-### 2. Определение языка в коде обработчика команды
-
-#### В C (C11):
-```c
-#include "module_abi.h"
-
-static void cmd_mycmd(koto_ctx* ctx, const koto_api* api) {
-    int is_en = koto_is_lang_en(ctx, api);
-    
-    if (is_en) {
-        api->c_text(ctx, "⏳ Processing request...");
-    } else {
-        api->c_text(ctx, "⏳ Обрабатываю запрос...");
-    }
-    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
-}
-```
-Или с помощью макроса `KOTO_TR`:
-```c
-api->c_text(ctx, KOTO_TR(ctx, api, "Готово!", "Done!"));
-```
-
-#### В C++ (C++20):
+### 2. Локализация вывода в чат
+Используйте хелперы из `koto_utils.hpp`:
 ```cpp
-#include "module_abi.h"
 #include "koto_utils.hpp"
 
-static void cmd_mycmd(koto_ctx* ctx, const koto_api* api) {
-    using namespace koto_utils;
-    
-    api->c_text(ctx, tr(ctx, api, "Загрузка началась...", "Download started..."));
-    api->c_edit(ctx, KOTO_NO_LINK_PREVIEW);
+// Проверка текущего языка:
+if (koto_utils::is_en(ctx, api)) {
+    api->c_add_text(ctx, "Done successfully!", 0);
+} else {
+    api->c_add_text(ctx, "Успешно выполнено!", 0);
 }
-```
 
-#### В Lua:
-```lua
-local lang = api.setting_get("app_language") or "ru"
-local is_en = (lang == "en" or lang == "english")
-
-local msg = is_en and "Done!" or "Готово!"
-api.c_text(msg)
+// Или макрос KOTO_TR:
+api->c_add_text(ctx, KOTO_TR(ctx, api, "Успешно!", "Success!"), 0);
 ```
 
 ---
 
-## 🛠 Сборка модулей
+## 📦 Быстрый старт сборки собственного модуля
 
-### Под Windows:
-```cmd
-:: Собрать под обе архитектуры (arm64-v8a и armeabi-v7a):
-build.bat --all
-
-:: Собрать конкретный модуль:
-build.bat src\my_module.cpp --all
-
-:: Собрать только под 32-бит:
-build.bat --arm32
-
-:: Собрать только под 64-бит:
-build.bat --arm64
-```
-
-### Под Linux / macOS:
-```bash
-./build.sh --all
-```
-
-Бинарники `.so` сохраняются в `out/android-arm64-v8a/` и `out/android-armeabi-v7a/`.
+1. Откройте файл `src/sample.cpp` (или скопируйте любой из `examples/native/`).
+2. Настройте NDK путь в `build.bat` (Windows) или `build.sh` (Linux/macOS).
+3. Запустите сборку:
+   ```bash
+   ./build.sh
+   ```
+4. Скомпилированные библиотеки появятся в папке `out/`:
+   - `out/android-arm64-v8a/` (64-бит)
+   - `out/android-armeabi-v7a/` (32-бит)
+5. Отправьте файл `.so` в Избранное Telegram и ответьте на него командой `.install`.

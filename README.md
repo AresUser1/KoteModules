@@ -3,8 +3,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a%20%7C%20armeabi--v7a%20(32--bit)-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
   <img src="https://img.shields.io/badge/ABI-Native%20ABI%203-blue?style=for-the-badge" alt="ABI" />
-  <img src="https://img.shields.io/badge/Kotogram-v0.4.18%2B%20(Host%20112)-orange?style=for-the-badge" alt="Kotogram Version" />
-  <img src="https://img.shields.io/badge/SDK-v0.4.8-7F52FF?style=for-the-badge" alt="SDK Version" />
+  <img src="https://img.shields.io/badge/Kotogram-v0.4.19%2B%20(Host%20113)-orange?style=for-the-badge" alt="Kotogram Version" />
+  <img src="https://img.shields.io/badge/SDK-v0.4.9-7F52FF?style=for-the-badge" alt="SDK Version" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
@@ -129,7 +129,7 @@
 
 ## 👨‍💻 Разработчикам модулей
 
-Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK v0.4.8 (ABI 3, Host 112)**:
+Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK v0.4.9 (ABI 3, Host 113)**:
 * 🧰 **[Скачать Kote Module SDK Kit (GitHub)](https://raw.githubusercontent.com/AresUser1/LoaderKote/main/dist/kote-module-sdk.zip)** • **[Зеркало GitFlic (RuGit)](https://gitflic.ru/project/koteyka/koteloader/blob/raw?file=dist/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочными файлами `module_abi.h` / `koto_services.hpp`, скриптами `build.bat` / `build.sh` / `CMakeLists.txt` и документацией `HOST_SERVICES.md` / `LUA_GUIDE.md`.
 * **Сборка под Android**: NDK Clang под `arm64-v8a` (или под локальный Linux через `./build.sh --host`).
 * **Инлайн-кнопки и колбэки**: универсальная поддержка интерактивных игр и кнопочных меню через `api->c_button()`, `on_callback`, `api->cb_answer()` и `api->c_edit_message()`.
