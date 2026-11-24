@@ -5,8 +5,10 @@
 
 #include "module_abi.h"
 #include "koto_utils.hpp"
+#include "nlohmann/json.hpp"
 #include <string>
 #include <vector>
+#include <map>
 #include <sstream>
 #include <cstring>
 #include <cctype>
@@ -318,6 +320,54 @@ static std::string build_message_json(const QuoteMessageItem& item) {
     return ss.str();
 }
 
+struct SenderCacheEntry {
+    std::string name;
+    std::string first_name;
+    std::string last_name;
+    std::string username;
+};
+
+static void fill_sender_info(koto_ctx* ctx, const koto_api* api, long long uid,
+                             std::map<long long, SenderCacheEntry>& cache,
+                             QuoteMessageItem& item) {
+    item.sender_id = uid;
+    if (uid <= 0) {
+        if (item.name.empty()) item.name = "User";
+        return;
+    }
+    auto it = cache.find(uid);
+    if (it != cache.end()) {
+        item.name = it->second.name;
+        item.first_name = it->second.first_name;
+        item.last_name = it->second.last_name;
+        item.username = it->second.username;
+        return;
+    }
+
+    SenderCacheEntry entry;
+    char buf[128];
+    if (api->user_name && api->user_name(ctx, uid, buf, sizeof(buf) - 1) > 0) entry.name = buf;
+    if (api->user_first_name && api->user_first_name(ctx, uid, buf, sizeof(buf) - 1) > 0) entry.first_name = buf;
+    if (api->user_last_name && api->user_last_name(ctx, uid, buf, sizeof(buf) - 1) > 0) entry.last_name = buf;
+    if (api->user_username && api->user_username(ctx, uid, buf, sizeof(buf) - 1) > 0) entry.username = buf;
+    if (entry.name.empty()) {
+        entry.name = entry.first_name;
+        if (!entry.last_name.empty()) {
+            if (!entry.name.empty()) entry.name += " ";
+            entry.name += entry.last_name;
+        }
+    }
+    if (entry.name.empty() && !entry.username.empty()) {
+        entry.name = "@" + entry.username;
+    }
+
+    item.name = entry.name;
+    item.first_name = entry.first_name;
+    item.last_name = entry.last_name;
+    item.username = entry.username;
+    cache[uid] = std::move(entry);
+}
+
 // ── .q ──────────────────────────────────────────────────────────────────────
 static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
@@ -374,34 +424,17 @@ static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
     api->c_edit(ctx, 0);
 
     std::vector<QuoteMessageItem> items;
+    std::map<long long, SenderCacheEntry> sender_cache;
+
+    long long cid = api->chat_id ? api->chat_id(ctx) : 0;
+    long long cur_mid = api->msg_id ? api->msg_id(ctx) : 0;
+    long long my_uid = api->get_me ? api->get_me(ctx) : 0;
 
     // Собираем сообщение из реплая
     QuoteMessageItem rep_item;
-    rep_item.sender_id = api->reply_sender_id ? api->reply_sender_id(ctx) : 0;
+    long long r_uid = api->reply_sender_id ? api->reply_sender_id(ctx) : 0;
     rep_item.text = r_text ? r_text : "";
-
-    if (rep_item.sender_id > 0) {
-        char n_buf[128] = {0};
-        if (api->user_name && api->user_name(ctx, rep_item.sender_id, n_buf, sizeof(n_buf) - 1) > 0) {
-            rep_item.name = n_buf;
-        }
-        char fn_buf[128] = {0};
-        if (api->user_first_name && api->user_first_name(ctx, rep_item.sender_id, fn_buf, sizeof(fn_buf) - 1) > 0) {
-            rep_item.first_name = fn_buf;
-        }
-        char ln_buf[128] = {0};
-        if (api->user_last_name && api->user_last_name(ctx, rep_item.sender_id, ln_buf, sizeof(ln_buf) - 1) > 0) {
-            rep_item.last_name = ln_buf;
-        }
-        char un_buf[128] = {0};
-        if (api->user_username && api->user_username(ctx, rep_item.sender_id, un_buf, sizeof(un_buf) - 1) > 0) {
-            rep_item.username = un_buf;
-        }
-        if (rep_item.name.empty()) {
-            rep_item.name = rep_item.first_name;
-            if (!rep_item.last_name.empty()) rep_item.name += " " + rep_item.last_name;
-        }
-    }
+    fill_sender_info(ctx, api, r_uid, sender_cache, rep_item);
 
     int n_ents = api->reply_entity_count ? api->reply_entity_count(ctx) : 0;
     for (int i = 0; i < n_ents; ++i) {
@@ -420,6 +453,65 @@ static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
     }
 
     items.push_back(rep_item);
+
+    // Если запрошено больше 1 сообщения (.q <count>), добираем следующие по порядку из истории чата
+    if (count > 1 && r_mid > 0 && cid != 0 && api->get_history_json) {
+        std::map<long long, nlohmann::json> by_id;
+        long long min_seen_id = 0;
+
+        auto collect_batch = [&](int offset_id, int limit, int add_offset) {
+            std::vector<char> hbuf(262144, '\0');
+            int n = api->get_history_json(ctx, cid, offset_id, limit, add_offset, hbuf.data(), (int)hbuf.size() - 1);
+            if (n <= 0) return;
+            auto j = nlohmann::json::parse(hbuf.data(), nullptr, false);
+            if (!j.is_array()) return;
+            for (const auto& obj : j) {
+                if (!obj.is_object()) continue;
+                long long id = obj.value("id", 0LL);
+                if (id <= 0) continue;
+                if (min_seen_id == 0 || id < min_seen_id) min_seen_id = id;
+                by_id[id] = obj;
+            }
+        };
+
+        collect_batch(0, std::max(count * 3 + 10, 60), 0);
+        if (by_id.empty() || min_seen_id > r_mid) {
+            collect_batch((int)r_mid, count + 12, -(count + 3));
+        }
+
+        for (const auto& [id, obj] : by_id) {
+            if ((int)items.size() >= count) break;
+            if (id <= r_mid || id == cur_mid) continue;
+
+            std::string m_text = obj.value("text", "");
+            if (m_text.empty()) continue;
+
+            QuoteMessageItem next_item;
+            next_item.text = std::move(m_text);
+
+            long long sid = obj.value("sender_id", 0LL);
+            bool is_out = obj.value("out", false);
+            if (is_out && my_uid > 0 && (sid == 0 || sid == cid)) {
+                sid = my_uid;
+            }
+            fill_sender_info(ctx, api, sid, sender_cache, next_item);
+
+            if (obj.contains("entities") && obj["entities"].is_array()) {
+                for (const auto& ej : obj["entities"]) {
+                    if (!ej.is_object()) continue;
+                    QuoteMessageItem::Entity ent;
+                    ent.type = ej.value("type", 0);
+                    ent.off = ej.value("offset", 0);
+                    ent.len = ej.value("length", 0);
+                    ent.docid = ej.value("document_id", 0LL);
+                    ent.url = ej.value("url", "");
+                    next_item.entities.push_back(std::move(ent));
+                }
+            }
+
+            items.push_back(std::move(next_item));
+        }
+    }
 
     // Формируем JSON запрос к API
     std::string ext = as_file ? "png" : "webp";
@@ -489,7 +581,6 @@ static void cmd_quote(koto_ctx* ctx, const koto_api* api) {
     api->delete_msg(ctx);
 
     // Отправляем готовую цитату в чат
-    long long cid = api->chat_id(ctx);
     std::string fname = as_file ? (is_png ? "Quote.png" : "Quote.webp") : (is_png ? "Quote.png" : "Quote.webp");
     int flags = as_file ? 2 /* KOTO_SEND_AS_FILE */ : 0;
     api->c_reset(ctx);
@@ -764,7 +855,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "quotes",
     "Создание стикеров-цитат и фейк-цитат из сообщений Telegram через сервис Quotes API. C++ ABI 3.",
-    "1.1.0",
+    "1.2.0",
     24,
     0,
     COMMANDS,

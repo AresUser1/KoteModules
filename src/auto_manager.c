@@ -221,13 +221,46 @@ static int is_twin_account(koto_ctx* ctx, const koto_api* api) {
 static long long canonical_chat(koto_ctx* ctx, const koto_api* api) {
     long long id=api->chat_id(ctx);
     int type=api->chat_type ? api->chat_type(ctx) : KOTO_CHAT_UNKNOWN;
-    if (!id || id==LLONG_MIN || type==KOTO_CHAT_UNKNOWN) return 0;
+    if (!id || id==LLONG_MIN) return 0;
     if (type==KOTO_CHAT_CHANNEL) {
         long long raw=id<=-1000000000000LL ? -(id+1000000000000LL) : (id<0?-id:id);
-        return raw>0 && raw<1000000000000LL ? -1000000000000LL-raw : 0;
+        return raw>0 && raw<1000000000000LL ? -1000000000000LL-raw : id;
     }
     if (type==KOTO_CHAT_GROUP) return id<0?id:-id;
-    return id<0?-id:id;
+    if (type==KOTO_CHAT_PRIVATE) return id<0?-id:id;
+    return id;
+}
+
+static long long bare_id_of(long long id) {
+    if (id <= -1000000000000LL) return -(id + 1000000000000LL);
+    if (id < 0) return -id;
+    return id;
+}
+
+static int chat_matches_set(koto_ctx* ctx, const koto_api* api, const char* key, long long cid, long long canonical) {
+    if (!cid && !canonical) return 0;
+    if (canonical && chat_set_has(ctx, api, key, canonical)) return 1;
+    if (cid && cid != canonical && chat_set_has(ctx, api, key, cid)) return 1;
+    long long bare = bare_id_of(cid ? cid : canonical);
+    if (bare > 0) {
+        if (chat_set_has(ctx, api, key, bare)) return 1;
+        if (chat_set_has(ctx, api, key, -bare)) return 1;
+        if (bare < 1000000000000LL && chat_set_has(ctx, api, key, -1000000000000LL - bare)) return 1;
+    }
+    return 0;
+}
+
+static void chat_remove_all_forms(koto_ctx* ctx, const koto_api* api, const char* key, long long cid, long long canonical) {
+    if (canonical) chat_set_toggle(ctx, api, key, canonical, 0);
+    if (cid && cid != canonical) chat_set_toggle(ctx, api, key, cid, 0);
+    long long bare = bare_id_of(cid ? cid : canonical);
+    if (bare > 0) {
+        chat_set_toggle(ctx, api, key, bare, 0);
+        chat_set_toggle(ctx, api, key, -bare, 0);
+        if (bare < 1000000000000LL) {
+            chat_set_toggle(ctx, api, key, -1000000000000LL - bare, 0);
+        }
+    }
 }
 static int parse_id(const char* text,long long* id) {
     if (!text || !*text) return 0;
@@ -251,29 +284,32 @@ static void cmd_autread(koto_ctx* ctx, const koto_api* api) {
     long long target=0;
     int local=scope!=NULL;
     if (local) {
-        if (!strcasecmp(scope,"this")) target=canonical_chat(ctx,api);
-        else if (!parse_id(scope,&target)) goto usage;
-        if (!target) goto usage;
-        if (target==api->chat_id(ctx)) target=canonical_chat(ctx,api);
+        if (!strcasecmp(scope,"this")) {
+            target=canonical_chat(ctx,api);
+            if (!target) target=api->chat_id(ctx);
+        } else if (!parse_id(scope,&target)) {
+            goto usage;
+        }
         if (!target) goto usage;
     }
     int ok=1;
     if (!local) {
-        if (on) ok=chat_set_toggle(ctx,api,"autoread_chats",0,1);
-        else api->db_set(ctx,"autoread_chats","");
+        if (on) {
+            ok=chat_set_toggle(ctx,api,"autoread_chats",0,1);
+        } else {
+            api->db_set(ctx,"autoread_chats","");
+            api->db_set(ctx,"autoread_excluded","");
+        }
     } else if (on) {
         ok=chat_set_toggle(ctx,api,"autoread_chats",target,1);
-        if (ok) chat_set_toggle(ctx,api,"autoread_excluded",target,0);
+        if (ok) chat_remove_all_forms(ctx,api,"autoread_excluded",target,target);
     } else {
         ok=chat_set_toggle(ctx,api,"autoread_excluded",target,1);
-        if (ok) {
-            chat_set_toggle(ctx,api,"autoread_chats",target,0);
-            if (target==canonical_chat(ctx,api)) chat_set_toggle(ctx,api,"autoread_chats",api->chat_id(ctx),0);
-        }
+        if (ok) chat_remove_all_forms(ctx,api,"autoread_chats",target,target);
     }
     api->c_reset(ctx);
     if (!ok) api->c_text(ctx,"❌ Список чатов заполнен. Настройка не применена.");
-    else if (!local) api->c_text(ctx,on ? "✅ Авточтение включено во всех чатах, кроме сохранённых исключений." : "✅ Авточтение основного аккаунта выключено во всех чатах.");
+    else if (!local) api->c_text(ctx,on ? "✅ Авточтение включено во всех чатах, кроме сохранённых исключений." : "✅ Авточтение выключено во всех чатах.");
     else {
         char text[256];snprintf(text,sizeof(text),"✅ Авточтение %s в чате %lld.%s",on?"включено":"выключено",target,on?"":" Исключение действует и при включённом режиме для всех чатов.");
         api->c_text(ctx,text);
@@ -339,54 +375,75 @@ static void cmd_autoapprove(koto_ctx* ctx, const koto_api* api) {
 
     const char* raw = api->cmd_args(ctx);
     char args[256] = {0};
+    if (raw && strlen(raw) >= sizeof(args)) goto usage;
     if (raw) snprintf(args, sizeof(args), "%s", raw);
 
-    char* p = args;
-    while (*p == ' ') p++;
-    char* end = p + strlen(p);
-    while (end > p && (*(end-1) == ' ' || *(end-1) == '\t' || *(end-1) == '\n' || *(end-1) == '\r')) {
-        *(--end) = '\0';
+    char* save = NULL;
+    char* mode = strtok_r(args, " \t\r\n", &save);
+    char* scope = strtok_r(NULL, " \t\r\n", &save);
+    char* extra = strtok_r(NULL, " \t\r\n", &save);
+
+    if (!mode || extra || (strcasecmp(mode, "on") && strcasecmp(mode, "off"))) goto usage;
+    int on = !strcasecmp(mode, "on");
+
+    long long target = 0;
+    int local = (scope != NULL);
+
+    if (local) {
+        if (!strcasecmp(scope, "this")) {
+            target = canonical_chat(ctx, api);
+            if (!target) target = api->chat_id(ctx);
+        } else if (!parse_id(scope, &target)) {
+            goto usage;
+        }
+        if (!target) goto usage;
     }
 
-    int on = -1;
-    int this_chat = 0;
-
-    if (strncmp(p, "on", 2) == 0 && (p[2] == '\0' || p[2] == ' ')) {
-        on = 1;
-        p += 2;
-    } else if (strncmp(p, "off", 3) == 0 && (p[3] == '\0' || p[3] == ' ')) {
-        on = 0;
-        p += 3;
+    int ok = 1;
+    if (!local) {
+        if (on) {
+            ok = chat_set_toggle(ctx, api, "autoapprove_chats", 0, 1);
+        } else {
+            api->db_set(ctx, "autoapprove_chats", "");
+            api->db_set(ctx, "autoapprove_excluded", "");
+        }
+    } else if (on) {
+        ok = chat_set_toggle(ctx, api, "autoapprove_chats", target, 1);
+        if (ok) {
+            chat_remove_all_forms(ctx, api, "autoapprove_excluded", target, target);
+        }
+    } else {
+        ok = chat_set_toggle(ctx, api, "autoapprove_excluded", target, 1);
+        if (ok) {
+            chat_remove_all_forms(ctx, api, "autoapprove_chats", target, target);
+        }
     }
-
-    while (*p == ' ') p++;
-    if (strcmp(p, "this") == 0) {
-        this_chat = 1;
-    }
-
-    if (on == -1) {
-        api->c_reset(ctx);
-        api->c_emoji(ctx, "❌", EMO_ERROR);
-        api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
-        char u[128];
-        snprintf(u, sizeof(u), "%sautoapprove on [this] или %sautoapprove off [this]", pfx, pfx);
-        api->c_fmt(ctx, u, KOTO_ENT_CODE);
-        send_result(ctx, api);
-        return;
-    }
-
-    long long target_id = this_chat ? api->chat_id(ctx) : 0;
-    const char* chat_desc = this_chat ? "текущем чате" : "всех чатах";
-
-    chat_set_toggle(ctx, api, "autoapprove_chats", target_id, on);
 
     api->c_reset(ctx);
-    api->c_emoji(ctx, "✅", EMO_SUCCESS);
-    api->c_fmt(ctx, " Автоодобрение заявок ", KOTO_ENT_BOLD);
-    api->c_fmt(ctx, on ? "включено" : "выключено", KOTO_ENT_CODE);
-    char desc[128];
-    snprintf(desc, sizeof(desc), " в %s.", chat_desc);
-    api->c_fmt(ctx, desc, KOTO_ENT_BOLD);
+    if (!ok) {
+        api->c_text(ctx, "❌ Список чатов заполнен. Настройка не применена.");
+    } else {
+        api->c_emoji(ctx, "✅", EMO_SUCCESS);
+        api->c_fmt(ctx, " Автоодобрение заявок ", KOTO_ENT_BOLD);
+        api->c_fmt(ctx, on ? "включено" : "выключено", KOTO_ENT_CODE);
+        char desc[128];
+        if (!local) {
+            snprintf(desc, sizeof(desc), " во %s.", on ? "всех чатах, кроме сохранённых исключений" : "всех чатах");
+        } else {
+            snprintf(desc, sizeof(desc), " в чате %lld.%s", target, on ? "" : " Исключение сохранено.");
+        }
+        api->c_fmt(ctx, desc, KOTO_ENT_BOLD);
+    }
+    send_result(ctx, api);
+    return;
+
+usage:
+    api->c_reset(ctx);
+    api->c_emoji(ctx, "❌", EMO_ERROR);
+    api->c_fmt(ctx, " Использование: ", KOTO_ENT_BOLD);
+    char u[128];
+    snprintf(u, sizeof(u), "%sautoapprove on|off [this|ID]", pfx);
+    api->c_fmt(ctx, u, KOTO_ENT_CODE);
     send_result(ctx, api);
 }
 
@@ -394,39 +451,22 @@ static void cmd_autoapprovelist(koto_ctx* ctx, const koto_api* api) {
     if (is_twin_account(ctx, api)) return;
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
-    char buf[8192] = {0};
-    int n = api->db_get(ctx, "autoapprove_chats", buf, sizeof(buf) - 1);
-
     api->c_reset(ctx);
     api->c_emoji(ctx, "📋", EMO_LIST);
-    api->c_fmt(ctx, " Чаты с автоодобрением заявок:\n\n", KOTO_ENT_BOLD);
+    api->c_fmt(ctx, " Автоодобрение заявок:\n\n", KOTO_ENT_BOLD);
 
-    if (n <= 0) {
-        api->c_text(ctx, "Список автоодобрения пуст.");
+    if (chat_set_has(ctx, api, "autoapprove_chats", 0)) {
+        api->c_text(ctx, "Статус: включено во всех чатах, кроме исключений.\n\n");
     } else {
-        char* saveptr = NULL;
-        char* line = strtok_r(buf, "\r\n", &saveptr);
-        int printed = 0;
-        while (line) {
-            while (*line == ' ') line++;
-            if (*line) {
-                long long cid = strtoll(line, NULL, 10);
-                api->c_text(ctx, "• ");
-                if (cid == 0) {
-                    api->c_fmt(ctx, "Все чаты (где есть права)\n", KOTO_ENT_BOLD);
-                } else {
-                    char id_str[64];
-                    snprintf(id_str, sizeof(id_str), "%lld\n", cid);
-                    api->c_fmt(ctx, id_str, KOTO_ENT_CODE);
-                }
-                printed++;
-            }
-            line = strtok_r(NULL, "\r\n", &saveptr);
-        }
-        if (!printed) {
-            api->c_text(ctx, "Список автоодобрения пуст.");
-        }
+        api->c_text(ctx, "Статус: выключено по умолчанию.\n\n");
     }
+
+    api->c_text(ctx, "Исключения (не одобрять):\n");
+    print_chat_set(ctx, api, "autoapprove_excluded");
+
+    api->c_text(ctx, "\nЯвно включённые чаты:\n");
+    print_chat_set(ctx, api, "autoapprove_chats");
+
     send_result(ctx, api);
 }
 
@@ -505,17 +545,27 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     long long cid = api->chat_id(ctx);
     if (cid == 0) return 0;
 
-    long long canonical=canonical_chat(ctx,api);
-    if (!canonical || chat_set_has(ctx,api,"autoread_excluded",canonical)) return 0;
+    long long canonical = canonical_chat(ctx, api);
+    if (!canonical) canonical = cid;
+
+    // 1. Excluded chat check (applies to both main account and twins)
+    if (chat_matches_set(ctx, api, "autoread_excluded", cid, canonical)) {
+        return 0;
+    }
+
     long long my_id = api->get_me ? api->get_me(ctx) : 0;
     long long mid = api->msg_id ? api->msg_id(ctx) : 0;
 
-    // Read the current registry for every event. Added/removed accounts and
-    // isolated module processes must not share a stale process-global cache.
+    // Check if account is a registered twin
     TwinItem twins[32];
     int count = get_all_twins(ctx, api, twins, 32);
     int is_twin = 0;
-    for (int i=0; i<count; ++i) if (my_id>0 && twins[i].uid==my_id) {is_twin=1;break;}
+    for (int i = 0; i < count; ++i) {
+        if (my_id > 0 && twins[i].uid == my_id) {
+            is_twin = 1;
+            break;
+        }
+    }
 
     if (is_twin) {
         char mode_key[64];
@@ -523,16 +573,18 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         char mode_val[32] = {0};
         api->db_get(ctx, mode_key, mode_val, sizeof(mode_val) - 1);
         if (atoi(mode_val) == 1) {
-            if (api->read_history) api->read_history(ctx, cid, mid);
-            if (api->read_mentions) api->read_mentions(ctx, cid);
+            if (chat_set_has(ctx, api, "autoread_chats", 0) ||
+                chat_matches_set(ctx, api, "autoread_chats", cid, canonical)) {
+                if (api->read_history) api->read_history(ctx, cid, mid);
+                if (api->read_mentions) api->read_mentions(ctx, cid);
+            }
         }
         return 0;
     }
 
-    // 2. Основной аккаунт: проверяем autoread_chats (0 = все чаты, или cid)
+    // 2. Main account:
     if (chat_set_has(ctx, api, "autoread_chats", 0) ||
-        chat_set_has(ctx, api, "autoread_chats", canonical) ||
-        chat_set_has(ctx, api, "autoread_chats", cid)) {
+        chat_matches_set(ctx, api, "autoread_chats", cid, canonical)) {
         if (api->read_history) api->read_history(ctx, cid, mid);
         if (api->read_mentions) api->read_mentions(ctx, cid);
     }
@@ -616,7 +668,7 @@ static const koto_command COMMANDS[] = {
         &cmd_autoapprove,
         KOTO_LEVEL_TRUSTED,
         "Управление автоодобрением заявок на вступление.",
-        "<on|off> [this]"
+        "<on|off> [this|ID]"
     },
     {
         "autoapprovelist",
@@ -638,7 +690,7 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.3.0",
+    .version          = "1.3.1",
     .min_host_version = 64,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
     .flags            = KOTO_MOD_TWINS,

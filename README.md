@@ -3,8 +3,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android%20arm64--v8a%20%7C%20armeabi--v7a%20(32--bit)-brightgreen?style=for-the-badge&logo=android" alt="Platform" />
   <img src="https://img.shields.io/badge/ABI-Native%20ABI%203-blue?style=for-the-badge" alt="ABI" />
-  <img src="https://img.shields.io/badge/Kotogram-v0.4.19%2B%20(Host%20113)-orange?style=for-the-badge" alt="Kotogram Version" />
-  <img src="https://img.shields.io/badge/SDK-v0.4.9-7F52FF?style=for-the-badge" alt="SDK Version" />
+  <img src="https://img.shields.io/badge/Kotogram-v0.4.20%2B%20(Host%20114)-orange?style=for-the-badge" alt="Kotogram Version" />
+  <img src="https://img.shields.io/badge/SDK-v0.4.10-7F52FF?style=for-the-badge" alt="SDK Version" />
   <img src="https://img.shields.io/badge/License-MIT-purple?style=for-the-badge" alt="License" />
 </p>
 
@@ -22,7 +22,7 @@
 | **[afk](src/afk.cpp)** | `Native .so` | `v2.1.3` | `.afk`, `.unafk`, `.afkexc`, `.setstatus`, `.removestatus` | Модуль автоматического ответа (AFK). Включает в себя кулдаун ответов в ЛС и систему исключений, перехват упоминаний и ответов, а также установку статуса ' // AFK' в профиле Telegram. |
 | **[akinator](src/akinator.cpp)** | Native .so | 1.1.2 | .aki, .akistop, .akilang | Интерактивная игра Акинатор: угадывание персонажей по наводящим вопросам с инлайн-кнопками. |
 | **[aniliberty](src/aniliberty.cpp)** | `Native .so` | `v1.0.9` | `.aniliberty`, `.arandom`, `.anilib_search` | AniLiberty: поиск аниме по названию, случайные тайтлы (зеркала aniliberty/anilibria) и подробная информация. |
-| **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.2.5` | `.autread`, `.autreadlist`, `.autreadnow`, `.amtwins` | Авточтение с исключениями для чатов и отдельными режимами аккаунтов. |
+| **[auto_manager](src/auto_manager.c)** | `Native .so` | `v1.3.1` | `.autread`, `.autreadlist`, `.autreadnow`, `.autoapprove`, `.autoapprovelist`, `.amtwins` | Авточтение и автоодобрение заявок со всеми формами ID чатов (`bare` / `-bare` / `-100...`), исключениями и отдельными режимами твинков. |
 | **[autolast](src/autolast.cpp)** | `Native .so` | `v1.7.1` | `.addlastchat`, `.rmlastchat`, `.addlastuser`, `.rmlastuser`, `.lastadmin`, `.lasthard`, `.listlast` | Продвинутый 'ласт' автоответчик для игр (готовы / го) с белыми списками и хардмодом. |
 | **[autoresponder](src/autoresponder.cpp)** | `Native .so` | `v2.4.4` | `.pm`, `.pmignore` | Продвинутый автоответчик для ЛС с поддержкой Rich Text, форматирования, премиум-эмодзи, прикрепления медиа, гибкой настройки часов работы, кулдауна и игнор-листов. |
 | **[bakusearch](src/bakusearch.cpp)** | `Native .so` | `v1.0.4` | `.baku` | Помощник для ведущих мафии (Baku). Ищет, кто не проголосовал, анализируя список живых игроков и историю чата (с поддержкой фильтрации red/blue). |
@@ -41,10 +41,11 @@
 | **[gift_stats](src/gift_stats.cpp)** | `Native .so` | `v1.0.0` | `.giftstat` | Статистика сохранённых подарков Telegram (обычные, лимитированные, NFT, оценка стоимости) + баланс и транзакции Stars (Host 112+). |
 | **[gemini_web](src/gemini_web/)** | `Native .so` | `v0.1.2` | `.gweb`, `.gweblogin`, `.gweblogout`, `.gwebmodel`, `.gwebclear`, `.gwebcookies`, `.gwebstatus`, `.gwebtest`, `.gwebrefresh`, `.gwebtimeout` | Клиент Gemini Web для Android с прямым HTTPS-транспортом, поддержкой cookies, выбором моделей и персистентной памятью диалогов. |
 | **[godchat](src/godchat.cpp)** | `Native .so` | `v1.1.1` | `.ban`, `.unban`, `.kick`, `.mute`, `.unmute`, `.dmute`, `.gban`, `.gunban`, `.banchat`, `.panic`, `.req`, `.tkick`, `.purge`, `.del`, `.pref`, `.aclear`, `.member`, `.rmember`, `.getmsg`, `.nochan`, `.guest`, `.gq`, `.gfq`, `.gcfg` | Комбайн модерации и управления чатами: баны/муты, глобальные баны, режим паники/медленный режим, заявки на вступление, очистка удалённых аккаунтов, сообщения пользователя и гостевые лимиты (Host 112+). |
-| **[id](src/id.cpp)** | `Native .so` | `v1.0.6` | `.ай`, `.id` | Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку на аккаунт (C++ ABI 3). |
+| **[id](src/id.cpp)** | `Native .so` | `v1.1.1` | `.ай`, `.id` | Показывает ваш ID, ID пользователя, юзернейм и кликабельную ссылку по `@username`, `t.me/...`, ID или реплаю (C++ ABI 3). |
 | **[idprem](src/idprem.cpp)** | `Native .so` | `v1.0.1` | `.idprem` | Утилита для получения document_id премиум-эмодзи из сообщения (в ответ или к своему). Удобно для настройки .setrpemoji / .setmodemoji. |
 | **[invoice](src/invoice.cpp)** | `Native .so` | `v1.0.1` | `.invoice` | Создание инвойсов на оплату Telegram Stars (XTR) с инлайн-кнопкой оплаты через Bot API (автоматически использует токен активного бота Kotogram). |
 | **[inviter](src/inviter.cpp)** | `Native .so` | `v1.0.0` | `.inv`, `.invstop`, `.invlog`, `.invworkers`, `.invcfg` | Массовая рассылка и инвайтинг в чаты с поддержкой твинков-воркеров, настраиваемых задержек и фильтров. |
+| **[kodel](src/kodel.cpp)** | `Native .so` | `v1.0.0` | `.d`, `.del`, `.kodel` | Быстрое удаление сообщений текущего чата по ответу или количеству (`.d [N]`, C++ ABI 3). |
 | **[kotserv](src/kotserv.cpp)** | `Native .so` | `v2.0.4` | `.serv`, `.kscfg` | Модуль управления и отображения статуса сервисов Kote, синхронизации и кастомизации. |
 | **[link_manager](src/link_manager.cpp)** | Native .so | 1.1.1 | .lset, .linkhelp, .exportlinks | Экспорт и управление пригласительными ссылками для чатов и каналов, автообход CHANNEL_INVALID. |
 | **[mafia_multitool](src/mafia_multitool.cpp)** | `Native .so` | `v1.2.9` | `.mset`, `.mdelay`, `.mhuman`, `.msettings`, `.mfreeze`, `.mcombat`, `.mlast`, `.mprelast`, `.mvesh`, `.mreg`, `.mbvesh`, `.mblike`, `.mbdis`, `.mrole`, `.mlike`, `.mdis`, `.mprofile`, `.mtrue`, `.mtvesh`, `.mkvesh`, `.mkgraf`, `.mbaku`, `.movesh` | Боевой комбайн для мафиозных ботов (CombatMafia, TrueMafia, Baku, Koto, Mafioso): мульти-аккаунты (твинки), очеловеченный разброс кликов (.mhuman), авто-голосование Combat (.mcombat, .mlast, .mprelast, .mvesh), скан ролей (.mrole), регистрация (.mreg), линч (.mlike, .mdis), аналитика не проголосовавших (.mbaku, .mkgraf). |
@@ -55,8 +56,11 @@
 | **[moderation](src/moderation.cpp)** | `Native .so` | `v1.1.7` | `.ban`, `.sban`, `.unban`, `.kick`, `.skick`, `.mute`, `.smute`, `.unmute`, `.warn`, `.unwarn`, `.warns`, `.warnlimit`, `.delusers`, `.modhistory`, `.gameban`, `.gset`, `.gban`, `.ungban`, `.gkick` | Комплексный модуль модерации чатов: бан, кик, мут, варны с автобаном, глобальные категории чатов (.gset, .gban, .gkick), очистка сообщений пользователя, история действий, временный игровой бан (.gameban) и логирование в Избранное. |
 | **[nft_info](src/nft_info.cpp)** | `Native .so` | `v1.0.0` | `.nft` | Инспекция уникальных подарков (NFT) Telegram по ссылке t.me/nft/..., определение метаданных, скрытого владельца через поиск контактов и проверка статуса чейна TON (Host 111+). |
 | **[music](src/music.cpp)** | `Native .so` | `v3.0.0` | `.mus`, `.musconfig` | Поиск и мгновенная отправка музыки через Telegram-ботов (@lybot → @vkmusic_bot). Файлы отправляются напрямую через серверы Telegram без скачивания на память устройства. |
+| **[nekospy](src/nekospy.cpp)** | `Native .so` | `v1.2.3` | `.spymode`, `.spyinfo`, `.spybl`, `.spyblclear`, `.spywl`, `.spywlclear` | Модуль слежки за удалёнными и изменёнными сообщениями (включая фото/одноразки и `-100...` чаты) для основы и твинков с отчётом в «Избранное» (C++ ABI 3). |
+| **[pinterest_dl](src/pinterest_dl.cpp)** | `Native .so` | `v1.1.0` | `.pin`, `.pindl`, `.pinterest` | Скачивание медиафайлов из Pinterest (видео, GIF, аудио, фото) в максимальном качестве с инлайн-меню выбора формата. |
 | **[pmbl](src/pmbl.cpp)** | `Native .so` | `v0.2.0` | `.pmbl`, `.pmblstatus`, `.allowpm`, `.denypm`, `.pmlist`, `.pmblsett`, `.pmblcfg`, `.pmbanlast` | Нативная защита личных сообщений (PMBL): фильтрация спама, белый список, доверие контактам и переписке, блокировка и жалобы. |
 | **[profile_manager](src/profile_manager.cpp)** | `Native .so` | `v1.2.2` | `.name`, `.sname`, `.lname`, `.dname`, `.namelist`, `.setava`, `.delava` | Управление профилем (имя, аватар, история имён): смена имени, история, инлайн-меню переключения, установка и удаление аватара (C++ ABI 3). |
+| **[quotes](src/quotes.cpp)** | `Native .so` | `v1.2.0` | `.q`, `.fq`, `.qcfg` | Генерация стикеров и PNG-картинок из цитат и фейк-цитат с кэшем отправителей (C++ ABI 3). |
 | **[rp](src/rp.cpp)** | `Native .so` | `v3.0.3` | `.rp`, `.addrp`, `.delrp`, `.rplist`, `.setrpnick`, `.delrpnick`, `.rpnick`, `.addrpcreator`, `.delrpcreator`, `.listrpcreators`, `.setrpemoji`, `.delrpemoji`, `.rpemojis` | Полнофункциональный ролевой модуль: кастомные действия с премиум-эмодзи (.addrp), управление доступом в чатах (.rp), RP-ники (.setrpnick), создатели команд и настраиваемые статичные эмодзи интерфейса (.setrpemoji). |
 | **[scrapper](src/scrapper.cpp)** | `Native .so` | `v1.0.0` | `.scrap`, `.scrapstop`, `.scraplog`, `.scrapinfo`, `.scrapclear`, `.scrapcsv`, `.scrapworkers`, `.scrapcfg` | Сбор участников и активности чатов в файл с поддержкой твинков и фильтрации. |
 | **[spam_ban](src/spam_ban.cpp)** | `Native .so` | `v1.6.2` | `.spamban`, `.spamtwins` | Запрос жалобы и блокировки текущим аккаунтом; требуется ядро 60+. Команда `.spamtwins` сообщает о доступности функции. |
@@ -68,7 +72,7 @@
 | **[tt_dl](src/tt_dl.cpp)** | `Native .so` | `v1.7.1` | `.tt` | Скачивание контента из TikTok (видео со стримингом и плеером, GIF, фото-альбомы единым сообщением через c_send_album), мгновенный статус загрузки, поддержка реплаев и каскадный фоллбэк на ssstik.io. |
 | **[weather](src/weather.cpp)** | `Native .so` | `v1.1.2` | `.weather`, `.w` | Текущая погода и прогноз наперёд через wttr.in и Open-Meteo на 3 или 7 дней с разбивкой по времени. |
 | **[wordle](src/wordle.cpp)** | Native .so | 1.3.1 | .w, .g, .hint, .wset, .wstop | Игра «Wordle» (Отгадай слово): цветное табло, лобби для групп, настраиваемое число попыток, подсказки. |
-| **[whois](src/whois.cpp)** | `Native .so` | `v1.0.0` | `.whois`, `.whoisclear`, `.whoiscsv`, `.whoislog`, `.whoiscfg` | Подробная информация о пользователях (профиль, ID, bio, dc, premium) и глубокий анализ чатов (участники, админы, боты). |
+| **[whois](src/whois.cpp)** | `Native .so` | `v1.2.1` | `.whois`, `.whoischat`, `.chatanalysis` | Подробная информация о пользователях (включая точное определение собеседника в ЛС по реплаю, ID, bio, dc, premium) и глубокий анализ чатов (участники, админы, боты). |
 | **[wisp](src/wisp.cpp)** | `Native .so` | `v1.0.4` | `.wisp`, `.wispcfg` | Секретные самоуничтожающиеся сообщения с инлайн-кнопкой прочтения, защитой адресата и настраиваемым шаблоном. |
 
 ---
@@ -129,7 +133,7 @@
 
 ## 👨‍💻 Разработчикам модулей
 
-Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK v0.4.9 (ABI 3, Host 113)**:
+Все нативные C и C++ модули разрабатываются на базе **Kote Module SDK v0.4.10 (ABI 3, Host 114)**:
 * 🧰 **[Скачать Kote Module SDK Kit (GitHub)](https://raw.githubusercontent.com/AresUser1/LoaderKote/main/dist/kote-module-sdk.zip)** • **[Зеркало GitFlic (RuGit)](https://gitflic.ru/project/koteyka/koteloader/blob/raw?file=dist/kote-module-sdk.zip)** — официальный архив со всеми инструментами сборки, заголовочными файлами `module_abi.h` / `koto_services.hpp`, скриптами `build.bat` / `build.sh` / `CMakeLists.txt` и документацией `HOST_SERVICES.md` / `LUA_GUIDE.md`.
 * **Сборка под Android**: NDK Clang под `arm64-v8a` (или под локальный Linux через `./build.sh --host`).
 * **Инлайн-кнопки и колбэки**: универсальная поддержка интерактивных игр и кнопочных меню через `api->c_button()`, `on_callback`, `api->cb_answer()` и `api->c_edit_message()`.

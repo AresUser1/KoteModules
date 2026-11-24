@@ -16,7 +16,7 @@
 
 namespace {
 
-static constexpr long long EMO_USER    = 5283097055852503586LL; // 👤
+static constexpr long long EMO_USER    = 5778145208411624388LL; // 👤
 static constexpr long long EMO_CHAT    = 5778661935927004845LL; // 💬
 static constexpr long long EMO_STAR    = 5469947168523558652LL; // ⭐
 static constexpr long long EMO_SHIELD  = 5470049770997292425LL; // 🛡️
@@ -81,14 +81,28 @@ static void cmd_whois(koto_ctx* ctx, const koto_api* api) {
             }
         }
     } else {
-        if (api->reply_sender_id) {
-            target_uid = api->reply_sender_id(ctx);
+        long long rep_mid = api->reply_msg_id ? api->reply_msg_id(ctx) : 0;
+        if (rep_mid > 0) {
+            if (api->reply_sender_id) {
+                target_uid = api->reply_sender_id(ctx);
+            }
+            if (target_uid <= 0) {
+                // В личном чате автор входящего сообщения — собеседник (cid)
+                long long cid = api->chat_id ? api->chat_id(ctx) : 0;
+                long long me = api->get_me ? api->get_me(ctx) : 0;
+                if (cid > 0 && cid != me) {
+                    target_uid = cid;
+                }
+            }
         }
-        if (target_uid == 0 && api->sender_id) {
-            target_uid = api->sender_id(ctx);
-        }
-        if (target_uid == 0 && api->get_me) {
-            target_uid = api->get_me(ctx);
+        if (target_uid == 0 && rep_mid == 0) {
+            // Только если команда вызвана без реплая, берём автора команды / себя
+            if (api->sender_id) {
+                target_uid = api->sender_id(ctx);
+            }
+            if (target_uid == 0 && api->get_me) {
+                target_uid = api->get_me(ctx);
+            }
         }
     }
 
@@ -467,7 +481,7 @@ const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "whois",
     "Подробная информация о пользователях и глубокий анализ чатов (C++ ABI 3).",
-    "1.1.0",
+    "1.2.1",
     26,
     0,
     COMMANDS,
