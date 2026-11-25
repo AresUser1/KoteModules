@@ -149,13 +149,25 @@ inline std::string shell_escape(const std::string& s) {
     return out;
 }
 
-// HTTP GET запрос через хост-API или fallback через curl
+// HTTP GET запрос через хост-API (вкл. http_get_ex с заголовками на host >= 118) или fallback через curl
 inline std::string http_get(const koto_api* api, koto_ctx* ctx, const std::string& url, const std::vector<std::string>& headers = {}, int timeout_sec = 10) {
-    if (api && api->http_get) {
-        std::vector<unsigned char> buf(256 * 1024);
-        long long n = api->http_get(ctx, url.c_str(), buf.data(), static_cast<int>(buf.size()));
-        if (n > 0) {
-            return std::string(reinterpret_cast<char*>(buf.data()), static_cast<size_t>(n));
+    if (api) {
+        bool has_ex = !headers.empty() && api->host_version && api->host_version(ctx) >= 118 && api->http_get_ex;
+        if (has_ex) {
+            std::string h_str;
+            for (const auto& h : headers) h_str += h + "\n";
+            std::vector<unsigned char> buf(512 * 1024);
+            long long n = api->http_get_ex(ctx, url.c_str(), h_str.c_str(), buf.data(), static_cast<int>(buf.size()));
+            if (n > 0) {
+                return std::string(reinterpret_cast<char*>(buf.data()), static_cast<size_t>(n));
+            }
+        }
+        if (api->http_get) {
+            std::vector<unsigned char> buf(512 * 1024);
+            long long n = api->http_get(ctx, url.c_str(), buf.data(), static_cast<int>(buf.size()));
+            if (n > 0) {
+                return std::string(reinterpret_cast<char*>(buf.data()), static_cast<size_t>(n));
+            }
         }
     }
     std::string cmd = "curl -sL --max-time " + std::to_string(timeout_sec);

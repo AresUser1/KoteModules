@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "weather");
-    CHECK(std::string(mod->version) == "1.1.3");
+    CHECK(std::string(mod->version) == "1.2.0");
     CHECK(mod->command_count == 4);
     CHECK(std::string(mod->commands[0].name) == "weather");
     CHECK(std::string(mod->commands[1].name) == "w");

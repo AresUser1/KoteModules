@@ -25,8 +25,8 @@ int main(int argc,char** argv) {
     auto second=dlopen(argv[2],RTLD_NOW|RTLD_LOCAL);CHECK(second);
     auto load=[](void* handle){auto fn=reinterpret_cast<const koto_module*(*)()>(dlsym(handle,"koto_module_register"));assert(fn);return fn();};
     auto manager=load(first);auto chat=load(second);
-    CHECK(std::string(manager->version)=="1.2.5" && manager->min_host_version==64);
-    CHECK(std::string(chat->version)=="1.0.6" && chat->min_host_version==61);
+    CHECK(std::string(manager->version)=="1.3.2" && manager->min_host_version==64);
+    CHECK(std::string(chat->version)=="1.1.0" && chat->min_host_version==61);
     CHECK((manager->watch_flags & KOTO_WATCH_UNREAD_SYNC) != 0);
     CHECK((manager->flags & KOTO_MOD_TWINS) != 0); // Android router requires this before calling the watcher.
     koto_api api{};

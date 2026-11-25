@@ -22,7 +22,7 @@ int main(int argc,char** argv) {
     CHECK(argc==2);
     auto handle=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);CHECK(handle);
     auto entry=reinterpret_cast<const koto_module*(*)()>(dlsym(handle,"koto_module_register"));CHECK(entry);
-    auto module=entry();CHECK(module && std::string(module->version)=="1.0.2" && module->min_host_version==60);
+    auto module=entry();CHECK(module && std::string(module->version)=="1.1.0" && module->min_host_version==60);
     koto_api api{};
     api.check_permission=[](koto_ctx* c,int level){assert(level==KOTO_LEVEL_OWNER);return int(c->allowed);};
     api.chat_type=[](koto_ctx* c){return c->type;};

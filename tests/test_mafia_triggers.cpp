@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     CHECK(mod != nullptr);
 
     CHECK(std::string(mod->name) == "mafia_triggers");
-    CHECK(std::string(mod->version) == "2.2.0");
+    CHECK(std::string(mod->version) == "2.3.0");
     CHECK(mod->command_count == 7);
     CHECK(std::string(mod->commands[0].name) == "wtr");
     CHECK(std::string(mod->commands[1].name) == "mtr");

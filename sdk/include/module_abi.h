@@ -64,7 +64,11 @@ enum {
 enum {
     KOTO_FMT_PLAIN       = 0,
     KOTO_NO_LINK_PREVIEW = 1 << 0, /* link_preview=False */
-    KOTO_SEND_AS_FILE    = 1 << 1  /* c_send_file: отправить строго как документ-файл без авто-определения медиа */
+    KOTO_SEND_AS_FILE    = 1 << 1, /* c_send_file/bytes: отправить строго как документ-файл без авто-определения медиа */
+    KOTO_SEND_AS_VOICE   = 1 << 2, /* c_send_file/bytes: отправить как голосовое сообщение (voice wave) (host >= 118) */
+    KOTO_SEND_AS_PHOTO   = 1 << 3, /* c_send_file/bytes: отправить как фото с автоконвертацией WebP->PNG (host >= 118) */
+    KOTO_REPLY_TO_TARGET = 1 << 4, /* c_send_file/bytes: отвечать на reply-сообщение вместо команды (host >= 118) */
+    KOTO_NO_REPLY        = 1 << 5  /* c_send_file/bytes: отправить без reply_to (host >= 118) */
 };
 
 /* ─── Типы настраиваемых полей (панель cfg) ─── */
@@ -448,6 +452,23 @@ typedef struct koto_api {
     /* 35. HTTP POST запрос (v0.4.2 / versionCode 92+) */
     long long (*http_post)(koto_ctx*, const char* url, const char* body, const char* headers,
                            unsigned char* buf, int buflen);
+    /* 36. Расширенный HTTP GET и RPC каналов/юзернеймов (v0.4.21 / versionCode 118+).
+       APPEND ONLY — модули, использующие эти поля, обязаны указать min_host_version >= 118. */
+    long long (*http_get_ex)(koto_ctx*, const char* url, const char* headers,
+                             unsigned char* buf, int buflen);
+    /* check_username: 1=свободен, 0=занят/Fragment, -1=недопустим, -2=ошибка RPC. MAY BLOCK. */
+    int       (*check_username)(koto_ctx*, const char* username);
+    /* create_channel: создаёт канал (megagroup=0) или супергруппу (megagroup=1).
+       Возвращает Bot API ID (-100...) или 0 при ошибке (текст ошибки в err_buf). MAY BLOCK. */
+    long long (*create_channel)(koto_ctx*, const char* title, const char* about, int megagroup,
+                                char* err_buf, int err_len);
+    /* update_channel_username: назначает @username каналу. Возвращает 1=ок, 0=ошибка. MAY BLOCK. */
+    int       (*update_channel_username)(koto_ctx*, long long chat_id, const char* username,
+                                         char* err_buf, int err_len);
+    /* edit_channel_photo: устанавливает аватарку каналу по локальному пути или http(s) URL.
+       Возвращает 1=ок, 0=ошибка. MAY BLOCK. */
+    int       (*edit_channel_photo)(koto_ctx*, long long chat_id, const char* path_or_url,
+                                    char* err_buf, int err_len);
 } koto_api;
 /* ========================================================================== *
  *  Хэндлеры модуля. Все СИНХРОННЫЕ (как on_message в ABI 2): api передаётся    *

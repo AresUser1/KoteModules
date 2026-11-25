@@ -221,33 +221,19 @@ static int is_twin_account(koto_ctx* ctx, const koto_api* api) {
 static long long canonical_chat(koto_ctx* ctx, const koto_api* api) {
     long long id=api->chat_id(ctx);
     int type=api->chat_type ? api->chat_type(ctx) : KOTO_CHAT_UNKNOWN;
-    if (!id || id==LLONG_MIN) return 0;
+    if (!id || id==LLONG_MIN || type==KOTO_CHAT_UNKNOWN) return 0;
     if (type==KOTO_CHAT_CHANNEL) {
         long long raw=id<=-1000000000000LL ? -(id+1000000000000LL) : (id<0?-id:id);
-        return raw>0 && raw<1000000000000LL ? -1000000000000LL-raw : id;
+        return raw>0 && raw<1000000000000LL ? -1000000000000LL-raw : 0;
     }
     if (type==KOTO_CHAT_GROUP) return id<0?id:-id;
-    if (type==KOTO_CHAT_PRIVATE) return id<0?-id:id;
-    return id;
+    return id<0?-id:id;
 }
 
 static long long bare_id_of(long long id) {
     if (id <= -1000000000000LL) return -(id + 1000000000000LL);
     if (id < 0) return -id;
     return id;
-}
-
-static int chat_matches_set(koto_ctx* ctx, const koto_api* api, const char* key, long long cid, long long canonical) {
-    if (!cid && !canonical) return 0;
-    if (canonical && chat_set_has(ctx, api, key, canonical)) return 1;
-    if (cid && cid != canonical && chat_set_has(ctx, api, key, cid)) return 1;
-    long long bare = bare_id_of(cid ? cid : canonical);
-    if (bare > 0) {
-        if (chat_set_has(ctx, api, key, bare)) return 1;
-        if (chat_set_has(ctx, api, key, -bare)) return 1;
-        if (bare < 1000000000000LL && chat_set_has(ctx, api, key, -1000000000000LL - bare)) return 1;
-    }
-    return 0;
 }
 
 static void chat_remove_all_forms(koto_ctx* ctx, const koto_api* api, const char* key, long long cid, long long canonical) {
@@ -284,28 +270,25 @@ static void cmd_autread(koto_ctx* ctx, const koto_api* api) {
     long long target=0;
     int local=scope!=NULL;
     if (local) {
-        if (!strcasecmp(scope,"this")) {
-            target=canonical_chat(ctx,api);
-            if (!target) target=api->chat_id(ctx);
-        } else if (!parse_id(scope,&target)) {
-            goto usage;
-        }
+        if (!strcasecmp(scope,"this")) target=canonical_chat(ctx,api);
+        else if (!parse_id(scope,&target)) goto usage;
+        if (!target) goto usage;
+        if (target==api->chat_id(ctx)) target=canonical_chat(ctx,api);
         if (!target) goto usage;
     }
     int ok=1;
     if (!local) {
-        if (on) {
-            ok=chat_set_toggle(ctx,api,"autoread_chats",0,1);
-        } else {
-            api->db_set(ctx,"autoread_chats","");
-            api->db_set(ctx,"autoread_excluded","");
-        }
+        if (on) ok=chat_set_toggle(ctx,api,"autoread_chats",0,1);
+        else api->db_set(ctx,"autoread_chats","");
     } else if (on) {
         ok=chat_set_toggle(ctx,api,"autoread_chats",target,1);
-        if (ok) chat_remove_all_forms(ctx,api,"autoread_excluded",target,target);
+        if (ok) chat_set_toggle(ctx,api,"autoread_excluded",target,0);
     } else {
         ok=chat_set_toggle(ctx,api,"autoread_excluded",target,1);
-        if (ok) chat_remove_all_forms(ctx,api,"autoread_chats",target,target);
+        if (ok) {
+            chat_set_toggle(ctx,api,"autoread_chats",target,0);
+            if (target==canonical_chat(ctx,api)) chat_set_toggle(ctx,api,"autoread_chats",api->chat_id(ctx),0);
+        }
     }
     api->c_reset(ctx);
     if (!ok) api->c_text(ctx,"❌ Список чатов заполнен. Настройка не применена.");
@@ -546,10 +529,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     if (cid == 0) return 0;
 
     long long canonical = canonical_chat(ctx, api);
-    if (!canonical) canonical = cid;
-
-    // 1. Excluded chat check (applies to both main account and twins)
-    if (chat_matches_set(ctx, api, "autoread_excluded", cid, canonical)) {
+    if (!canonical || chat_set_has(ctx, api, "autoread_excluded", canonical)) {
         return 0;
     }
 
@@ -573,18 +553,16 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
         char mode_val[32] = {0};
         api->db_get(ctx, mode_key, mode_val, sizeof(mode_val) - 1);
         if (atoi(mode_val) == 1) {
-            if (chat_set_has(ctx, api, "autoread_chats", 0) ||
-                chat_matches_set(ctx, api, "autoread_chats", cid, canonical)) {
-                if (api->read_history) api->read_history(ctx, cid, mid);
-                if (api->read_mentions) api->read_mentions(ctx, cid);
-            }
+            if (api->read_history) api->read_history(ctx, cid, mid);
+            if (api->read_mentions) api->read_mentions(ctx, cid);
         }
         return 0;
     }
 
     // 2. Main account:
     if (chat_set_has(ctx, api, "autoread_chats", 0) ||
-        chat_matches_set(ctx, api, "autoread_chats", cid, canonical)) {
+        chat_set_has(ctx, api, "autoread_chats", canonical) ||
+        chat_set_has(ctx, api, "autoread_chats", cid)) {
         if (api->read_history) api->read_history(ctx, cid, mid);
         if (api->read_mentions) api->read_mentions(ctx, cid);
     }
@@ -690,7 +668,7 @@ static const koto_module MODULE = {
     .abi_version      = KOTO_MODULE_ABI,
     .name             = "auto_manager",
     .description      = "Автоматизация: авточтение сообщений, твинки и управление заявками.",
-    .version          = "1.3.1",
+    .version          = "1.3.2",
     .min_host_version = 64,
     .update_url       = "https://raw.githubusercontent.com/AresUser1/KoteModules/main/modules/auto_manager.so",
     .flags            = KOTO_MOD_TWINS,
