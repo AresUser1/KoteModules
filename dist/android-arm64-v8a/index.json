@@ -1,8 +1,114 @@
 {
   "name": "KoteModules Official Repository",
   "version": "2.0.0",
-  "updated": "2026-11-25",
+  "updated": "2026-11-24",
   "modules": [
+    {
+      "id": "giveaways",
+      "name": "giveaways",
+      "display_name": "Giveaways",
+      "author": "Kote",
+      "description": "[ru] Автоматическое участие в Telegram-розыгрышах (Premium и Stars) с отпиской от спонсоров. [en] Auto participation in Telegram giveaways (Premium & Stars) with auto-leaving sponsor channels.",
+      "version": "2.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "gw",
+          "doc": "[ru] Включить или выключить авто-участие в розыгрышах [en] Toggle auto participation in giveaways",
+          "usage": ""
+        },
+        {
+          "name": "gwst",
+          "doc": "[ru] Показать список всех активных розыгрышей [en] Show active giveaways",
+          "usage": ""
+        },
+        {
+          "name": "gwstats",
+          "doc": "[ru] Подробная статистика участий, побед и спонсорских каналов [en] Show giveaway statistics",
+          "usage": ""
+        },
+        {
+          "name": "gwscan",
+          "doc": "[ru] Просканировать историю чатов на пропущенные розыгрыши [en] Scan chat history for giveaways",
+          "usage": "[лимит]"
+        }
+      ],
+      "size": 433624,
+      "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
+      "license": "MIT",
+      "min_host_version": 87,
+      "size_arm64": 433624,
+      "sha256_arm64": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
+      "size_arm32": 361412,
+      "sha256_arm32": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
+          "size": 433624,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
+          "size": 361412,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "VoiceToText",
+      "name": "VoiceToText",
+      "display_name": "Voice to Text",
+      "author": "Kote",
+      "description": "[ru] Распознавание голосовых и видеосообщений в текст через Google STT (by kote). [en] Voice and video note speech-to-text transcriber (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "v2t",
+          "doc": "[ru] Расшифровать голосовое/видеосообщение в ответ [en] Transcribe voice/video note in reply",
+          "usage": ""
+        },
+        {
+          "name": "v2tauto",
+          "doc": "[ru] Переключить авто-расшифровку входящих [en] Toggle auto-transcribe",
+          "usage": ""
+        }
+      ],
+      "size": 264368,
+      "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 264368,
+      "sha256_arm64": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
+      "size_arm32": 201792,
+      "sha256_arm32": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so",
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
+          "size": 264368,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
+          "size": 201792,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so"
+        }
+      },
+      "verified": true
+    },
     {
       "id": "administration",
       "name": "administration",
@@ -409,13 +515,13 @@
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/auto_manager.so",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "64f56f694a1365aee1444b8fb4f23241d2eedb3a1a1962e0edf2b0b55d23f777",
-          "size": 23112,
+          "sha256": "8dba22fe68ca50e2af917bc326bee4cb1951aa30b6f5b60abb562b10f8898cee",
+          "size": 19792,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/auto_manager.so"
         },
         "armeabi-v7a": {
-          "sha256": "7c009b977e3a0715ac226dce2fa48a008d1438fa1d2663bfccd898f1ab71be79",
-          "size": 21988,
+          "sha256": "f5953354c955c3ffb6ddd168b490b5e102ea9f473cfacd8cca614fc3b700f7f1",
+          "size": 17768,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/auto_manager.so"
         }
       },
@@ -1099,58 +1205,6 @@
       "verified": true
     },
     {
-      "id": "discordo",
-      "name": "discordo",
-      "display_name": "Discordo",
-      "author": "Kote (port by SunnexGB)",
-      "description": "[ru] Показывает текущую активность в Discord через Lanyard API с генерацией PNG-баннера и кастомными темами. [en] Discord Rich Presence via Lanyard API with PNG banner.",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "dsnow",
-          "doc": "[ru] Показать текущую активность в Discord [en] Show Discord activity",
-          "usage": ""
-        },
-        {
-          "name": "dsguide",
-          "doc": "[ru] Гайд по настройке Discordo [en] Setup guide",
-          "usage": ""
-        },
-        {
-          "name": "ctheme",
-          "doc": "[ru] Кастомные HEX-цвета темы баннера [en] Custom banner theme colors",
-          "usage": "{\"bg\":\"#1e1f22\",\"text\":\"#ffffff\"}"
-        }
-      ],
-      "size": 268072,
-      "sha256": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/discordo.cpp",
-      "license": "MIT",
-      "min_host_version": 24,
-      "size_arm64": 268072,
-      "sha256_arm64": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so",
-      "size_arm32": 207760,
-      "sha256_arm32": "750950415b5adc8afbd9c0cddb7b5d20e0525204d4949a54e5b4a5009faf4ef2",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/discordo.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
-          "size": 268072,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "750950415b5adc8afbd9c0cddb7b5d20e0525204d4949a54e5b4a5009faf4ef2",
-          "size": 207760,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/discordo.so"
-        }
-      },
-      "verified": true
-    },
-    {
       "id": "doom",
       "name": "doom",
       "display_name": "DOOM 3D",
@@ -1244,101 +1298,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "file_creator",
-      "name": "file_creator",
-      "display_name": "File Creator",
-      "author": "Kote (port by Killu)",
-      "description": "[ru] Собирает код/текст из одного или нескольких сообщений и отправляет готовый файл любого формата. [en] Collect messages and export as a file.",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "cfile",
-          "doc": "[ru] Начать сбор кода в файл [en] Start file session",
-          "usage": "<формат> [название] | cancel"
-        },
-        {
-          "name": "done",
-          "doc": "[ru] Завершить сбор и отправить файл [en] Finish and send file",
-          "usage": ""
-        }
-      ],
-      "size": 214664,
-      "sha256": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/file_creator.cpp",
-      "license": "MIT",
-      "min_host_version": 24,
-      "size_arm64": 214664,
-      "sha256_arm64": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so",
-      "size_arm32": 158680,
-      "sha256_arm32": "4d9da4213944f852b07c93f20ec2473b1c7768ecc0b2033b39b948cc9b3e5a84",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/file_creator.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
-          "size": 214664,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "4d9da4213944f852b07c93f20ec2473b1c7768ecc0b2033b39b948cc9b3e5a84",
-          "size": 158680,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/file_creator.so"
-        }
-      },
-      "verified": true
-    },
-    {
-      "id": "financemod",
-      "name": "financemod",
-      "display_name": "FinanceMod",
-      "author": "Kote",
-      "description": "[ru] Курсы валют ЦБ РФ и криптовалют CoinLore (by kote). [en] CBR fiat rates and CoinLore crypto rates (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "valute",
-          "doc": "[ru] Курс валюты по ЦБ РФ [en] CBR currency exchange rates",
-          "usage": "[кол-во] [код]"
-        },
-        {
-          "name": "crypto",
-          "doc": "[ru] Курс криптовалют (CoinLore) [en] Crypto rates via CoinLore",
-          "usage": "[кол-во] [код]"
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/financemod.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/financemod.cpp",
-      "verified": true,
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/financemod.so",
-      "sha256": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
-      "size": 328456,
-      "sha256_arm64": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
-      "size_arm64": 328456,
-      "sha256_arm32": "9549fee0c2356eb33956ea3f611f2eb205cd117d46d474bf7d48ec53251be2c8",
-      "size_arm32": 259472,
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
-          "size": 328456,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "9549fee0c2356eb33956ea3f611f2eb205cd117d46d474bf7d48ec53251be2c8",
-          "size": 259472,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/financemod.so"
-        }
-      }
     },
     {
       "id": "freegpt",
@@ -1479,286 +1438,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "gift_stats",
-      "name": "gift_stats",
-      "display_name": "GiftStats",
-      "author": "Kote (port by Killu)",
-      "description": "[ru] Анализирует подарки в профиле, считает стоимость обычных/лимитированных/NFT подарков и статистику Stars. [en] Telegram Gifts & Stars value analyzer.",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "giftstat",
-          "doc": "[ru] Статистика подарков пользователя [en] User gift statistics",
-          "usage": "[@username | ID | реплай]"
-        }
-      ],
-      "size": 258368,
-      "sha256": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/gift_stats.cpp",
-      "license": "MIT",
-      "min_host_version": 112,
-      "size_arm64": 258368,
-      "sha256_arm64": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so",
-      "size_arm32": 202312,
-      "sha256_arm32": "1b40f83a93ccd68a70124d300866389d82b7d960e8a67f41d39971c07af37b91",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gift_stats.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
-          "size": 258368,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "1b40f83a93ccd68a70124d300866389d82b7d960e8a67f41d39971c07af37b91",
-          "size": 202312,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gift_stats.so"
-        }
-      },
-      "verified": true
-    },
-    {
-      "id": "giveaways",
-      "name": "giveaways",
-      "display_name": "Giveaways",
-      "author": "Kote",
-      "description": "[ru] Автоматическое участие в Telegram-розыгрышах (Premium и Stars) с отпиской от спонсоров. [en] Auto participation in Telegram giveaways (Premium & Stars) with auto-leaving sponsor channels.",
-      "version": "2.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "gw",
-          "doc": "[ru] Включить или выключить авто-участие в розыгрышах [en] Toggle auto participation in giveaways",
-          "usage": ""
-        },
-        {
-          "name": "gwst",
-          "doc": "[ru] Показать список всех активных розыгрышей [en] Show active giveaways",
-          "usage": ""
-        },
-        {
-          "name": "gwstats",
-          "doc": "[ru] Подробная статистика участий, побед и спонсорских каналов [en] Show giveaway statistics",
-          "usage": ""
-        },
-        {
-          "name": "gwscan",
-          "doc": "[ru] Просканировать историю чатов на пропущенные розыгрыши [en] Scan chat history for giveaways",
-          "usage": "[лимит]"
-        }
-      ],
-      "size": 433624,
-      "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
-      "license": "MIT",
-      "min_host_version": 87,
-      "size_arm64": 433624,
-      "sha256_arm64": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so",
-      "size_arm32": 361412,
-      "sha256_arm32": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/giveaways.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "b8c28d597da56903c14d88d144b8d9f87b3aab3c044168c7924beb8cf0581947",
-          "size": 433624,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giveaways.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "abc6188df2f958d68c15fd8d689adc8fdd67e79375c13b898e733db5341c886a",
-          "size": 361412,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giveaways.so"
-        }
-      },
-      "verified": true
-    },
-    {
-      "id": "godchat",
-      "name": "godchat",
-      "display_name": "GodChat",
-      "author": "Kote (port by Mofko)",
-      "description": "[ru] Комбайн модерации и управления чатом: ban/kick/mute/dmute/gban/banchat/panic/req/tkick/purge/del/pref/aclear/member/rmember/getmsg/nochan/guest/gq/gfq/gcfg. [en] All-in-one chat moderation & utilities suite.",
-      "version": "1.1.1",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "ban",
-          "doc": "[ru] Забанить пользователя [en] Ban user",
-          "usage": "[user] [time] [-d] [reason]"
-        },
-        {
-          "name": "unban",
-          "doc": "[ru] Разбанить пользователя [en] Unban user",
-          "usage": "[user]"
-        },
-        {
-          "name": "kick",
-          "doc": "[ru] Кикнуть пользователя [en] Kick user",
-          "usage": "[user] [reason]"
-        },
-        {
-          "name": "mute",
-          "doc": "[ru] Замутить пользователя [en] Mute user",
-          "usage": "[user] [time] [reason]"
-        },
-        {
-          "name": "unmute",
-          "doc": "[ru] Снять мут [en] Unmute user",
-          "usage": "[user]"
-        },
-        {
-          "name": "dmute",
-          "doc": "[ru] Делит-мут (автоудаление сообщений) [en] Delete-mute toggle",
-          "usage": "[user] [time]"
-        },
-        {
-          "name": "gban",
-          "doc": "[ru] Глобальный бан [en] Global ban",
-          "usage": "[user] [reason]"
-        },
-        {
-          "name": "gunban",
-          "doc": "[ru] Глобальный разбан [en] Global unban",
-          "usage": "[user]"
-        },
-        {
-          "name": "purge",
-          "doc": "[ru] Удалить сообщения до реплая [en] Purge up to reply",
-          "usage": ""
-        },
-        {
-          "name": "del",
-          "doc": "[ru] Удалить реплай или N сообщений [en] Delete messages",
-          "usage": "[N]"
-        },
-        {
-          "name": "pref",
-          "doc": "[ru] Установить админ-префикс [en] Set admin rank",
-          "usage": "[user] [rank]"
-        },
-        {
-          "name": "aclear",
-          "doc": "[ru] Очистить админ-теги [en] Clear admin tags",
-          "usage": ""
-        },
-        {
-          "name": "member",
-          "doc": "[ru] Карточка участника [en] Member info",
-          "usage": "[user/reply]"
-        },
-        {
-          "name": "rmember",
-          "doc": "[ru] Случайный активный участник [en] Random active member",
-          "usage": ""
-        },
-        {
-          "name": "getmsg",
-          "doc": "[ru] Экспорт сообщений участника в TXT [en] Export messages to TXT",
-          "usage": "[user/reply] [limit]"
-        },
-        {
-          "name": "nochan",
-          "doc": "[ru] Запретить сообщения от каналов [en] Toggle channel block",
-          "usage": ""
-        },
-        {
-          "name": "guest",
-          "doc": "[ru] Анти-гостевые боты [en] Toggle guest bot block",
-          "usage": ""
-        },
-        {
-          "name": "gq",
-          "doc": "[ru] Цитата из реплая (стикер) [en] Quote sticker",
-          "usage": ""
-        },
-        {
-          "name": "gfq",
-          "doc": "[ru] Фейк-цитата [en] Fake quote sticker",
-          "usage": "<текст>"
-        },
-        {
-          "name": "gcfg",
-          "doc": "[ru] Панель настроек GodChat [en] Settings panel",
-          "usage": ""
-        },
-        {
-          "name": "banchat",
-          "doc": "[ru] Закрыть/открыть чат [en] Close/open chat",
-          "usage": "[time | on | off]"
-        },
-        {
-          "name": "panic",
-          "doc": "[ru] Режим паники (закрыть чат + slowmode 1ч + отклонить заявки) [en] Toggle panic mode",
-          "usage": "[on | off]"
-        },
-        {
-          "name": "req",
-          "doc": "[ru] Управление заявками на вступление [en] Manage join requests",
-          "usage": "[approve | decline]"
-        },
-        {
-          "name": "tkick",
-          "doc": "[ru] Кик по времени вступления или удалённых [en] Kick recent joiners or deleted",
-          "usage": "<время | -d>"
-        }
-      ],
-      "size": 369728,
-      "sha256": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/godchat.cpp",
-      "license": "MIT",
-      "min_host_version": 112,
-      "size_arm64": 369728,
-      "sha256_arm64": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so",
-      "size_arm32": 299632,
-      "sha256_arm32": "f70e8e62e6e887fc014be878f33920e81a1ca45b5b610900ce1e874a47871100",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/godchat.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
-          "size": 369728,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "f70e8e62e6e887fc014be878f33920e81a1ca45b5b610900ce1e874a47871100",
-          "size": 299632,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/godchat.so"
-        }
-      },
-      "verified": true
-    },
-    {
-      "id": "hookusername",
-      "name": "HookUsername",
-      "version": "1.0.0",
-      "description": "Проверка доступности Telegram-юзернеймов (MTProto + Fragment.com) и мгновенный захват свободного юзернейма на резервный канал (by Kote).",
-      "author": "Kote",
-      "abi": 3,
-      "min_host_version": 118,
-      "type": "native",
-      "commands": [
-        ".uz"
-      ],
-      "category": "tools",
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/hookusername.so",
-      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/hookusername.so",
-      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/hookusername.so",
-      "size": 67832,
-      "sha256": "5e194485113e386fba504a888363ba73ace1994a07348bcb9d1d339a782dbe27",
-      "size_arm64": 67832,
-      "sha256_arm64": "5e194485113e386fba504a888363ba73ace1994a07348bcb9d1d339a782dbe27",
-      "size_arm32": 34756,
-      "sha256_arm32": "7dbc61c1620d9400cc93100d5cf5c473a4121438f1647be98c7860dc12b198f1"
     },
     {
       "id": "id",
@@ -1922,48 +1601,6 @@
       "verified": true
     },
     {
-      "id": "invoice",
-      "name": "invoice",
-      "display_name": "Stars Invoice",
-      "author": "Kote (port by Killu)",
-      "description": "[ru] Создаёт в чате инвойс на Telegram Stars через своего бота с кнопкой «Оплатить». [en] Create Telegram Stars invoices via your bot.",
-      "version": "1.0.1",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "invoice",
-          "doc": "[ru] Создать счёт на оплату в Telegram Stars [en] Create Stars invoice",
-          "usage": "<кол-во звезд> | token <BOT_TOKEN>"
-        }
-      ],
-      "size": 232080,
-      "sha256": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/invoice.cpp",
-      "license": "MIT",
-      "min_host_version": 92,
-      "size_arm64": 232080,
-      "sha256_arm64": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so",
-      "size_arm32": 176420,
-      "sha256_arm32": "ff1404348d367f3acd7a6a26e208aad9bda2034a691acd57ee67633b519a34bd",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/invoice.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
-          "size": 232080,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "ff1404348d367f3acd7a6a26e208aad9bda2034a691acd57ee67633b519a34bd",
-          "size": 176420,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/invoice.so"
-        }
-      },
-      "verified": true
-    },
-    {
       "id": "iris",
       "name": "iris",
       "display_name": "Iris Helper",
@@ -2025,59 +1662,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "kodel",
-      "name": "kodel",
-      "display_name": "Kodel",
-      "author": "Kote / Kovalsky",
-      "description": "[ru] Быстрое удаление сообщений командой .d (по ответу или по количеству). [en] Fast message deletion via .d (by reply or count).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "d",
-          "doc": "[ru] Удалить сообщение по ответу или N сообщений (.d, .d 5) [en] Delete message by reply or N messages (.d, .d 5)",
-          "usage": "[кол-во]"
-        },
-        {
-          "name": "del",
-          "doc": "[ru] Алиас для команды .d [en] Alias for .d",
-          "usage": "[кол-во]"
-        },
-        {
-          "name": "kodel",
-          "doc": "[ru] Алиас для команды .d [en] Alias for .d",
-          "usage": "[кол-во]"
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kodel.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/kodel.cpp",
-      "verified": true,
-      "sha256": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
-      "size": 161480,
-      "sha256_arm64": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
-      "size_arm64": 161480,
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so",
-      "sha256_arm32": "3ef6ccc31a831e99234878f8d6bb31c5d2352617db6866e50a28727cc23cfd6c",
-      "size_arm32": 113840,
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/kodel.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
-          "size": 161480,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "3ef6ccc31a831e99234878f8d6bb31c5d2352617db6866e50a28727cc23cfd6c",
-          "size": 113840,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/kodel.so"
-        }
-      }
     },
     {
       "id": "kotserv",
@@ -2475,96 +2059,6 @@
       "verified": true
     },
     {
-      "id": "mat_analyzer",
-      "name": "mat_analyzer",
-      "display_name": "MatAnalyzer",
-      "author": "Kote (port by Killu)",
-      "description": "[ru] Анализирует маты в чате за последние 10к сообщений: топ слов, топ пользователей, ваш процент. [en] Chat profanity analyzer.",
-      "version": "1.0.1",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "mats",
-          "doc": "[ru] Статистика матов в чате [en] Chat profanity stats",
-          "usage": "[лимит]"
-        }
-      ],
-      "size": 212840,
-      "sha256": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mat_analyzer.cpp",
-      "license": "MIT",
-      "min_host_version": 27,
-      "size_arm64": 212840,
-      "sha256_arm64": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so",
-      "size_arm32": 163852,
-      "sha256_arm32": "99f228412bb0872db27d56e320d996b88dd48066060e11e541cba04c5d0c1fff",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mat_analyzer.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
-          "size": 212840,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "99f228412bb0872db27d56e320d996b88dd48066060e11e541cba04c5d0c1fff",
-          "size": 163852,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mat_analyzer.so"
-        }
-      },
-      "verified": true
-    },
-    {
-      "id": "match3",
-      "name": "match3",
-      "display_name": "Три в ряд (Match-3)",
-      "author": "Kote",
-      "description": "[ru] Игра «Три в ряд» (Match-3): сетка 8х8, цветные кружки, система уровней и опыта, подсветка собранных рядов (зелёный/синий каскад) (by kote). [en] Match-3 puzzle game: 8x8 grid, colored circles, levels and XP, match highlight (green/blue cascade) (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "m3",
-          "description": "Запустить игру «Три в ряд» (Match-3)",
-          "args": "[restart|top]"
-        },
-        {
-          "name": "match3",
-          "description": "Запустить игру «Три в ряд» (Match-3)",
-          "args": "[restart|top]"
-        }
-      ],
-      "size": 258888,
-      "file_size": 258888,
-      "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/match3.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 258888,
-      "sha256_arm64": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so",
-      "size_arm32": 201888,
-      "sha256_arm32": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/match3.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
-          "size": 258888,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
-          "size": 201888,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/match3.so"
-        }
-      },
-      "verified": true
-    },
-    {
       "id": "mazegame",
       "name": "mazegame",
       "display_name": "Лабиринт (MazeGame)",
@@ -2626,274 +2120,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "mellstroyvoice",
-      "name": "mellstroyvoice",
-      "display_name": "MellstroyVoice",
-      "author": "Kote",
-      "description": "45 голосовых фраз и звуковых эффектов Мелстроя (голосовые сообщения на Host 118+, локальное кэширование, by Kote).",
-      "version": "1.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "mellstroy",
-          "doc": "[ru] Список всех 45 звуков Мелстроя или запуск по имени (by kote) [en] List all 45 Mellstroy clips or play by name (by kote)",
-          "usage": "[название]"
-        },
-        {
-          "name": "банан",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "быстрее",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "ааа",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "амамам",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "бембембем",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "блять",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "браво",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "щавель",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "чтотыдумал",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "эхты",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "идинахуй",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "посидим",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "раздва",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "скольконахуй",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "стопстопстоп",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "свист",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "виноград",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "хамам",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "хахаха",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "уху",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "аоао",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "бабка",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "брбрбр",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "бурмофиксики",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "буяя",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "возняафриканская",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "закинь5миллионов",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "зевсятина",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "кислый",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "милиция",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "нормалды",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "омайгад",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "отказано",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "подразбитьбы",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "реально",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "тише",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "учись",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "че",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "элджиевка",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "этокто",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "яблоко",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "яужекрасный",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "бурмалда",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "салатик",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        },
-        {
-          "name": "стоит",
-          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
-          "usage": ""
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mellstroyvoice.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mellstroyvoice.cpp",
-      "verified": true,
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/mellstroyvoice.so",
-      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/mellstroyvoice.so",
-      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/mellstroyvoice.so",
-      "sha256": "70a8cd447c327c60eab406b3677ccd1e5d64fd8541e43940c3b34e66bb2f1e0e",
-      "size": 68944,
-      "sha256_arm64": "70a8cd447c327c60eab406b3677ccd1e5d64fd8541e43940c3b34e66bb2f1e0e",
-      "size_arm64": 68944,
-      "sha256_arm32": "64e366e6f7605dcc9b5e8db65a69012af354796f9bc7a7f8d373465fa3fd1181",
-      "size_arm32": 30428,
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "1356fef2260fa32a7e364994b47eec7c5de214cf2500914f539c7301c6f433ba",
-          "size": 91320,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mellstroyvoice.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "e5c5a2b0d6a10bbf8934f396859fa70e549827aef708f26d84ef4325370631d3",
-          "size": 44192,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mellstroyvoice.so"
-        }
-      }
     },
     {
       "id": "moderation",
@@ -3220,48 +2446,6 @@
       "verified": true
     },
     {
-      "id": "nft_info",
-      "name": "nft_info",
-      "display_name": "NFT StarGift Info",
-      "author": "Коте",
-      "description": "[ru] Инспекция уникальных подарков (NFT) Telegram по ссылке t.me/nft/..., распознавание атрибутов, определение скрытого владельца через поиск контактов и проверка статуса чейна TON. [en] Telegram Unique StarGift (NFT) inspection, owner resolution and TON blockchain status.",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "nft",
-          "doc": "[ru] Информация об уникальном NFT подарке [en] Unique NFT StarGift info.",
-          "usage": "<ссылка или slug>"
-        }
-      ],
-      "size": 78144,
-      "sha256": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/nft_info.cpp",
-      "license": "MIT",
-      "min_host_version": 111,
-      "size_arm64": 78144,
-      "sha256_arm64": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so",
-      "size_arm32": 41868,
-      "sha256_arm32": "f0da508fb24be27f8420224f599b1aa24a2f3554aaee1bc04f1573fc7d42542e",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nft_info.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
-          "size": 78144,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "f0da508fb24be27f8420224f599b1aa24a2f3554aaee1bc04f1573fc7d42542e",
-          "size": 41868,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nft_info.so"
-        }
-      },
-      "verified": true
-    },
-    {
       "id": "omni",
       "name": "omni",
       "display_name": "OmniLoad",
@@ -3351,59 +2535,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "pinterest_dl",
-      "name": "pinterest_dl",
-      "display_name": "Pinterest Downloader",
-      "author": "Kote / weyrix",
-      "description": "[ru] Скачивает медиа из Pinterest (видео, GIF, звук, фото) с инлайн-меню. [en] Downloads Pinterest media (video, GIF, audio, photo) with inline menu.",
-      "version": "1.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "pin",
-          "doc": "[ru] Скачать медиа из Pinterest с выбором качества [en] Download Pinterest media",
-          "usage": "<ссылка или реплай>"
-        },
-        {
-          "name": "pindl",
-          "doc": "[ru] Алиас для команды .pin [en] Alias for .pin",
-          "usage": "<ссылка или реплай>"
-        },
-        {
-          "name": "pinterest",
-          "doc": "[ru] Алиас для команды .pin [en] Alias for .pin",
-          "usage": "<ссылка или реплай>"
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/pinterest_dl.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/pinterest_dl.cpp",
-      "verified": true,
-      "sha256": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
-      "size": 234104,
-      "sha256_arm64": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
-      "size_arm64": 234104,
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so",
-      "sha256_arm32": "4a30486a9189d2ac6690f34beb7d26d0f3922d1db879d99fd756a99951f4b22c",
-      "size_arm32": 183004,
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/pinterest_dl.so",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
-          "size": 234104,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "4a30486a9189d2ac6690f34beb7d26d0f3922d1db879d99fd756a99951f4b22c",
-          "size": 183004,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/pinterest_dl.so"
-        }
-      }
     },
     {
       "id": "pmbl",
@@ -3662,54 +2793,6 @@
       },
       "verified": true,
       "min_host_version": 24
-    },
-    {
-      "id": "randomanimepic",
-      "name": "randomanimepic",
-      "display_name": "RandomAnimePic",
-      "author": "Kote",
-      "description": "Случайные аниме-картинки и список тегов через NekosAPI v4 с автоконвертацией WebP→PNG на Host 118+ (by Kote).",
-      "version": "1.1.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "rapic",
-          "doc": "[ru] Получить рандомную аниме-картинку [en] Fetch random anime pic",
-          "usage": "[category]"
-        },
-        {
-          "name": "racategories",
-          "doc": "[ru] Список категорий из NekosAPI [en] Fetch categories from NekosAPI",
-          "usage": ""
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/randomanimepic.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/randomanimepic.cpp",
-      "verified": true,
-      "url": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/randomanimepic.so",
-      "url_arm64": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-arm64-v8a/randomanimepic.so",
-      "url_arm32": "https://raw.githubusercontent.com/AresUser1/KoteModules/main/dist/android-armeabi-v7a/randomanimepic.so",
-      "sha256": "0a2640cadc35fb352bddac055980b1dfc783969cd3b3aa560333e477a89db669",
-      "size": 238224,
-      "sha256_arm64": "0a2640cadc35fb352bddac055980b1dfc783969cd3b3aa560333e477a89db669",
-      "size_arm64": 238224,
-      "sha256_arm32": "c4d9d7bb477f32dfeedf715b9d07cb703c35400835f0845c8a5aa9c964c032aa",
-      "size_arm32": 182472,
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "f8a314e69a3bec114df50f6a7f45bb31bd582617f3abe691926092791ab32817",
-          "size": 321808,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/randomanimepic.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "b3e0fe44a48036c425646ee65253c753cc0e01c880f01e49b24e95eebb8a366b",
-          "size": 257652,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/randomanimepic.so"
-        }
-      }
     },
     {
       "id": "rp",
@@ -4514,54 +3597,6 @@
       "verified": true
     },
     {
-      "id": "VoiceToText",
-      "name": "VoiceToText",
-      "display_name": "Voice to Text",
-      "author": "Kote",
-      "description": "[ru] Распознавание голосовых и видеосообщений в текст через Google STT (by kote). [en] Voice and video note speech-to-text transcriber (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "v2t",
-          "doc": "[ru] Расшифровать голосовое/видеосообщение в ответ [en] Transcribe voice/video note in reply",
-          "usage": ""
-        },
-        {
-          "name": "v2tauto",
-          "doc": "[ru] Переключить авто-расшифровку входящих [en] Toggle auto-transcribe",
-          "usage": ""
-        }
-      ],
-      "size": 264368,
-      "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "size_arm64": 264368,
-      "sha256_arm64": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so",
-      "size_arm32": 201792,
-      "sha256_arm32": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so",
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/voicetotext.cpp",
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "71814a144dbcd5208fd5d3e8cab4248b79ed518090474a88fd27f6fc3990551d",
-          "size": 264368,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/VoiceToText.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "b8695276a6fd5c245cba7c190713319d27f3a6f527218f7b168a19f01827d21b",
-          "size": 201792,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/VoiceToText.so"
-        }
-      },
-      "verified": true
-    },
-    {
       "id": "weather",
       "name": "weather",
       "display_name": "Погода (Weather)",
@@ -4669,59 +3704,6 @@
         }
       },
       "verified": true
-    },
-    {
-      "id": "wikisearch",
-      "name": "wikisearch",
-      "display_name": "WikiSearch",
-      "author": "Kote",
-      "description": "[ru] Быстрый поиск статей на Wikipedia с миниатюрами и LRU+TTL-кэшем (by kote). [en] Fast Wikipedia article search with thumbnails and LRU+TTL cache (by kote).",
-      "version": "1.0.0",
-      "kind": "so",
-      "abi": "arm64-v8a, armeabi-v7a",
-      "commands": [
-        {
-          "name": "wiki",
-          "doc": "[ru] Поиск статей на Wikipedia [en] Search Wikipedia articles",
-          "usage": "[lang] <query|reply>"
-        },
-        {
-          "name": "wikiclear",
-          "doc": "[ru] Очистить кэш WikiSearch [en] Clear WikiSearch cache",
-          "usage": ""
-        },
-        {
-          "name": "wikicache",
-          "doc": "[ru] Статистика кэша WikiSearch [en] WikiSearch cache statistics",
-          "usage": ""
-        }
-      ],
-      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wikisearch.cpp",
-      "license": "MIT",
-      "min_host_version": 26,
-      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wikisearch.cpp",
-      "verified": true,
-      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so",
-      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so",
-      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wikisearch.so",
-      "sha256": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
-      "size": 306792,
-      "sha256_arm64": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
-      "size_arm64": 306792,
-      "sha256_arm32": "ff8db9bb1c67bf9cc879d6f9497af7d8cd20eeebc68f370be843f88a48df43e3",
-      "size_arm32": 246684,
-      "architectures": {
-        "arm64-v8a": {
-          "sha256": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
-          "size": 306792,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so"
-        },
-        "armeabi-v7a": {
-          "sha256": "ff8db9bb1c67bf9cc879d6f9497af7d8cd20eeebc68f370be843f88a48df43e3",
-          "size": 246684,
-          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wikisearch.so"
-        }
-      }
     },
     {
       "id": "wisp",
@@ -4921,6 +3903,1044 @@
         }
       },
       "verified": true
+    },
+    {
+      "id": "match3",
+      "name": "match3",
+      "display_name": "Три в ряд (Match-3)",
+      "author": "Kote",
+      "description": "[ru] Игра «Три в ряд» (Match-3): сетка 8х8, цветные кружки, система уровней и опыта, подсветка собранных рядов (зелёный/синий каскад) (by kote). [en] Match-3 puzzle game: 8x8 grid, colored circles, levels and XP, match highlight (green/blue cascade) (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "m3",
+          "description": "Запустить игру «Три в ряд» (Match-3)",
+          "args": "[restart|top]"
+        },
+        {
+          "name": "match3",
+          "description": "Запустить игру «Три в ряд» (Match-3)",
+          "args": "[restart|top]"
+        }
+      ],
+      "size": 258888,
+      "file_size": 258888,
+      "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/match3.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size_arm64": 258888,
+      "sha256_arm64": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so",
+      "size_arm32": 201888,
+      "sha256_arm32": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/match3.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "3c21711127b333e30e22b61d714005e852364ead69b127d3668e0e94fad3a3d3",
+          "size": 258888,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/match3.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "3ccaee4c65e692f77e7d2d214fc0e8a0c51720219a4395c48bbad6ef2f2837e6",
+          "size": 201888,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/match3.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "nft_info",
+      "name": "nft_info",
+      "display_name": "NFT StarGift Info",
+      "author": "Коте",
+      "description": "[ru] Инспекция уникальных подарков (NFT) Telegram по ссылке t.me/nft/..., распознавание атрибутов, определение скрытого владельца через поиск контактов и проверка статуса чейна TON. [en] Telegram Unique StarGift (NFT) inspection, owner resolution and TON blockchain status.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "nft",
+          "doc": "[ru] Информация об уникальном NFT подарке [en] Unique NFT StarGift info.",
+          "usage": "<ссылка или slug>"
+        }
+      ],
+      "size": 78144,
+      "sha256": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/nft_info.cpp",
+      "license": "MIT",
+      "min_host_version": 111,
+      "size_arm64": 78144,
+      "sha256_arm64": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so",
+      "size_arm32": 41868,
+      "sha256_arm32": "f0da508fb24be27f8420224f599b1aa24a2f3554aaee1bc04f1573fc7d42542e",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nft_info.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "6dab4ea8fb83402ce31e838d5d513c80c8a052e8a014c021ad08dcf33b5390ee",
+          "size": 78144,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/nft_info.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "f0da508fb24be27f8420224f599b1aa24a2f3554aaee1bc04f1573fc7d42542e",
+          "size": 41868,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/nft_info.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "invoice",
+      "name": "invoice",
+      "display_name": "Stars Invoice",
+      "author": "Kote (port by Killu)",
+      "description": "[ru] Создаёт в чате инвойс на Telegram Stars через своего бота с кнопкой «Оплатить». [en] Create Telegram Stars invoices via your bot.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "invoice",
+          "doc": "[ru] Создать счёт на оплату в Telegram Stars [en] Create Stars invoice",
+          "usage": "<кол-во звезд> | token <BOT_TOKEN>"
+        }
+      ],
+      "size": 232080,
+      "sha256": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/invoice.cpp",
+      "license": "MIT",
+      "min_host_version": 92,
+      "size_arm64": 232080,
+      "sha256_arm64": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so",
+      "size_arm32": 176420,
+      "sha256_arm32": "ff1404348d367f3acd7a6a26e208aad9bda2034a691acd57ee67633b519a34bd",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/invoice.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "a8980dc232204ffda62b5bbcaafafdb9e01152115b0465371ef4b3d9003ec3f8",
+          "size": 232080,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/invoice.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "ff1404348d367f3acd7a6a26e208aad9bda2034a691acd57ee67633b519a34bd",
+          "size": 176420,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/invoice.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "file_creator",
+      "name": "file_creator",
+      "display_name": "File Creator",
+      "author": "Kote (port by Killu)",
+      "description": "[ru] Собирает код/текст из одного или нескольких сообщений и отправляет готовый файл любого формата. [en] Collect messages and export as a file.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "cfile",
+          "doc": "[ru] Начать сбор кода в файл [en] Start file session",
+          "usage": "<формат> [название] | cancel"
+        },
+        {
+          "name": "done",
+          "doc": "[ru] Завершить сбор и отправить файл [en] Finish and send file",
+          "usage": ""
+        }
+      ],
+      "size": 214664,
+      "sha256": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/file_creator.cpp",
+      "license": "MIT",
+      "min_host_version": 24,
+      "size_arm64": 214664,
+      "sha256_arm64": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so",
+      "size_arm32": 158680,
+      "sha256_arm32": "4d9da4213944f852b07c93f20ec2473b1c7768ecc0b2033b39b948cc9b3e5a84",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/file_creator.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "afe80016f2bff78ea4309705f689c106206065b0e31a2040f90d7cb5b8b7cce4",
+          "size": 214664,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/file_creator.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "4d9da4213944f852b07c93f20ec2473b1c7768ecc0b2033b39b948cc9b3e5a84",
+          "size": 158680,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/file_creator.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "mat_analyzer",
+      "name": "mat_analyzer",
+      "display_name": "MatAnalyzer",
+      "author": "Kote (port by Killu)",
+      "description": "[ru] Анализирует маты в чате за последние 10к сообщений: топ слов, топ пользователей, ваш процент. [en] Chat profanity analyzer.",
+      "version": "1.0.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "mats",
+          "doc": "[ru] Статистика матов в чате [en] Chat profanity stats",
+          "usage": "[лимит]"
+        }
+      ],
+      "size": 212840,
+      "sha256": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mat_analyzer.cpp",
+      "license": "MIT",
+      "min_host_version": 27,
+      "size_arm64": 212840,
+      "sha256_arm64": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so",
+      "size_arm32": 163852,
+      "sha256_arm32": "99f228412bb0872db27d56e320d996b88dd48066060e11e541cba04c5d0c1fff",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mat_analyzer.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "970dd6ec9643d701cf471657dde02611aec44ad1b905483852473d3c13afc9c7",
+          "size": 212840,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mat_analyzer.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "99f228412bb0872db27d56e320d996b88dd48066060e11e541cba04c5d0c1fff",
+          "size": 163852,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mat_analyzer.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "discordo",
+      "name": "discordo",
+      "display_name": "Discordo",
+      "author": "Kote (port by SunnexGB)",
+      "description": "[ru] Показывает текущую активность в Discord через Lanyard API с генерацией PNG-баннера и кастомными темами. [en] Discord Rich Presence via Lanyard API with PNG banner.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "dsnow",
+          "doc": "[ru] Показать текущую активность в Discord [en] Show Discord activity",
+          "usage": ""
+        },
+        {
+          "name": "dsguide",
+          "doc": "[ru] Гайд по настройке Discordo [en] Setup guide",
+          "usage": ""
+        },
+        {
+          "name": "ctheme",
+          "doc": "[ru] Кастомные HEX-цвета темы баннера [en] Custom banner theme colors",
+          "usage": "{\"bg\":\"#1e1f22\",\"text\":\"#ffffff\"}"
+        }
+      ],
+      "size": 268072,
+      "sha256": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/discordo.cpp",
+      "license": "MIT",
+      "min_host_version": 24,
+      "size_arm64": 268072,
+      "sha256_arm64": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so",
+      "size_arm32": 207760,
+      "sha256_arm32": "750950415b5adc8afbd9c0cddb7b5d20e0525204d4949a54e5b4a5009faf4ef2",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/discordo.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "28f0afdaf7f53dc2532ce4ac7a8315d6d34413f33c9b8379b4bf587d3970466f",
+          "size": 268072,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/discordo.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "750950415b5adc8afbd9c0cddb7b5d20e0525204d4949a54e5b4a5009faf4ef2",
+          "size": 207760,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/discordo.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "gift_stats",
+      "name": "gift_stats",
+      "display_name": "GiftStats",
+      "author": "Kote (port by Killu)",
+      "description": "[ru] Анализирует подарки в профиле, считает стоимость обычных/лимитированных/NFT подарков и статистику Stars. [en] Telegram Gifts & Stars value analyzer.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "giftstat",
+          "doc": "[ru] Статистика подарков пользователя [en] User gift statistics",
+          "usage": "[@username | ID | реплай]"
+        }
+      ],
+      "size": 258368,
+      "sha256": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/gift_stats.cpp",
+      "license": "MIT",
+      "min_host_version": 112,
+      "size_arm64": 258368,
+      "sha256_arm64": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so",
+      "size_arm32": 202312,
+      "sha256_arm32": "1b40f83a93ccd68a70124d300866389d82b7d960e8a67f41d39971c07af37b91",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gift_stats.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "7bd7b43da13cb1d36328764e83bf262509b5ecb0a036fa759ef57b09d98bfeac",
+          "size": 258368,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/gift_stats.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "1b40f83a93ccd68a70124d300866389d82b7d960e8a67f41d39971c07af37b91",
+          "size": 202312,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gift_stats.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "godchat",
+      "name": "godchat",
+      "display_name": "GodChat",
+      "author": "Kote (port by Mofko)",
+      "description": "[ru] Комбайн модерации и управления чатом: ban/kick/mute/dmute/gban/banchat/panic/req/tkick/purge/del/pref/aclear/member/rmember/getmsg/nochan/guest/gq/gfq/gcfg. [en] All-in-one chat moderation & utilities suite.",
+      "version": "1.1.1",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "ban",
+          "doc": "[ru] Забанить пользователя [en] Ban user",
+          "usage": "[user] [time] [-d] [reason]"
+        },
+        {
+          "name": "unban",
+          "doc": "[ru] Разбанить пользователя [en] Unban user",
+          "usage": "[user]"
+        },
+        {
+          "name": "kick",
+          "doc": "[ru] Кикнуть пользователя [en] Kick user",
+          "usage": "[user] [reason]"
+        },
+        {
+          "name": "mute",
+          "doc": "[ru] Замутить пользователя [en] Mute user",
+          "usage": "[user] [time] [reason]"
+        },
+        {
+          "name": "unmute",
+          "doc": "[ru] Снять мут [en] Unmute user",
+          "usage": "[user]"
+        },
+        {
+          "name": "dmute",
+          "doc": "[ru] Делит-мут (автоудаление сообщений) [en] Delete-mute toggle",
+          "usage": "[user] [time]"
+        },
+        {
+          "name": "gban",
+          "doc": "[ru] Глобальный бан [en] Global ban",
+          "usage": "[user] [reason]"
+        },
+        {
+          "name": "gunban",
+          "doc": "[ru] Глобальный разбан [en] Global unban",
+          "usage": "[user]"
+        },
+        {
+          "name": "purge",
+          "doc": "[ru] Удалить сообщения до реплая [en] Purge up to reply",
+          "usage": ""
+        },
+        {
+          "name": "del",
+          "doc": "[ru] Удалить реплай или N сообщений [en] Delete messages",
+          "usage": "[N]"
+        },
+        {
+          "name": "pref",
+          "doc": "[ru] Установить админ-префикс [en] Set admin rank",
+          "usage": "[user] [rank]"
+        },
+        {
+          "name": "aclear",
+          "doc": "[ru] Очистить админ-теги [en] Clear admin tags",
+          "usage": ""
+        },
+        {
+          "name": "member",
+          "doc": "[ru] Карточка участника [en] Member info",
+          "usage": "[user/reply]"
+        },
+        {
+          "name": "rmember",
+          "doc": "[ru] Случайный активный участник [en] Random active member",
+          "usage": ""
+        },
+        {
+          "name": "getmsg",
+          "doc": "[ru] Экспорт сообщений участника в TXT [en] Export messages to TXT",
+          "usage": "[user/reply] [limit]"
+        },
+        {
+          "name": "nochan",
+          "doc": "[ru] Запретить сообщения от каналов [en] Toggle channel block",
+          "usage": ""
+        },
+        {
+          "name": "guest",
+          "doc": "[ru] Анти-гостевые боты [en] Toggle guest bot block",
+          "usage": ""
+        },
+        {
+          "name": "gq",
+          "doc": "[ru] Цитата из реплая (стикер) [en] Quote sticker",
+          "usage": ""
+        },
+        {
+          "name": "gfq",
+          "doc": "[ru] Фейк-цитата [en] Fake quote sticker",
+          "usage": "<текст>"
+        },
+        {
+          "name": "gcfg",
+          "doc": "[ru] Панель настроек GodChat [en] Settings panel",
+          "usage": ""
+        },
+        {
+          "name": "banchat",
+          "doc": "[ru] Закрыть/открыть чат [en] Close/open chat",
+          "usage": "[time | on | off]"
+        },
+        {
+          "name": "panic",
+          "doc": "[ru] Режим паники (закрыть чат + slowmode 1ч + отклонить заявки) [en] Toggle panic mode",
+          "usage": "[on | off]"
+        },
+        {
+          "name": "req",
+          "doc": "[ru] Управление заявками на вступление [en] Manage join requests",
+          "usage": "[approve | decline]"
+        },
+        {
+          "name": "tkick",
+          "doc": "[ru] Кик по времени вступления или удалённых [en] Kick recent joiners or deleted",
+          "usage": "<время | -d>"
+        }
+      ],
+      "size": 369728,
+      "sha256": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/godchat.cpp",
+      "license": "MIT",
+      "min_host_version": 112,
+      "size_arm64": 369728,
+      "sha256_arm64": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so",
+      "size_arm32": 299632,
+      "sha256_arm32": "f70e8e62e6e887fc014be878f33920e81a1ca45b5b610900ce1e874a47871100",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/godchat.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "2ba1fa1242e79a049a469cd3a33c07028e25adf94e6a38b745b5a7131fa0f6ad",
+          "size": 369728,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/godchat.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "f70e8e62e6e887fc014be878f33920e81a1ca45b5b610900ce1e874a47871100",
+          "size": 299632,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/godchat.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "kodel",
+      "name": "kodel",
+      "display_name": "Kodel",
+      "author": "Kote / Kovalsky",
+      "description": "[ru] Быстрое удаление сообщений командой .d (по ответу или по количеству). [en] Fast message deletion via .d (by reply or count).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "d",
+          "doc": "[ru] Удалить сообщение по ответу или N сообщений (.d, .d 5) [en] Delete message by reply or N messages (.d, .d 5)",
+          "usage": "[кол-во]"
+        },
+        {
+          "name": "del",
+          "doc": "[ru] Алиас для команды .d [en] Alias for .d",
+          "usage": "[кол-во]"
+        },
+        {
+          "name": "kodel",
+          "doc": "[ru] Алиас для команды .d [en] Alias for .d",
+          "usage": "[кол-во]"
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/kodel.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/kodel.cpp",
+      "verified": true,
+      "sha256": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
+      "size": 161480,
+      "sha256_arm64": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
+      "size_arm64": 161480,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so",
+      "sha256_arm32": "3ef6ccc31a831e99234878f8d6bb31c5d2352617db6866e50a28727cc23cfd6c",
+      "size_arm32": 113840,
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/kodel.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "f21d7b8b383ae5c0d8e50faedd86aee38c64357784b7968b7ce5a640094ad74c",
+          "size": 161480,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/kodel.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "3ef6ccc31a831e99234878f8d6bb31c5d2352617db6866e50a28727cc23cfd6c",
+          "size": 113840,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/kodel.so"
+        }
+      }
+    },
+    {
+      "id": "pinterest_dl",
+      "name": "pinterest_dl",
+      "display_name": "Pinterest Downloader",
+      "author": "Kote / weyrix",
+      "description": "[ru] Скачивает медиа из Pinterest (видео, GIF, звук, фото) с инлайн-меню. [en] Downloads Pinterest media (video, GIF, audio, photo) with inline menu.",
+      "version": "1.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "pin",
+          "doc": "[ru] Скачать медиа из Pinterest с выбором качества [en] Download Pinterest media",
+          "usage": "<ссылка или реплай>"
+        },
+        {
+          "name": "pindl",
+          "doc": "[ru] Алиас для команды .pin [en] Alias for .pin",
+          "usage": "<ссылка или реплай>"
+        },
+        {
+          "name": "pinterest",
+          "doc": "[ru] Алиас для команды .pin [en] Alias for .pin",
+          "usage": "<ссылка или реплай>"
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/pinterest_dl.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/pinterest_dl.cpp",
+      "verified": true,
+      "sha256": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
+      "size": 234104,
+      "sha256_arm64": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
+      "size_arm64": 234104,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so",
+      "sha256_arm32": "4a30486a9189d2ac6690f34beb7d26d0f3922d1db879d99fd756a99951f4b22c",
+      "size_arm32": 183004,
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/pinterest_dl.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "32d68f916ff9f7b2f33031f363a8fa116004e1b4ffc56d3bd4f597ba8cf72356",
+          "size": 234104,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/pinterest_dl.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "4a30486a9189d2ac6690f34beb7d26d0f3922d1db879d99fd756a99951f4b22c",
+          "size": 183004,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/pinterest_dl.so"
+        }
+      }
+    },
+    {
+      "id": "financemod",
+      "name": "financemod",
+      "display_name": "FinanceMod",
+      "author": "Kote",
+      "description": "[ru] Курсы валют ЦБ РФ и криптовалют CoinLore (by kote). [en] CBR fiat rates and CoinLore crypto rates (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "valute",
+          "doc": "[ru] Курс валюты по ЦБ РФ [en] CBR currency exchange rates",
+          "usage": "[кол-во] [код]"
+        },
+        {
+          "name": "crypto",
+          "doc": "[ru] Курс криптовалют (CoinLore) [en] Crypto rates via CoinLore",
+          "usage": "[кол-во] [код]"
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/financemod.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/financemod.cpp",
+      "verified": true,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/financemod.so",
+      "sha256": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
+      "size": 328456,
+      "sha256_arm64": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
+      "size_arm64": 328456,
+      "sha256_arm32": "9549fee0c2356eb33956ea3f611f2eb205cd117d46d474bf7d48ec53251be2c8",
+      "size_arm32": 259472,
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "5130258cd2e74172b081112306bd13231c5009cfd0c4f3f7e1937788a835867e",
+          "size": 328456,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/financemod.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "9549fee0c2356eb33956ea3f611f2eb205cd117d46d474bf7d48ec53251be2c8",
+          "size": 259472,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/financemod.so"
+        }
+      }
+    },
+    {
+      "id": "hookusername",
+      "name": "hookusername",
+      "display_name": "HookUsername",
+      "author": "Kote",
+      "description": "[ru] Проверка доступности Telegram-юзернеймов (MTProto + Fragment.com) и мгновенный захват свободного юзернейма на резервный канал (by kote). [en] Check Telegram username availability (MTProto + Fragment.com) and instantly claim free usernames to a backup channel (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "uz",
+          "doc": "[ru] Проверить юзернейм Telegram и занять, если свободен [en] Check Telegram username and claim if available",
+          "usage": "<username>"
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/hookusername.cpp",
+      "license": "MIT",
+      "min_host_version": 118,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/hookusername.cpp",
+      "verified": true,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/hookusername.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/hookusername.so",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/hookusername.so",
+      "sha256": "5e194485113e386fba504a888363ba73ace1994a07348bcb9d1d339a782dbe27",
+      "size": 67832,
+      "sha256_arm64": "5e194485113e386fba504a888363ba73ace1994a07348bcb9d1d339a782dbe27",
+      "size_arm64": 67832,
+      "sha256_arm32": "7dbc61c1620d9400cc93100d5cf5c473a4121438f1647be98c7860dc12b198f1",
+      "size_arm32": 34756,
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "5e194485113e386fba504a888363ba73ace1994a07348bcb9d1d339a782dbe27",
+          "size": 67832,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/hookusername.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "7dbc61c1620d9400cc93100d5cf5c473a4121438f1647be98c7860dc12b198f1",
+          "size": 34756,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/hookusername.so"
+        }
+      }
+    },
+    {
+      "id": "mellstroyvoice",
+      "name": "mellstroyvoice",
+      "display_name": "MellstroyVoice",
+      "author": "Kote",
+      "description": "[ru] 45 голосовых фраз и звуковых эффектов Мелстроя (голосовые сообщения на Host 118+, локальное кэширование, by kote). [en] 45 Mellstroy voice clips and sound effects (native voice messages on Host 118+, local caching, by kote).",
+      "version": "1.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "mellstroy",
+          "doc": "[ru] Список всех 45 звуков Мелстроя или запуск по имени (by kote) [en] List all 45 Mellstroy clips or play by name (by kote)",
+          "usage": "[название]"
+        },
+        {
+          "name": "банан",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "быстрее",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "ааа",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "амамам",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "бембембем",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "блять",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "браво",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "щавель",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "чтотыдумал",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "эхты",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "идинахуй",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "посидим",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "раздва",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "скольконахуй",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "стопстопстоп",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "свист",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "виноград",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "хамам",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "хахаха",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "уху",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "аоао",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "бабка",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "брбрбр",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "бурмофиксики",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "буяя",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "возняафриканская",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "закинь5миллионов",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "зевсятина",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "кислый",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "милиция",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "нормалды",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "омайгад",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "отказано",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "подразбитьбы",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "реально",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "тише",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "учись",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "че",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "элджиевка",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "этокто",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "яблоко",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "яужекрасный",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "бурмалда",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "салатик",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        },
+        {
+          "name": "стоит",
+          "doc": "[ru] Воспроизвести звук Мелстроя [en] Play Mellstroy clip",
+          "usage": ""
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/mellstroyvoice.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/mellstroyvoice.cpp",
+      "verified": true,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mellstroyvoice.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mellstroyvoice.so",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mellstroyvoice.so",
+      "sha256": "70a8cd447c327c60eab406b3677ccd1e5d64fd8541e43940c3b34e66bb2f1e0e",
+      "size": 68944,
+      "sha256_arm64": "70a8cd447c327c60eab406b3677ccd1e5d64fd8541e43940c3b34e66bb2f1e0e",
+      "size_arm64": 68944,
+      "sha256_arm32": "64e366e6f7605dcc9b5e8db65a69012af354796f9bc7a7f8d373465fa3fd1181",
+      "size_arm32": 30428,
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "70a8cd447c327c60eab406b3677ccd1e5d64fd8541e43940c3b34e66bb2f1e0e",
+          "size": 68944,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/mellstroyvoice.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "64e366e6f7605dcc9b5e8db65a69012af354796f9bc7a7f8d373465fa3fd1181",
+          "size": 30428,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/mellstroyvoice.so"
+        }
+      }
+    },
+    {
+      "id": "randomanimepic",
+      "name": "randomanimepic",
+      "display_name": "RandomAnimePic",
+      "author": "Kote",
+      "description": "[ru] Случайные аниме-картинки и список тегов через NekosAPI v4 с автоконвертацией WebP→PNG на Host 118+ (by kote). [en] Random anime images and tag list via NekosAPI v4 with WebP→PNG conversion on Host 118+ (by kote).",
+      "version": "1.1.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "rapic",
+          "doc": "[ru] Получить рандомную аниме-картинку [en] Fetch random anime pic",
+          "usage": "[category]"
+        },
+        {
+          "name": "racategories",
+          "doc": "[ru] Список категорий из NekosAPI [en] Fetch categories from NekosAPI",
+          "usage": ""
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/randomanimepic.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/randomanimepic.cpp",
+      "verified": true,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/randomanimepic.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/randomanimepic.so",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/randomanimepic.so",
+      "sha256": "0a2640cadc35fb352bddac055980b1dfc783969cd3b3aa560333e477a89db669",
+      "size": 238224,
+      "sha256_arm64": "0a2640cadc35fb352bddac055980b1dfc783969cd3b3aa560333e477a89db669",
+      "size_arm64": 238224,
+      "sha256_arm32": "c4d9d7bb477f32dfeedf715b9d07cb703c35400835f0845c8a5aa9c964c032aa",
+      "size_arm32": 182472,
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "0a2640cadc35fb352bddac055980b1dfc783969cd3b3aa560333e477a89db669",
+          "size": 238224,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/randomanimepic.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "c4d9d7bb477f32dfeedf715b9d07cb703c35400835f0845c8a5aa9c964c032aa",
+          "size": 182472,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/randomanimepic.so"
+        }
+      }
+    },
+    {
+      "id": "wikisearch",
+      "name": "wikisearch",
+      "display_name": "WikiSearch",
+      "author": "Kote",
+      "description": "[ru] Быстрый поиск статей на Wikipedia с миниатюрами и LRU+TTL-кэшем (by kote). [en] Fast Wikipedia article search with thumbnails and LRU+TTL cache (by kote).",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "wiki",
+          "doc": "[ru] Поиск статей на Wikipedia [en] Search Wikipedia articles",
+          "usage": "[lang] <query|reply>"
+        },
+        {
+          "name": "wikiclear",
+          "doc": "[ru] Очистить кэш WikiSearch [en] Clear WikiSearch cache",
+          "usage": ""
+        },
+        {
+          "name": "wikicache",
+          "doc": "[ru] Статистика кэша WikiSearch [en] WikiSearch cache statistics",
+          "usage": ""
+        }
+      ],
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/wikisearch.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "source": "https://github.com/AresUser1/KoteModules/blob/main/src/wikisearch.cpp",
+      "verified": true,
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wikisearch.so",
+      "sha256": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
+      "size": 306792,
+      "sha256_arm64": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
+      "size_arm64": 306792,
+      "sha256_arm32": "ff8db9bb1c67bf9cc879d6f9497af7d8cd20eeebc68f370be843f88a48df43e3",
+      "size_arm32": 246684,
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "06429e7e17dd1347b2068067b2f80110728ec0839d287ba52de5f13143e2d5f0",
+          "size": 306792,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/wikisearch.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "ff8db9bb1c67bf9cc879d6f9497af7d8cd20eeebc68f370be843f88a48df43e3",
+          "size": 246684,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/wikisearch.so"
+        }
+      }
     }
   ]
 }
