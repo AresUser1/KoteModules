@@ -1,7 +1,7 @@
 {
   "name": "KoteModules Official Repository",
   "version": "2.0.0",
-  "updated": "2026-11-24",
+  "updated": "2026-11-28",
   "modules": [
     {
       "id": "giveaways",
@@ -2619,13 +2619,13 @@
       "display_name": "Конструктор опросов",
       "author": "Kote",
       "description": "[ru] Создание опросов по шаблонам, сканер результатов и теги участников. [en] Create interactive polls and quizzes with options.",
-      "version": "3.5.1",
+      "version": "3.5.2",
       "kind": "so",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/poll.so",
-      "size": 330960,
-      "sha256": "be34655fc2a3015a826e0f2f05946c6da042861467d94c969ef9910a325d4180",
+      "size": 333344,
+      "sha256": "4c48c90d4935ba335c970dc9ec006e936697b9b9a89b4ecd52d0f0699020b1d0",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
       "license": "MIT",
       "min_host_version": 85,
@@ -2651,20 +2651,20 @@
           "usage": "<номер|novote> [текст]"
         }
       ],
-      "size_arm64": 330960,
-      "sha256_arm64": "be34655fc2a3015a826e0f2f05946c6da042861467d94c969ef9910a325d4180",
-      "size_arm32": 259688,
-      "sha256_arm32": "a3985aefad9bfe0f2a976cf852708a190eb7db58cd38dd6af9d804350889e160",
+      "size_arm64": 333344,
+      "sha256_arm64": "4c48c90d4935ba335c970dc9ec006e936697b9b9a89b4ecd52d0f0699020b1d0",
+      "size_arm32": 262216,
+      "sha256_arm32": "f9190de9cb16abde8d582923cd5807732160f9891294fc0d9e8c43b82e8d6b13",
       "abi": "arm64-v8a, armeabi-v7a",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "be34655fc2a3015a826e0f2f05946c6da042861467d94c969ef9910a325d4180",
-          "size": 330960,
+          "sha256": "4c48c90d4935ba335c970dc9ec006e936697b9b9a89b4ecd52d0f0699020b1d0",
+          "size": 333344,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so"
         },
         "armeabi-v7a": {
-          "sha256": "a3985aefad9bfe0f2a976cf852708a190eb7db58cd38dd6af9d804350889e160",
-          "size": 259688,
+          "sha256": "f9190de9cb16abde8d582923cd5807732160f9891294fc0d9e8c43b82e8d6b13",
+          "size": 262216,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/poll.so"
         }
       },
@@ -4215,6 +4215,58 @@
           "sha256": "1b40f83a93ccd68a70124d300866389d82b7d960e8a67f41d39971c07af37b91",
           "size": 202312,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/gift_stats.so"
+        }
+      },
+      "verified": true
+    },
+    {
+      "id": "giftgif",
+      "name": "giftgif",
+      "display_name": "GiftGif (Карточки подарков)",
+      "author": "Kote",
+      "description": "[ru] Нативный рендер Telegram-подарков (NFT) в анимированные карточки MP4/GIF с градиентом, узором, своей подписью (.gifttext) и сеткой до 9 плиток (rlottie + libwebp + NDK H.264). [en] Native renderer for Telegram collectible gifts into animated MP4/GIF cards with gradient, pattern, custom caption, and 9-tile grids.",
+      "version": "1.0.0",
+      "kind": "so",
+      "abi": "arm64-v8a, armeabi-v7a",
+      "commands": [
+        {
+          "name": "gif",
+          "doc": "[ru] Собрать анимированную карточку или сетку подарков Telegram (MP4/GIF) [en] Render Telegram gift card or grid (MP4/GIF)",
+          "usage": "[ссылка/слаг...] [256..1536] [видео|gif] [сетка] | статус"
+        },
+        {
+          "name": "gifttext",
+          "doc": "[ru] Задать или убрать свою подпись под карточкой подарка [en] Set or clear custom caption on gift cards",
+          "usage": "[текст|убрать]"
+        },
+        {
+          "name": "gifhelp",
+          "doc": "[ru] Подробная справка по командам и настройкам GiftGif [en] Detailed GiftGif help and settings",
+          "usage": ""
+        }
+      ],
+      "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giftgif.so",
+      "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/giftgif.cpp",
+      "license": "MIT",
+      "min_host_version": 26,
+      "size": 1097192,
+      "sha256": "14667f425764df7cc9dff55c537a71ce2833f7dc9cd71cd558e8557400b0ba68",
+      "size_arm64": 1097192,
+      "sha256_arm64": "14667f425764df7cc9dff55c537a71ce2833f7dc9cd71cd558e8557400b0ba68",
+      "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giftgif.so",
+      "size_arm32": 883524,
+      "sha256_arm32": "7ea96c55995126aa55fe7f142ad2553c94c7fcb3278c49eb9032121dc893ebc2",
+      "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giftgif.so",
+      "architectures": {
+        "arm64-v8a": {
+          "sha256": "14667f425764df7cc9dff55c537a71ce2833f7dc9cd71cd558e8557400b0ba68",
+          "size": 1097192,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/giftgif.so"
+        },
+        "armeabi-v7a": {
+          "sha256": "7ea96c55995126aa55fe7f142ad2553c94c7fcb3278c49eb9032121dc893ebc2",
+          "size": 883524,
+          "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/giftgif.so"
         }
       },
       "verified": true

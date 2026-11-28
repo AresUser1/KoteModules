@@ -744,59 +744,107 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
 
         const auto& poll = resp["poll"];
         std::string q_text = poll["question"].value("text", "");
+        long long cid = api->chat_id(ctx);
 
-        api->c_reset(ctx);
-        int mark = api->c_mark(ctx);
+        // Разбиваем длинный отчёт на несколько сообщений вместо обрезки "... и ещё N чел."
+        // Учитываем оба лимита Telegram: 4096 UTF-16 символов и 100 entities на сообщение.
+        constexpr int MAX_CHUNK_U16 = 3400;
+        constexpr int MAX_CHUNK_ENTS = 88;
 
-        api->c_emoji(ctx, "📋", ICON_POLL);
-        api->c_text(ctx, " ");
-        api->c_fmt(ctx, "Сканер опроса", KOTO_ENT_BOLD);
-        api->c_text(ctx, "\n");
-        api->c_fmt(ctx, q_text.c_str(), KOTO_ENT_ITALIC);
-        api->c_text(ctx, "\n\n");
+        int chunk_index = 0;
+        int cur_mark = 0;
+        int cur_u16 = 0;
+        int cur_ents = 0;
 
-        int total_chars = (int)q_text.size() + 50;
+        auto utf16_len_of = [](const std::string& s) -> int {
+            return utf16_offset(s, s.size());
+        };
+
+        auto begin_chunk = [&](bool continued) {
+            api->c_reset(ctx);
+            cur_mark = api->c_mark(ctx);
+            cur_u16 = 0;
+            cur_ents = 1; // резерв под внешний KOTO_ENT_BLOCKQUOTE
+            if (!continued) {
+                api->c_emoji(ctx, "📋", ICON_POLL);
+                api->c_text(ctx, " ");
+                api->c_fmt(ctx, "Сканер опроса", KOTO_ENT_BOLD);
+                api->c_text(ctx, "\n");
+                api->c_fmt(ctx, q_text.c_str(), KOTO_ENT_ITALIC);
+                api->c_text(ctx, "\n\n");
+                cur_u16 += 22 + utf16_len_of(q_text);
+                cur_ents += 3;
+            } else {
+                std::string cont_hdr = "Сканер опроса (часть " + std::to_string(chunk_index + 1) + ")";
+                api->c_emoji(ctx, "📋", ICON_POLL);
+                api->c_text(ctx, " ");
+                api->c_fmt(ctx, cont_hdr.c_str(), KOTO_ENT_BOLD);
+                api->c_text(ctx, "\n\n");
+                cur_u16 += 6 + utf16_len_of(cont_hdr);
+                cur_ents += 2;
+            }
+        };
+
+        auto flush_chunk = [&]() {
+            api->c_wrap(ctx, cur_mark, KOTO_ENT_BLOCKQUOTE, 1);
+            if (chunk_index == 0) {
+                if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
+                else api->c_reply(ctx, 0);
+            } else {
+                api->c_send(ctx, cid, 0);
+            }
+            chunk_index++;
+        };
+
+        auto ensure_space = [&](int add_u16, int add_ents, const std::string& cont_section = "") {
+            if ((cur_u16 + add_u16 > MAX_CHUNK_U16 || cur_ents + add_ents > MAX_CHUNK_ENTS) && cur_u16 > 60) {
+                flush_chunk();
+                begin_chunk(true);
+                if (!cont_section.empty()) {
+                    api->c_fmt(ctx, (cont_section + " (продолжение)\n").c_str(), KOTO_ENT_BOLD);
+                    cur_u16 += utf16_len_of(cont_section) + 16;
+                    cur_ents += 1;
+                }
+            }
+        };
+
+        begin_chunk(false);
 
         if (poll.contains("options") && poll["options"].is_array()) {
             int opt_num = 1;
             for (const auto& opt : poll["options"]) {
                 std::string opt_text = opt.value("text", "");
                 int count = opt.value("voter_count", 0);
+                std::string opt_title = std::to_string(opt_num++) + ". " + opt_text + " (" + std::to_string(count) + ")";
 
+                ensure_space(utf16_len_of(opt_title) + 24, 3);
                 api->c_emoji(ctx, "✅", ICON_VOTE);
                 api->c_text(ctx, " ");
-                std::string opt_title = std::to_string(opt_num++) + ". " + opt_text + " (" + std::to_string(count) + ")";
                 api->c_fmt(ctx, opt_title.c_str(), KOTO_ENT_BOLD);
                 api->c_text(ctx, "\n");
-                total_chars += (int)opt_text.size() + 20;
+                cur_u16 += utf16_len_of(opt_title) + 4;
+                cur_ents += 2;
 
                 if (count == 0) {
                     api->c_fmt(ctx, "    (Нет голосов)", KOTO_ENT_ITALIC);
                     api->c_text(ctx, "\n\n");
-                    total_chars += 20;
+                    cur_u16 += 19;
+                    cur_ents += 1;
                 } else if (opt.contains("voters") && opt["voters"].is_array()) {
                     const auto& vlist = opt["voters"];
-                    int v_idx = 0;
                     for (const auto& v : vlist) {
-                        if (total_chars > 3300) {
-                            int rem = (int)vlist.size() - v_idx;
-                            if (rem > 0) {
-                                api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
-                                api->c_text(ctx, "\n");
-                                total_chars += 25;
-                            }
-                            break;
-                        }
                         long long uid = v.value("id", 0LL);
                         std::string uname = format_user_name(v);
+                        int line_u16 = utf16_len_of(uname) + 8;
+                        ensure_space(line_u16, 1, opt_title);
                         api->c_text(ctx, "    • ");
                         api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                         api->c_text(ctx, "\n");
-                        total_chars += (int)uname.size() + 10;
-                        v_idx++;
+                        cur_u16 += line_u16;
+                        cur_ents += 1;
                     }
                     api->c_text(ctx, "\n");
-                    total_chars += 1;
+                    cur_u16 += 1;
                 }
             }
         }
@@ -804,39 +852,34 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
         // Не голосовавшие
         if (resp.contains("non_voters") && resp["non_voters"].is_array()) {
             const auto& nv = resp["non_voters"];
+            std::string nv_title = "Не голосовали (" + std::to_string(nv.size()) + ")";
+            ensure_space(utf16_len_of(nv_title) + 24, 3);
             api->c_emoji(ctx, "❌", ICON_NOVOTE);
             api->c_text(ctx, " ");
-            std::string nv_title = "Не голосовали (" + std::to_string(nv.size()) + ")";
             api->c_fmt(ctx, nv_title.c_str(), KOTO_ENT_BOLD);
             api->c_text(ctx, "\n");
-            total_chars += 30;
+            cur_u16 += utf16_len_of(nv_title) + 4;
+            cur_ents += 2;
 
             if (nv.empty()) {
                 api->c_fmt(ctx, "    (Все проголосовали или нет данных)", KOTO_ENT_ITALIC);
                 api->c_text(ctx, "\n\n");
-                total_chars += 40;
+                cur_u16 += 40;
+                cur_ents += 1;
             } else {
-                int nv_idx = 0;
                 for (const auto& v : nv) {
-                    if (total_chars > 3500) {
-                        int rem = (int)nv.size() - nv_idx;
-                        if (rem > 0) {
-                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
-                            api->c_text(ctx, "\n");
-                            total_chars += 25;
-                        }
-                        break;
-                    }
                     long long uid = v.value("id", 0LL);
                     std::string uname = format_user_name(v);
+                    int line_u16 = utf16_len_of(uname) + 8;
+                    ensure_space(line_u16, 1, nv_title);
                     api->c_text(ctx, "    • ");
                     api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                     api->c_text(ctx, "\n");
-                    total_chars += (int)uname.size() + 10;
-                    nv_idx++;
+                    cur_u16 += line_u16;
+                    cur_ents += 1;
                 }
                 api->c_text(ctx, "\n");
-                total_chars += 1;
+                cur_u16 += 1;
             }
         }
 
@@ -844,39 +887,30 @@ static void cmd_pollscan(koto_ctx* ctx, const koto_api* api) {
         if (resp.contains("not_in_chat") && resp["not_in_chat"].is_array()) {
             const auto& nic = resp["not_in_chat"];
             if (!nic.empty()) {
+                std::string nic_title = "Не состоят в группе (" + std::to_string(nic.size()) + ")";
+                ensure_space(utf16_len_of(nic_title) + 24, 3);
                 api->c_emoji(ctx, "🚪", ICON_NOVOTE);
                 api->c_text(ctx, " ");
-                std::string nic_title = "Не состоят в группе (" + std::to_string(nic.size()) + ")";
                 api->c_fmt(ctx, nic_title.c_str(), KOTO_ENT_BOLD);
                 api->c_text(ctx, "\n");
-                total_chars += 35;
-                int nic_idx = 0;
+                cur_u16 += utf16_len_of(nic_title) + 4;
+                cur_ents += 2;
                 for (const auto& v : nic) {
-                    if (total_chars > 3700) {
-                        int rem = (int)nic.size() - nic_idx;
-                        if (rem > 0) {
-                            api->c_fmt(ctx, ("    ... и ещё " + std::to_string(rem) + " чел.").c_str(), KOTO_ENT_ITALIC);
-                            api->c_text(ctx, "\n");
-                            total_chars += 25;
-                        }
-                        break;
-                    }
                     long long uid = v.value("id", 0LL);
                     std::string uname = format_user_name(v);
+                    int line_u16 = utf16_len_of(uname) + 8;
+                    ensure_space(line_u16, 1, nic_title);
                     api->c_text(ctx, "    • ");
                     api->c_url(ctx, uname.c_str(), ("tg://user?id=" + std::to_string(uid)).c_str());
                     api->c_text(ctx, "\n");
-                    total_chars += (int)uname.size() + 10;
-                    nic_idx++;
+                    cur_u16 += line_u16;
+                    cur_ents += 1;
                 }
                 api->c_text(ctx, "\n");
             }
         }
 
-        api->c_wrap(ctx, mark, KOTO_ENT_BLOCKQUOTE, 1);
-
-        if (api->is_outgoing(ctx)) api->c_edit(ctx, 0);
-        else api->c_reply(ctx, 0);
+        flush_chunk();
     } catch (const std::exception& e) {
         api->c_reset(ctx);
         api->c_emoji(ctx, "❌", ICON_NOVOTE);
@@ -1052,7 +1086,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.5.1",
+    "3.5.2",
     85,
     0,
     COMMANDS,
