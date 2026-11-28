@@ -2619,13 +2619,13 @@
       "display_name": "Конструктор опросов",
       "author": "Kote",
       "description": "[ru] Создание опросов по шаблонам, сканер результатов и теги участников. [en] Create interactive polls and quizzes with options.",
-      "version": "3.4.1",
+      "version": "3.5.1",
       "kind": "so",
       "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so",
       "url_arm64": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so",
       "url_arm32": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/poll.so",
-      "size": 260264,
-      "sha256": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
+      "size": 259688,
+      "sha256": "a3985aefad9bfe0f2a976cf852708a190eb7db58cd38dd6af9d804350889e160",
       "git_url": "https://github.com/AresUser1/KoteModules/blob/main/src/poll.cpp",
       "license": "MIT",
       "min_host_version": 85,
@@ -2651,20 +2651,20 @@
           "usage": "<номер|novote> [текст]"
         }
       ],
-      "size_arm64": 331808,
-      "sha256_arm64": "9f5b9fadeadd13642f5a21ac572ec49e2f9454be1868cf0e2d882d5117fee0da",
-      "size_arm32": 260264,
-      "sha256_arm32": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
+      "size_arm64": 330960,
+      "sha256_arm64": "be34655fc2a3015a826e0f2f05946c6da042861467d94c969ef9910a325d4180",
+      "size_arm32": 259688,
+      "sha256_arm32": "a3985aefad9bfe0f2a976cf852708a190eb7db58cd38dd6af9d804350889e160",
       "abi": "arm64-v8a, armeabi-v7a",
       "architectures": {
         "arm64-v8a": {
-          "sha256": "9f5b9fadeadd13642f5a21ac572ec49e2f9454be1868cf0e2d882d5117fee0da",
-          "size": 331808,
+          "sha256": "be34655fc2a3015a826e0f2f05946c6da042861467d94c969ef9910a325d4180",
+          "size": 330960,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-arm64-v8a/poll.so"
         },
         "armeabi-v7a": {
-          "sha256": "c55fe1c16d86e57c38c1ac5111e57f06133285636f8c45e146a3c626492b21bc",
-          "size": 260264,
+          "sha256": "a3985aefad9bfe0f2a976cf852708a190eb7db58cd38dd6af9d804350889e160",
+          "size": 259688,
           "url": "https://cdn.jsdelivr.net/gh/AresUser1/KoteModules@main/dist/android-armeabi-v7a/poll.so"
         }
       },

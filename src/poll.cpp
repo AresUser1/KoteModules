@@ -459,7 +459,7 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     int wlen = api->db_get(ctx, "wait_type", wtype, sizeof(wtype));
     if (wlen <= 0 || !wtype[0]) return 0;
 
-    if (!api->check_permission(ctx, KOTO_LEVEL_OWNER) && !api->is_outgoing(ctx)) return 0;
+    if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED) && !api->is_outgoing(ctx)) return 0;
 
     const char* raw_text = api->msg_text(ctx);
     std::string text_val = raw_text ? koto_utils::trim(raw_text) : "";
@@ -558,6 +558,25 @@ static int on_watch(koto_ctx* ctx, const koto_api* api) {
     return 0;
 }
 
+static json make_poll_peer(koto_ctx* ctx, const koto_api* api) {
+    long long cid = api->chat_id(ctx);
+    long long bare_id = std::abs(cid);
+    if (bare_id > 1000000000000LL) {
+        bare_id -= 1000000000000LL;
+    }
+    int ct = api->chat_type ? api->chat_type(ctx) : KOTO_CHAT_UNKNOWN;
+    std::string ptype = "user";
+    if (ct == KOTO_CHAT_CHANNEL || cid <= -1000000000000LL) {
+        ptype = "channel";
+    } else if (ct == KOTO_CHAT_GROUP || cid < 0) {
+        ptype = "chat";
+    }
+    return {
+        {"type", ptype},
+        {"id", bare_id}
+    };
+}
+
 static void cmd_poll(koto_ctx* ctx, const koto_api* api) {
     if (!api->check_permission(ctx, KOTO_LEVEL_TRUSTED)) return;
 
@@ -637,12 +656,8 @@ static void cmd_poll(koto_ctx* ctx, const koto_api* api) {
         });
     }
 
-    long long cid = api->chat_id(ctx);
     json req = {
-        {"peer", {
-            {"type", (cid < 0 ? "channel" : "user")},
-            {"id", std::abs(cid)}
-        }},
+        {"peer", make_poll_peer(ctx, api)},
         {"question", {
             {"text", question},
             {"entities", q_entities}
@@ -672,23 +687,8 @@ static void cmd_pollcfg(koto_ctx* ctx, const koto_api* api) {
 }
 
 static json make_poll_scan_req(koto_ctx* ctx, const koto_api* api, long long reply_id) {
-    long long cid = api->chat_id(ctx);
-    long long bare_id = std::abs(cid);
-    if (bare_id > 1000000000000LL) {
-        bare_id -= 1000000000000LL;
-    }
-    int ct = api->chat_type(ctx);
-    std::string ptype = "user";
-    if (ct == KOTO_CHAT_CHANNEL || cid <= -1000000000000LL) {
-        ptype = "channel";
-    } else if (ct == KOTO_CHAT_GROUP || cid < 0) {
-        ptype = "chat";
-    }
     return {
-        {"peer", {
-            {"type", ptype},
-            {"id", bare_id}
-        }},
+        {"peer", make_poll_peer(ctx, api)},
         {"id", (int)reply_id}
     };
 }
@@ -1052,7 +1052,7 @@ static const koto_module MODULE = {
     KOTO_MODULE_ABI,
     "poll",
     "Мощный модуль для работы с опросами (C++ ABI 3).",
-    "3.5.0",
+    "3.5.1",
     85,
     0,
     COMMANDS,
